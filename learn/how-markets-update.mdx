@@ -1,0 +1,124 @@
+---
+title: "How markets update"
+description: "Follow the Null V1 market update: reconciliation, funding, price settlement, and the solvency bound."
+sidebarTitle: "How markets update"
+---
+
+# How markets update
+
+A Null market updates before every deposit, mint, withdrawal, or redemption. This keeps share pricing current before a user enters or exits.
+
+The market update has a fixed order:
+
+1. Validate the latest oracle price.
+2. Account for collateral share-price yield and any configured yield fee when yield tracking is enabled.
+3. Reconcile recorded pool balances against actual collateral.
+4. Compute funding and price settlement on the reconciled balances.
+5. Net the two legs into one transfer.
+6. Bound the transfer by available collateral.
+7. Store the new market state.
+
+## Yield-fee accounting
+
+Some markets use wrapped yield-bearing collateral, such as an ERC-4626 vault share. In that case, the market's token unit balance may not grow when collateral earns yield. Instead, each collateral share becomes worth more underlying value.
+
+When share-price tracking is enabled, the market reads the current collateral share price before reconciliation. If the share price has increased, the market can charge the configured `yieldFee` on measured yield, deduct that fee pro rata from Receiver and Payer pool balances, and add it to `protocolFees`.
+
+This step happens before balance reconciliation, funding, and price settlement. If yield tracking is off, the step is skipped.
+
+## Reconciliation
+
+Reconciliation asks one question: does the market actually hold the collateral it thinks it holds?
+
+The market has recorded Receiver and Payer balances. It also has an actual token balance. If the actual balance is higher than the recorded total, the difference may represent donations, rebases, direct token transfers, or other raw-balance gains. If it is lower, the difference is an external loss.
+
+For wrapped ERC-4626 collateral, ordinary collateral yield is handled through share-price accounting above rather than by assuming the market's raw token balance increased.
+
+The difference is allocated across Receiver and Payer in proportion to their recorded pool sizes.
+
+Example:
+
+```text
+Recorded Receiver = 1,000
+Recorded Payer    = 200
+Recorded total    = 1,200
+Actual collateral = 1,212
+External gain     = 12
+```
+
+Receiver receives 10 of the gain and Payer receives 2, because the pools were split 1,000 to 200.
+
+```text
+Reconciled Receiver = 1,010
+Reconciled Payer    = 202
+```
+
+Nothing has moved between Receiver and Payer yet. The market has only brought recorded accounting in line with actual collateral.
+
+## Price settlement
+
+After reconciliation, the market compares the current oracle price with the previous stored oracle price.
+
+If the price rises, Payer pays Receiver. If the price falls, Receiver pays Payer.
+
+In plain terms:
+
+```text
+price return = (new price - old price) / old price
+raw transfer = price return * reconciled Receiver pool
+```
+
+A positive transfer favors Receiver. A negative transfer favors Payer.
+
+## Circuit breaker
+
+Null uses a circuit breaker for abnormal oracle moves. If the oracle move is too large for the elapsed time, directional price settlement is skipped for that update.
+
+Funding still applies. The circuit breaker filters the price-transfer leg; it does not pause the whole market.
+
+The new price is still stored as the next baseline, so a rejected abnormal jump does not compound into the next ordinary update.
+
+The allowed move scales linearly with elapsed time:
+
+```text
+allowed delta = previous price * 700 * elapsed / (10,000 * 1 hour)
+```
+
+After 30 minutes, this allows about 3.5%. After a full hour, it allows 7%. Continuous price movement can still settle over time if each update remains inside the allowed bound.
+
+## Funding
+
+Funding always moves from Receiver to Payer. Receiver pays because Receiver exposure uses Payer collateral as backing capital.
+
+The Receiver funding APR increases with the exposure ratio:
+
+```text
+E = reconciled Receiver pool / reconciled Payer pool
+Receiver funding APR = min(mu * E, funding cap)
+```
+
+The funding amount for one update is the Receiver funding APR scaled by elapsed time and applied to the reconciled Receiver pool.
+
+## Netting and solvency
+
+The contract does not move price settlement and funding as two separate transfers. It nets them first.
+
+```text
+net transfer into Receiver = price transfer - funding
+```
+
+Then the market caps the net transfer by the paying pool's available collateral.
+
+If Receiver should receive 500 units but Payer only has 200, Receiver receives 200. If Receiver should pay 500 units but Receiver only has 300, Payer receives 300.
+
+This is the full-collateralization rule. Null can redistribute collateral already held by the market, but it cannot create debt.
+
+## User actions happen after the update
+
+After the market stores the updated state, the user's action is processed against current pool values.
+
+Depositors enter after the latest price movement and funding have been reflected. Withdrawers exit after the latest price movement and funding have been reflected. This sequencing protects both existing shareholders and the user taking the action.
+
+## Summary
+
+The market update is deterministic: validate price, account for yield-fee/share-price changes when enabled, reconcile actual collateral, compute price movement and funding, net them, apply the solvency bound, and then process user actions. This order keeps pool shares tied to real collateral and prevents stale accounting.

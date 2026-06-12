@@ -4,7 +4,11 @@ sidebarTitle: "Overview"
 description: "Learn how Null V1 oracles work, the 1e36 price scale, the updateData flow, and which oracle type fits your market."
 ---
 
-Null V1 uses a modular oracle system where every price feed implements a common interface, `INullV1Oracle`. This shared surface lets the protocol read prices uniformly regardless of the underlying data source — whether that's a pull-based service like Pyth or Chainlink Data Streams, an on-chain Uniswap V3 TWAP, or a fully stateless feed derived from `block.basefee`. Oracles that require off-chain price updates additionally implement `INullV1UpdatableOracle`, which adds a standard `update()` entry point so the router can hydrate the feed before any pool operation.
+Null V1 uses a modular oracle system where every price feed implements a common interface, `INullV1Oracle`. This shared surface lets the protocol read prices uniformly regardless of the underlying data source, whether that is an updatable service like Pyth or Chainlink Data Streams, an onchain Uniswap V3 TWAP, or a stateless feed derived from `block.basefee`. Oracles that require offchain price updates additionally implement `INullV1UpdatableOracle`, which adds a standard `update()` entry point so the router can hydrate the feed before any pool operation.
+
+<Note>
+For oracle selection guidance, read [Null V1 oracle types and integration guide](/markets/oracles). This page is the oracle interface reference.
+</Note>
 
 ## Price Scale
 
@@ -12,17 +16,18 @@ All oracles return prices scaled to **1e36**. A price of $3,000 for `AAPL/USD` i
 
 ## The updateData Flow
 
-For pull-based oracles (Pyth and Chainlink Data Streams), price data must be fetched off-chain and submitted on-chain before the pool reads the price. The sequence is:
+For updatable oracles such as Pyth and Chainlink Data Streams, price data must be fetched offchain and submitted onchain before the pool reads the price. The sequence is:
 
 1. **Fetch** signed update bytes from the relevant off-chain API (Pyth Hermes or Chainlink Data Streams).
 2. **Pass** those bytes as `updateData` in your call to `router.depositMarket(...)` or `router.redeemMarket(...)`.
 3. **The router** calls `oracle.update{value: fee}(updateData)` automatically before executing the pool operation.
 4. **The oracle** stores the validated price, and the pool reads it via `oracle.price()`.
 
-For push-based oracles (Uniswap V3 TWAP and Base Fee), no off-chain data is needed — pass an empty array (`[]`) as `updateData` and the router skips the update step entirely.
+For onchain or stateless oracles such as Uniswap V3 TWAP and Base Fee, no offchain data is needed. Pass an empty array (`[]`) as `updateData` and the router skips the update step entirely.
 
 <Note>
-  The router handles update fee payment on your behalf. You only need to ensure your transaction includes enough ETH to cover any required fee (e.g. Pyth). Chainlink Data Streams verification is free, so no ETH is needed for those oracles.
+  The current router handles update fee payment from its own ETH balance. Ensure
+  the deployed router is funded before relying on fee-charging oracle updates.
 </Note>
 
 ## Oracle Types

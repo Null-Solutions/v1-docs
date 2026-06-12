@@ -6,6 +6,10 @@ description: "NullV1Lens delivers read-only market state previews and price simu
 
 The `NullV1Lens` contract is a read-only utility designed for off-chain consumers: frontends, indexers, analytics dashboards, and automated monitoring bots. Its functions compute the current or hypothetical market state without submitting any state-changing transaction. This means you can call Lens methods via `eth_call` at zero gas cost and receive rich data — pool balances, share price, total supply, and annualised funding rate — in a single RPC request. When you want to display live market conditions or model the impact of a hypothetical oracle price, Lens is the right tool.
 
+<Note>
+For implementation patterns, read [Integrating Null V1 into your frontend UI](/contracts/integration/ui) and [Building an indexer](/contracts/integration/indexer). This page is the Lens API reference.
+</Note>
+
 ## Data Structures
 
 ### `MarketState`
@@ -220,5 +224,5 @@ simulations.forEach((sim, i) => {
 </Tip>
 
 <Note>
-  Lens reads are based on the last settled on-chain state. For markets with push-based oracles (Pyth, Chainlink Data Streams), the displayed state may lag the live oracle price by one block or one update cycle. Use `simulateMarket` with the latest off-chain price to show the most up-to-date projection while the on-chain state catches up.
+  Lens reads are based on the last settled on-chain state. For markets with updatable oracles (Pyth, Chainlink Data Streams), the displayed state may lag the live oracle price by one block or one update cycle. Use `simulateMarket` with the latest offchain price to show the most up-to-date projection while the on-chain state catches up.
 </Note>

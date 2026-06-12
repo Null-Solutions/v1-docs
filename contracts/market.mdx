@@ -4,7 +4,11 @@ sidebarTitle: "Market"
 description: "NullV1Market is the core accounting authority that holds collateral, tracks pool balances, settles oracle prices, and distributes protocol fees."
 ---
 
-The `INullV1Market` contract sits at the heart of every Null V1 market. It owns the collateral deposited by liquidity providers across both the receiver and payer pools, maintains the authoritative on-chain state (balances, oracle price, share price, and accrued fees), and enforces the fee schedule. Both pools call back into the market to synchronise state before every mutating operation, meaning the market always reflects the latest oracle price before assets change hands. You will rarely call the market directly as an end-user — the [Router](/contracts/router) handles that — but understanding its interface is essential when building integrations, dashboards, or automated fee-collection bots.
+The `INullV1Market` contract sits at the heart of every Null V1 market. It owns the collateral deposited across both the Receiver and Payer pools, maintains the authoritative on-chain state (balances, oracle price, share price, and accrued fees), and enforces the fee schedule. Both pools call back into the market to synchronize state before every mutating operation. You will rarely call the market directly as an end-user, but understanding its interface is essential when building integrations, dashboards, or automated fee-collection bots.
+
+<Note>
+For the update sequence and integration implications, read [Market update](/developers-tab/market-update). This page is the function and event reference.
+</Note>
 
 ## State
 
@@ -17,11 +21,11 @@ Returns a snapshot of the full market state at the current block. Calling this f
 </ResponseField>
 
 <ResponseField name="receiverPoolAssets" type="uint256">
-  The total assets (in collateral token decimals) currently attributed to the receiver pool after PnL settlement.
+  The total assets currently attributed to the Receiver pool after settlement.
 </ResponseField>
 
 <ResponseField name="payerPoolAssets" type="uint256">
-  The total assets attributed to the payer pool after PnL settlement.
+  The total assets attributed to the Payer pool after settlement.
 </ResponseField>
 
 <ResponseField name="price" type="uint256">
@@ -62,7 +66,7 @@ Returns the live share price computed from the latest oracle reading without req
 | `factory()` | `address` | The `INullV1Factory` that deployed this market. |
 | `asset()` | `IERC20` | The ERC-20 collateral token. |
 | `oracle()` | `INullV1Oracle` | The price oracle supplying external reference prices. |
-| `mu()` | `uint24` | The drift parameter μ governing funding rate dynamics. |
+| `mu()` | `uint24` | The Receiver funding multiplier governing the funding curve. |
 | `receiverPool()` | `INullV1Pool` | The ERC-4626 pool for the receiver (long funding) position. |
 | `payerPool()` | `INullV1Pool` | The ERC-4626 pool for the payer (short funding) position. |
 

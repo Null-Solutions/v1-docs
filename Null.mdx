@@ -1,81 +1,54 @@
 ---
-title: "Introduction to Null V1 Perpetual Return Swaps Protocol"
+title: "Null V1"
 sidebarTitle: "Introduction"
-description: "Learn how Null V1 eliminates liquidations through bounded pool settlement, and how receiver and payer roles interact via ERC-4626 share tokens."
+description: "Start with Null V1, a fully collateralized protocol for pooled oracle-referenced synthetic exposure."
 ---
 
-<Frame>
-  <div
-  style={{
-background: "linear-gradient(135deg, #1e3a8a 0%, #3b6ea5 50%, #6b8caf 100%)",
-borderRadius: "16px",
-padding: "64px 32px",
-textAlign: "center",
-color: "white"
-}}
->
-  <h1 style={{ color: "white", fontSize: "2.75rem", fontWeight: 600, marginBottom: "1rem", lineHeight: 1.2 }}>
-    Connect to the open return swaps network
-  </h1>
+# Null V1
 
-  <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.1rem", margin: 0 }}>
-    Directional exposure without liquidations, settled on-chain.
-  </p>
-</div>
-</Frame>
+Null V1 is a non-custodial protocol for creating oracle-referenced synthetic exposure with pooled collateral. Each market has a Receiver pool and a Payer pool. Receivers get the reference asset return and pay funding. Payers back that exposure, receive funding, and take the opposite price risk.
 
-<Card title="Null Whitepaper" icon="file-lines" horizontal href="/resources/whitepapers">
-  Explore Null V1's perpetual return swaps design.
-</Card>
+The core invariant is full collateralization. The protocol can redistribute collateral between pools, but it cannot create debt or an undercollateralized receivable.
 
-<Card title="Null 101" icon="graduation-cap" horizontal href="https://null.xyz/blog">
-  New to Null? Start with our introductory articles covering the protocol's core principles and fundamentals.
-</Card>
+## Choose your path
 
-<Columns cols={2}>
-  <Card title="Researchers & Users" icon="book-open" href="/learn/overview">
-    Understand Null's core concepts and ecosystem fundamentals.
+<CardGroup cols={2}>
+  <Card title="Learn the protocol" icon="book-open" href="/learn/overview">
+    Start with the Receiver/Payer model, market updates, funding, carry, and risk controls.
   </Card>
 
-  <Card title="Developers & Integrators" icon="code" href="/developers-tab/overview">
-    Build DeFi apps on Null with end-to-end tutorials, SDKs, and APIs.
-  </Card>
-</Columns>
-
-<Frame>
-  <div
-  style={{
-background: "linear-gradient(135deg, #1e3a8a 0%, #3b6ea5 50%, #6b8caf 100%)",
-borderRadius: "16px",
-padding: "64px 32px",
-textAlign: "center",
-color: "white"
-}}
->
-  <h1 style={{ color: "white", fontSize: "2.75rem", fontWeight: 600, marginBottom: "1rem", lineHeight: 1.2 }}>
-    Connect to the open return swaps network
-  </h1>
-
-  <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.1rem", margin: 0 }}>
-    Directional exposure without liquidations, settled on-chain.
-  </p>
-</div>
-</Frame>
-
-<Card title="Null Whitepaper" icon="file-lines" horizontal href="/resources/whitepapers">
-  Explore Null V1's perpetual return swaps design.
-</Card>
-
-<Card title="Null 101" icon="graduation-cap" horizontal href="https://null.xyz/blog">
-  New to Null? Start with our introductory articles covering the protocol's core principles and fundamentals.
-</Card>
-
-<Columns cols={2}>
-  <Card title="Researchers & Users" icon="book-open" href="/learn/overview">
-    Understand Null's core concepts and ecosystem fundamentals.
+  <Card title="Use Null" icon="arrow-right-to-bracket" href="/quick-start">
+    Follow the practical flow for choosing a side, depositing, redeeming, and understanding fees.
   </Card>
 
-  <Card title="Developers & Integrators" icon="code" href="/developers-tab/overview">
-    Build DeFi apps on Null with end-to-end tutorials, SDKs, and APIs.
+  <Card title="Build an integration" icon="code" href="/developers-tab/overview">
+    Integrate markets, pools, router flows, UI reads, indexers, and market creation.
   </Card>
-</Columns>
+
+  <Card title="Read the reference" icon="file-code" href="/contracts/factory">
+    Look up contract functions, events, oracle interfaces, router behavior, and Lens reads.
+  </Card>
+</CardGroup>
+
+## How Null fits together
+
+<Steps>
+  <Step title="Markets are pooled">
+    A market aggregates all Receiver capital into one pool and all Payer capital into another. Users hold ERC-4626 compatible shares in the side they choose.
+  </Step>
+
+  <Step title="Updates happen before actions">
+    Before deposits, mints, withdrawals, or redemptions, the market validates the oracle price, accounts for yield-fee/share-price changes when enabled, reconciles collateral, and settles funding plus price movement.
+  </Step>
+
+  <Step title="Settlement is bounded">
+    Price settlement and funding are netted into one transfer. The paying pool can never pay more than it has.
+  </Step>
+</Steps>
+
+## Start here
+
+- If you are new to Null, read [Learn Null V1](/learn/overview).
+- If you want to enter a position, use the [Quick start](/quick-start).
+- If you are building, start with the [Developer overview](/developers-tab/overview).
+- If you need exact function details, use the [Reference](/contracts/factory).

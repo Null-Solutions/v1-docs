@@ -1,5 +1,133 @@
 ---
-title: "Developers"
+title: "Developer overview"
 sidebarTitle: "Overview"
-description: "Developer resources for Null V1."
+description: "Understand the Null V1 contract architecture and the main integration surfaces."
 ---
+
+# Developer overview
+
+Null V1 is built around a small core:
+
+- `NullV1Factory` deploys canonical markets.
+- `NullV1Market` owns market accounting.
+- `NullV1Pool` exposes Receiver and Payer ERC-4626 entry points.
+- `NullV1Math` computes reconciliation, funding, price settlement, yield-fee accounting, and solvency-bounded transfers.
+- `NullV1Router` provides periphery helpers for market creation, deposits, redemptions, oracle update data, slippage checks, and ERC-4626 collateral wrapping.
+
+Most integrations need three ideas:
+
+1. A market is unique for an `(asset, oracle, mu)` tuple.
+2. Users enter and exit through the Receiver or Payer pool, or through the router.
+3. Every state-changing pool action updates the market before shares are minted, burned, or priced.
+
+## Market stack
+
+When the factory creates a market, it deploys one market contract and two pool contracts.
+
+```text
+NullV1Factory
+  -> NullV1Market
+      -> Receiver NullV1Pool
+      -> Payer NullV1Pool
+```
+
+The market stores the authoritative accounting state:
+
+```text
+timestamp
+receiverPool
+payerPool
+price
+protocolFees
+sharePrice
+```
+
+Pools expose ERC-4626 methods and query the market for `totalAssets()`. They do not own independent PnL accounting.
+
+## Integration surfaces
+
+### Factory
+
+Use the factory to discover or create markets.
+
+```solidity
+function getMarket(address asset, address oracle, uint24 mu) external view returns (address market);
+function createMarket(IERC20 asset, INullV1Oracle oracle, uint24 mu) external returns (INullV1Market market);
+```
+
+`mu` is the Receiver funding multiplier in parts per million. In the current v1 contracts, it must be greater than zero. Markets are unique by `(asset, oracle, mu)`.
+
+### Market
+
+Use the market for discovery and state reads.
+
+```solidity
+function asset() external view returns (IERC20);
+function oracle() external view returns (INullV1Oracle);
+function mu() external view returns (uint24);
+function receiverPool() external view returns (INullV1Pool);
+function payerPool() external view returns (INullV1Pool);
+function state() external view returns (
+    uint256 timestamp,
+    uint256 receiverPoolAssets,
+    uint256 payerPoolAssets,
+    uint256 price,
+    uint256 protocolFees,
+    uint256 sharePrice
+);
+```
+
+The market's `updateState()` function is called by pools. External integrations normally do not call it directly.
+
+### Pools
+
+Each pool is an ERC-4626 vault-like token. Use standard ERC-4626 reads and actions:
+
+```solidity
+deposit(uint256 assets, address receiver)
+mint(uint256 shares, address receiver)
+withdraw(uint256 assets, address receiver, address owner)
+redeem(uint256 shares, address receiver, address owner)
+previewDeposit(uint256 assets)
+previewMint(uint256 shares)
+previewWithdraw(uint256 assets)
+previewRedeem(uint256 shares)
+```
+
+Receiver and Payer pools have the same interface. Their economic behavior differs because the market updates their balances differently.
+
+### Router
+
+The router can route both sides in a single transaction:
+
+```solidity
+depositMarket(
+    INullV1Market market,
+    uint256 receiverAssets,
+    uint256 payerAssets,
+    uint256 minReceiverShares,
+    uint256 minPayerShares,
+    uint256 deadline,
+    bytes[] calldata updateData
+)
+
+redeemMarket(
+    INullV1Market market,
+    uint256 receiverShares,
+    uint256 payerShares,
+    uint256 minReceiverAssets,
+    uint256 minPayerAssets,
+    uint256 deadline,
+    bytes[] calldata updateData
+)
+```
+
+Use the router when you need deadline checks, slippage minimums, optional updatable-oracle data, or wrapping and unwrapping of ERC-4626 market assets.
+
+## Recommended reading
+
+- [Integrator quickstart](/developers-tab/integrator-quickstart): build the basic read and transact flow.
+- [Market update](/developers-tab/market-update): understand exact settlement order.
+- [Pools and ERC-4626](/developers-tab/pools-and-erc4626): integrate Receiver and Payer pools safely.
+- [Router](/developers-tab/router): use periphery helpers for deposits, redemptions, and oracle updates.
+- [Reference](/contracts/factory): look up exact contract functions, events, and oracle interfaces.

@@ -1,113 +1,17 @@
 ---
-title: "Price Returns, Circuit Breakers & Net Settlement"
+title: "Price returns and settlement"
 sidebarTitle: "Price Returns"
-description: "Understand how Null V1 translates oracle price moves into PnL, how the 7% hourly circuit breaker protects users, and how returns are netted against funding."
+description: "Find the current Null V1 price settlement, circuit-breaker, and netting guides."
 ---
 
-Price returns are the mechanism by which Null V1 converts real-world asset price movements into gains and losses for pool participants. Receivers gain when the reference price rises and lose when it falls; payers take the opposite exposure. Crucially, no position can be liquidated — losses are bounded by the capital each side has deposited, not by any margin requirement.
-
-## How Price-Based PnL Is Calculated
-
-When the oracle reports a new price, the protocol first computes a **receiver notional** — the effective size of the receiver position in price units — and then scales the price delta by that notional to arrive at a dollar transfer between pools.
-
-```
-receiverNotional = receiverPool * PRICE_SCALE / lastPrice
-receiverPnl      = priceDelta  * receiverNotional / PRICE_SCALE
-```
-
-Where `priceDelta = currentPrice - lastPrice`.
-
-<Info>
-  `PRICE_SCALE` is a fixed constant used for precision. All price values from the oracle are expected to be denominated in the same scale. The net effect is that `receiverPnl ≈ receiverPool * (priceDelta / lastPrice)` — i.e. the percentage price change applied to the full receiver pool.
-</Info>
-
-**Direction of transfer:**
+This legacy mechanics page has moved into the main Learn and Developers paths.
 
 <CardGroup cols={2}>
-  <Card title="Price rises" icon="arrow-trend-up">
-    `priceDelta > 0` → `receiverPnl > 0`. Capital moves from the payer pool to the receiver pool.
+  <Card title="How markets update" icon="book-open" href="/learn/how-markets-update">
+    Understand price settlement, the circuit breaker, funding netting, and the solvency bound in plain language.
   </Card>
-  <Card title="Price falls" icon="arrow-trend-down">
-    `priceDelta < 0` → `receiverPnl < 0`. Capital moves from the receiver pool to the payer pool.
+
+  <Card title="Market update" icon="code" href="/developers-tab/market-update">
+    Read the implementation-level update order, including exact circuit-breaker behavior.
   </Card>
 </CardGroup>
-
-## The 7% Per-Hour Circuit Breaker
-
-To protect against oracle manipulation, stale prices, or extreme short-term volatility, the protocol enforces a maximum price change of **7% (700 basis points) per one-hour window**.
-
-```
-maxChange = lastPrice * 700 / 10_000   // 7% of last price
-```
-
-If the reported price deviates from the last stored price by more than 7%:
-
-- **Price returns are skipped** — no PnL is transferred between pools for this update.
-- **Funding still settles** — the elapsed time is used to accrue and pay out funding normally.
-- **The timestamp advances** — `lastTimestamp` is updated so future funding accrual is correct.
-- **The price is NOT updated** — `lastPrice` retains its previous value, meaning the full move will only take effect once it has been reported within the 7% band.
-
-<Warning>
-  If you observe a very large price move that you expect to produce PnL, check whether the circuit breaker has triggered. Your position's price-return P&L may be deferred until subsequent oracle updates clear the move within permitted increments.
-</Warning>
-
-<Tip>
-  The circuit breaker is deliberately asymmetric in its impact: it suppresses returns but not funding. Payers continue to accrue funding income even during a circuit-breaker event.
-</Tip>
-
-## No Liquidations — Losses Bounded by Pool Size
-
-Unlike margin-based derivatives, Null V1 has no liquidation engine. You cannot lose more than the capital you have deposited into a pool. The net settlement formula enforces this hard cap:
-
-```
-U = returnsPayerToReceiver - fundingReceiverToPayer   // signed net
-N = max(-receiverPool, min(U, payerPool))
-```
-
-Here:
-
-- **U** is the uncapped net transfer (positive = payer owes receiver; negative = receiver owes payer).
-- **N** is the capped transfer actually applied.
-  - `min(U, payerPool)` ensures the payer cannot pay out more than it holds.
-  - `max(-receiverPool, ...)` ensures the receiver cannot pay out more than it holds.
-
-<Info>
-  Funding and returns are **netted before capping**. This means a receiver who is simultaneously earning price returns and paying funding only moves the difference — preserving the whitepaper model and avoiding double-counting edge cases.
-</Info>
-
-A worked example:
-
-| Scenario | Returns (U\_returns) | Funding (U\_funding) | Net U | Capped N |
-|----------|---------------------|---------------------|-------|----------|
-| Strong price rally, low funding | +$1,000 | −$50 | +$950 | min(950, payerPool) |
-| Price flat, high funding owed | $0 | −$200 | −$200 | max(−200, −receiverPool) |
-| Price drop larger than funding | −$500 | −$100 | −$600 | max(−600, −receiverPool) |
-
-## State Update Order
-
-Every deposit, redeem, or oracle interaction triggers a full state update. Understanding the order matters for reasoning about when your PnL settles.
-
-<Steps>
-  <Step title="Validate oracle price">
-    The new price from the oracle must be non-zero. If it is zero, the entire transaction reverts.
-  </Step>
-  <Step title="Apply yield fee">
-    If the market uses yield-bearing collateral, the protocol's share of accrued yield is deducted before computing returns. See [Yield-Bearing Collateral](/mechanics/yield-bearing-collateral).
-  </Step>
-  <Step title="Reconcile external balance changes">
-    Any tokens that arrived in the contract outside of normal deposits (e.g. direct transfers or donations) are folded into the pool balances.
-  </Step>
-  <Step title="Apply netted funding + returns">
-    The net transfer **N** is computed and applied to both pool balances simultaneously.
-  </Step>
-  <Step title="Store new timestamp and price">
-    `lastTimestamp` and `lastPrice` are updated. The circuit breaker check uses these values on the next update.
-  </Step>
-</Steps>
-
-## Practical Implications for Integrators
-
-- **Every deposit and redeem settles PnL.** You cannot deposit or withdraw without first settling the accrued funding and price returns since the last checkpoint.
-- **Large positions amplify circuit-breaker deferral.** If you hold a large receiver position and the circuit breaker fires repeatedly, accrued price returns may be deferred across many oracle updates.
-- **Pool size is your maximum loss.** Design your collateral sizing based on the worst-case price move you are willing to absorb — there is no margin call to force additional deposits.
-- **Net settlement favors efficiency.** Because returns and funding net before capping, you avoid scenarios where a receiver pool is drained by funding even while it is simultaneously owed price-return profits.

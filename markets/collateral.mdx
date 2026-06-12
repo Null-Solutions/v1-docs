@@ -71,9 +71,9 @@ With yield-bearing collateral, the net annual return for each side of the pool c
 | Role | Net APR Formula |
 |------|----------------|
 | **Receiver LP** | `yieldAPR − fundingAPR` |
-| **Payer LP** | `yieldAPR + fundingAPR × rho` |
+| **Payer LP** | `yieldAPR + fundingAPR * E` |
 
-Where `fundingAPR = mu / 1_000_000 × rho` and `yieldAPR` is the underlying yield of the ERC-4626 wrapper.
+Where `fundingAPR = mu / 1_000_000 * E`, `E = receiverPool / payerPool`, and `yieldAPR` is the underlying yield of the ERC-4626 wrapper.
 
 <Tip>
   For receiver LPs, yield-bearing collateral can partially or fully offset the
@@ -111,14 +111,13 @@ The wrapper handles the rebase internally, exposing a stable balance interface t
 
 ## Depositing and Withdrawing
 
-Users always deposit and withdraw the **wrapper token directly**. The protocol itself does not perform any wrapping or unwrapping. If you want to give end users the ability to deposit the underlying asset (e.g. deposit raw USDC instead of `waUSDC`), you can build a UI layer that wraps on their behalf before calling the pool.
+The core pools accept the market asset directly. If the market asset is an ERC-4626 wrapper, direct pool callers deposit and withdraw wrapper shares.
 
 <Note>
-  The Null V1 Router supports auto-unwrapping ERC-4626 collateral when users
-  withdraw. When a user exits a pool that holds ERC-4626 shares, the router can
-  redeem the shares and return the underlying token to the user in a single
-  transaction, improving UX without requiring the user to manually interact with
-  the vault contract.
+  The Null V1 Router improves the user path for ERC-4626 market assets. On
+  deposit, it can pull the underlying token, wrap it into the market asset, and
+  deposit the wrapper shares into the selected Null pool. On redemption, it can
+  unwrap the market asset and return the underlying token to the user.
 </Note>
 
 ---

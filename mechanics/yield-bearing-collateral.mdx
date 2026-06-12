@@ -1,113 +1,25 @@
 ---
-title: "Yield-Bearing Collateral: waUSDC & Share Prices"
+title: "Yield-bearing collateral"
 sidebarTitle: "Yield Collateral"
-description: "Learn how Null V1 supports yield-bearing wrapper tokens like waUSDC, how yield accrues in share prices, and how the protocol fee and net carry are calculated."
+description: "Find the current Null V1 guides for ERC-4626 collateral, yield-fee accounting, and carry."
 ---
 
-Null V1 supports yield-bearing collateral tokens — ERC-4626-style wrapper tokens such as waUSDC (wrapped Aave USDC) — as the collateral asset for a market. When you deposit collateral that already earns an underlying yield, both receivers and payers benefit from that base return on top of their funding exposure. This makes it possible for receivers to achieve a positive net carry even while paying funding to payers.
-
-## How Yield Accrues: Share Price, Not Rebasing
-
-Pool balances inside Null V1 are always denominated in **wrapper units** (e.g. waUSDC shares), not underlying units (e.g. USDC). The protocol never rebases pool balances. Instead, yield accrues inside the wrapper's **share price**:
-
-```
-underlyingValue = wrapperBalance * convertToAssets(1e18) / 1e18
-```
-
-As the underlying yield protocol (e.g. Aave) accrues interest, `convertToAssets(1e18)` grows over time, meaning each waUSDC share is worth progressively more USDC — even though your recorded pool share in wrapper units stays constant.
-
-<Info>
-  When displaying pool values or position sizes to end-users, always multiply wrapper-unit balances by `convertToAssets(1e18)` off-chain to show the correct underlying equivalent.
-</Info>
-
-<Warning>
-  **Rebasing tokens are not supported.** Raw aUSDC (which adjusts your balance directly) cannot be used as collateral. Always use the non-rebasing wrapper equivalent (waUSDC, wsETH, etc.).
-</Warning>
-
-## Wrapping and the Router
-
-The Null V1 core contract operates entirely in wrapper units. It does not wrap or unwrap tokens on your behalf.
-
-- **To deposit:** wrap your underlying token (USDC → waUSDC) outside the protocol, then deposit the wrapper.
-- **To redeem:** the router handles auto-unwrapping on exit — you deposit waUSDC into the market, and the router returns USDC to you when you redeem.
-
-<Note>
-  The router's auto-unwrap is a convenience feature for redemptions. You must still wrap before depositing. Check your router's documentation for supported wrapper pairs.
-</Note>
-
-## The Yield Fee
-
-If a market has a yield fee enabled, the protocol takes a cut of the collateral yield earned by both pools each time a state update runs.
-
-```
-yieldDelta = currentSharePrice - storedSharePrice
-fee = (receiverPool + payerPool) * yieldDelta / currentSharePrice
-        * yieldFee / 10_000
-```
-
-The fee is deducted from pool balances (in wrapper units) before funding and returns are settled. The remaining yield — `yieldDelta` net of the fee — is what flows to participants as the base collateral return.
-
-<Info>
-  `yieldFee` is expressed in basis points (bps) with a denominator of `10_000`. A fee of `500` means 5% of accrued yield is taken by the protocol.
-</Info>
-
-## Net Carry Formulas
-
-With yield-bearing collateral, your effective annual return combines the base collateral yield with your funding position:
-
-```
-receiverNetApr = collateralYield - receiverFundingApr
-payerNetApr    = collateralYield + payerFundingApr
-               = collateralYield + receiverFundingApr * rho
-```
-
-Because payer funding earnings scale with rho (the utilization ratio), high utilization can generate very attractive total returns for payers while still leaving receivers with a positive net carry when collateral yield is sufficient.
-
-## Yield + Funding Table (5% Collateral Yield, mu = 10,000)
-
-The table below illustrates how net carry changes across rho values for a market such as AAPL, using 5% annualized collateral yield (e.g. from waUSDC) and `mu = 10,000` (1%).
-
-| rho | Buffer (payer ÷ total) | Receiver gross funding | Receiver net APR | Payer gross funding | Payer net APR |
-|-----|------------------------|------------------------|------------------|---------------------|---------------|
-| 2   | 50%                    | 2%                     | **+3%**          | 4%                  | **9%**        |
-| 3   | 33%                    | 3%                     | **+2%**          | 9%                  | **14%**       |
-| 4   | 25%                    | 4%                     | **+1%**          | 16%                 | **21%**       |
-| 5   | 20%                    | 5%                     | **0%**           | 25%                 | **30%**       |
-
-<Tip>
-  Even at rho = 3, a receiver paying 3% funding still earns a net +2% APR from the 5% collateral yield — a better outcome than holding raw USDC at 0%. The wrapper's yield acts as a natural subsidy for receiver positions.
-</Tip>
-
-**Reading the table:**
-
-- **Buffer** is the fraction of total pool capital supplied by payers. A 33% buffer (rho = 3) means for every $1 of payer capital there are $3 of receiver capital.
-- **Receiver gross funding** is what receivers pay to payers per year, per unit of receiver capital.
-- **Receiver net APR** = 5% collateral yield − receiver gross funding.
-- **Payer gross funding** = receiver gross funding × rho (because the same payment is spread over a smaller pool).
-- **Payer net APR** = 5% collateral yield + payer gross funding.
-
-## Off-Chain Display Considerations
-
-Because pool balances are in wrapper units, any UI or dashboard that shows position sizes, share prices, or pool depths must convert using the live `convertToAssets` value:
-
-```
-// Pseudocode — call on the wrapper token contract
-underlyingAmount = wrapperShares * wrapperToken.convertToAssets(1e18) / 1e18
-```
-
-Failure to apply this conversion will display stale, understated values as yield accrues over time.
+This legacy yield-collateral page has been split into the current reader paths.
 
 <CardGroup cols={2}>
-  <Card title="Pool share prices" icon="chart-line">
-    Reported in wrapper units. Multiply by `convertToAssets` for underlying display.
+  <Card title="Funding and carry" icon="percent" href="/learn/funding-and-carry">
+    Learn how collateral yield combines with Receiver funding cost and Payer funding revenue.
   </Card>
-  <Card title="Yield fee accounting" icon="percent">
-    Fee is deducted in wrapper units before funding settlement each update cycle.
+
+  <Card title="How markets update" icon="gears" href="/learn/how-markets-update">
+    See where yield-fee accounting runs in the market update order.
   </Card>
-  <Card title="Deposit flow" icon="arrow-right-to-bracket">
-    Wrap underlying → deposit wrapper into Null V1. The protocol never wraps on your behalf.
+
+  <Card title="Collateral setup" icon="coins" href="/markets/collateral">
+    Compare plain ERC-20 collateral and ERC-4626 market assets.
   </Card>
-  <Card title="Redeem flow" icon="arrow-right-from-bracket">
-    Redeem shares from Null V1 → router auto-unwraps to underlying before returning to you.
+
+  <Card title="Router" icon="route" href="/developers-tab/router">
+    Read how the router wraps deposits and unwraps redemptions for ERC-4626 market assets.
   </Card>
 </CardGroup>

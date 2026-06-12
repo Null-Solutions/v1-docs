@@ -1,0 +1,166 @@
+---
+title: "Router"
+description: "Use NullV1Router for market creation, deposits, redemptions, oracle updates, deadlines, and slippage checks."
+sidebarTitle: "Router"
+---
+
+# Router
+
+`NullV1Router` is the periphery contract for common user flows. It does not own core market accounting. It wraps convenience behavior around the factory, pools, and oracle update flow.
+
+Use the router when you need:
+
+- combined Receiver and Payer deposits;
+- combined Receiver and Payer redemptions;
+- deadline checks;
+- minimum share or asset checks;
+- push-oracle `updateData`;
+- ERC-4626 market-asset wrapping and unwrapping.
+
+## Oracle update data
+
+Router methods accept:
+
+```solidity
+bytes[] calldata updateData
+```
+
+If `updateData.length > 0`, the router treats the market oracle as an updatable oracle:
+
+```solidity
+uint256 fee = updatable.getUpdateFee(updateData);
+updatable.update{ value: fee }(updateData);
+```
+
+The update fee is paid from the router's ETH balance. If the balance is insufficient, the call reverts with `InsufficientUpdateFeeBalance`.
+
+If the oracle does not require push updates, pass an empty array.
+
+## Create market
+
+```solidity
+function createMarket(
+    INullV1Factory factory,
+    IERC20 asset,
+    INullV1Oracle oracle,
+    uint24 mu,
+    bytes[] calldata updateData
+) external returns (INullV1Market market);
+```
+
+This optionally updates the oracle, then calls:
+
+```solidity
+factory.createMarket(asset, oracle, mu)
+```
+
+The factory rejects zero asset addresses, zero oracle addresses, zero `mu`, and duplicate `(asset, oracle, mu)` tuples.
+
+## Deposit market
+
+```solidity
+function depositMarket(
+    INullV1Market market,
+    uint256 receiverAssets,
+    uint256 payerAssets,
+    uint256 minReceiverShares,
+    uint256 minPayerShares,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 receiverShares, uint256 payerShares);
+```
+
+The router:
+
+1. checks `deadline`;
+2. optionally updates the market oracle;
+3. pulls market assets from the caller;
+4. deposits into the Receiver pool if `receiverAssets > 0`;
+5. deposits into the Payer pool if `payerAssets > 0`;
+6. verifies returned shares against `minReceiverShares` and `minPayerShares`.
+
+If returned shares are below the provided minimums, the call reverts with:
+
+```solidity
+SlippageReceiverShares(expected, actual)
+SlippagePayerShares(expected, actual)
+```
+
+## Redeem market
+
+```solidity
+function redeemMarket(
+    INullV1Market market,
+    uint256 receiverShares,
+    uint256 payerShares,
+    uint256 minReceiverAssets,
+    uint256 minPayerAssets,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 receiverAssets, uint256 payerAssets);
+```
+
+The router:
+
+1. checks `deadline`;
+2. optionally updates the market oracle;
+3. redeems Receiver shares if `receiverShares > 0`;
+4. redeems Payer shares if `payerShares > 0`;
+5. pushes market assets to the caller;
+6. verifies returned assets against `minReceiverAssets` and `minPayerAssets`.
+
+If returned assets are below the provided minimums, the call reverts with:
+
+```solidity
+SlippageReceiverAssets(expected, actual)
+SlippagePayerAssets(expected, actual)
+```
+
+## ERC-4626 market assets
+
+Some markets may use an ERC-4626 vault share as the market asset. The router detects this optimistically by calling `asset()` on the market asset.
+
+On deposit:
+
+1. the router pulls the vault's underlying token from the user;
+2. deposits the underlying into the ERC-4626 market asset;
+3. deposits the received market-asset shares into the selected Null pool.
+
+On redemption:
+
+1. the router redeems Null pool shares for market-asset shares;
+2. redeems those market-asset shares from the ERC-4626 vault;
+3. sends the underlying token to the user.
+
+If `asset()` is unavailable, the router treats the market asset as a plain ERC-20.
+
+## Deadlines
+
+Deposit and redeem methods include:
+
+```solidity
+uint256 deadline
+```
+
+If `block.timestamp > deadline`, the transaction reverts with `TransactionTooOld`.
+
+Use short deadlines for user-facing transactions so stale quotes do not execute unexpectedly.
+
+## Approvals
+
+For plain ERC-20 market assets, users approve the router to spend the market asset.
+
+For ERC-4626 market assets, users approve the router to spend the underlying asset. The router handles wrapping into the market asset before depositing into Null pools.
+
+## Operational notes
+
+- The router must hold enough ETH to pay oracle update fees when `updateData` is provided.
+- The router is `nonReentrant` on deposit, redeem, and owner ETH withdrawal paths.
+- The router resets token approvals after wrapping and pool deposits.
+- Router slippage checks happen after pool execution returns shares or assets.
+- Core accounting still lives in the market and pools. The router is convenience periphery.
+
+## API reference
+
+- [Router reference](/contracts/router): exact function signatures, parameters, errors, and operational notes.
+- [Oracle reference](/contracts/oracles/overview): `updateData`, price scale, and oracle implementation details.

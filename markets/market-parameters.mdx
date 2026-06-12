@@ -4,7 +4,7 @@ sidebarTitle: "Market Parameters"
 description: "Understand every parameter that defines a Null V1 market: asset, oracle, mu, pool addresses, and fee settings, with worked examples."
 ---
 
-A Null V1 market is governed by a small set of parameters, some of which are fixed permanently at creation and others that can be updated by governance over the market's lifetime. Understanding each parameter — especially `mu`, the funding multiplier — is essential before you deploy or integrate with a market. This page describes every field exposed by `NullV1Market`, explains the economics behind each one, and provides worked examples to help you choose sensible values.
+A Null V1 market is governed by a small set of parameters, some of which are fixed permanently at creation and others that can be updated by the protocol owner over the market's lifetime. Understanding each parameter, especially `mu`, the funding multiplier, is essential before you deploy or integrate with a market. This page describes every field exposed by `NullV1Market`, explains the economics behind each one, and provides worked examples to help you choose sensible values.
 
 ---
 
@@ -29,7 +29,7 @@ These three parameters are set at market creation and can never be changed. They
 <ParamField path="mu" type="uint24" required>
   The funding multiplier, expressed in **parts-per-million (ppm)**. This is the
   single most important economic parameter in the market. It controls how
-  aggressively funding rates scale with pool imbalance. `mu` is immutable — if
+  aggressively funding rates scale with pool imbalance. `mu` is immutable; if
   you need different economics, deploy a new market.
 </ParamField>
 
@@ -39,34 +39,32 @@ These three parameters are set at market creation and can never be changed. They
 
 <ParamField path="receiverPool" type="address">
   The address of the receiver-side liquidity pool. Liquidity providers in this
-  pool earn funding payments from the payer pool. These addresses are deployed
-  automatically by the factory at market creation time and are emitted in the
-  `MarketCreated` event.
+  pool receive the reference asset return and pay funding to the Payer pool.
+  These addresses are deployed automatically by the factory at market creation
+  time and are emitted in the `MarketCreated` event.
 </ParamField>
 
 <ParamField path="payerPool" type="address">
   The address of the payer-side liquidity pool. Liquidity providers in this pool
-  pay funding to the receiver pool in exchange for leveraged short exposure to
-  the underlying asset price.
+  back Receiver exposure, receive funding, and take the opposite price risk.
 </ParamField>
 
 ---
 
 ## Fee Parameters
 
-Fee values are set by governance and can be updated post-deployment, subject to protocol-enforced maximums.
+Fee values are set by the protocol owner and can be updated post-deployment, subject to protocol-enforced maximums.
 
 <ParamField path="entryFee" type="uint16">
   Fee charged when liquidity enters a pool, expressed in **basis points** (1 bp =
-  0.01%). Maximum value: **500 bp (5%)**. Entry fees accrue to existing
-  liquidity providers in the pool, protecting them from deposit/withdraw
-  arbitrage.
+  0.01%). Maximum value: **500 bp (5%)**. Entry fees are routed to the
+  protocol owner and leave the Receiver/Payer pool system.
 </ParamField>
 
 <ParamField path="exitFee" type="uint16">
   Fee charged when liquidity exits a pool, expressed in **basis points**.
-  Maximum value: **500 bp (5%)**. Like the entry fee, exit fees are distributed
-  to remaining pool participants.
+  Maximum value: **500 bp (5%)**. Exit fees are routed to the protocol owner
+  and are not redistributed between the two pools.
 </ParamField>
 
 <ParamField path="yieldFee" type="uint16">
@@ -80,39 +78,39 @@ Fee values are set by governance and can be updated post-deployment, subject to 
 
 ## Understanding mu
 
-`mu` is the parameter you will spend the most time thinking about when creating a market. It is the lever that sets the relationship between pool imbalance (`rho`) and funding rates.
+`mu` is the parameter you will spend the most time thinking about when creating a market. It is the lever that sets the relationship between pool imbalance (`E`) and funding rates.
 
 ### The Funding Formula
 
 The annual funding rate paid by the receiver pool is:
 
 ```
-fundingApr = min(mu / 1_000_000 × rho, 100%)
+fundingApr = min(mu / 1_000_000 * E, 100%)
 ```
 
 Where:
 - **`mu`** is the funding multiplier in ppm
-- **`rho`** is the ratio of receiver pool TVL to payer pool TVL (`receiverTVL / payerTVL`)
+- **`E`** is the ratio of receiver pool TVL to payer pool TVL (`receiverTVL / payerTVL`)
 - The receiver pool **pays** `fundingApr` per year to the payer pool
-- The payer pool **earns** `fundingApr × rho` per year (because it is smaller by definition when `rho > 1`)
+- The payer pool **earns** `fundingApr * E` per year (because it is smaller by definition when `E > 1`)
 
 ### Choosing mu
 
 Use this formula to derive the right `mu` for your target economics:
 
 ```
-mu = (targetReceiverFundingApr / targetRho) × 1_000_000
+mu = (targetReceiverFundingApr / targetE) * 1_000_000
 ```
 
-For example, if you want receivers to pay 3% APR when `rho = 3`:
+For example, if you want Receivers to pay 3% APR when `E = 3`:
 
 ```
-mu = (0.03 / 3) × 1_000_000 = 10_000
+mu = (0.03 / 3) * 1_000_000 = 10_000
 ```
 
 <Tip>
   Think of `mu` as the funding rate per unit of pool imbalance. A higher `mu`
-  makes the market more reactive to imbalance — good for volatile or
+  makes the market more reactive to imbalance, which can suit volatile or
   high-conviction assets. A lower `mu` creates a more stable funding environment
   suited to broad indexes.
 </Tip>
@@ -129,27 +127,27 @@ mu = (0.03 / 3) × 1_000_000 = 10_000
 
 ## mu Example Tables
 
-The tables below show how funding rates vary with `rho` for two common `mu` settings. "Buffer" is the percentage of total TVL in the payer pool — a smaller buffer means higher leverage for payers.
+The tables below show how funding rates vary with `E` for two common `mu` settings. "Buffer" is the percentage of total TVL in the Payer pool; a smaller buffer means higher price sensitivity for Payers.
 
-### mu = 10,000 (1%) — Single-Stock RWA (e.g. AAPL)
+### mu = 10,000 (1%) - Single-Stock RWA (e.g. AAPL)
 
-| rho | Buffer | Receiver pays | Payer earns |
+| E | Buffer | Receiver pays | Payer earns |
 |-----|--------|---------------|-------------|
 | 2   | 50%    | 2%            | 4%          |
 | 3   | 33%    | 3%            | 9%          |
 | 4   | 25%    | 4%            | 16%         |
 | 5   | 20%    | 5%            | 25%         |
 
-### mu = 3,000 (0.3%) — Broad Index RWA (e.g. S&P 500)
+### mu = 3,000 (0.3%) - Broad Index RWA (e.g. S&P 500)
 
-| rho   | Buffer | Receiver pays | Payer earns |
+| E     | Buffer | Receiver pays | Payer earns |
 |-------|--------|---------------|-------------|
 | 4     | 25%    | 1.2%          | 4.8%        |
 | 5     | 20%    | 1.5%          | 7.5%        |
 | 6.67  | 15%    | 2.0%          | 13.3%       |
 
 <Note>
-  Payer earnings scale quadratically with `rho` because payers receive funding
+  Payer earnings scale quadratically with `E` because Payers receive funding
   proportional to both the receiver pool size (which determines the total
   funding paid) and the inverse of their own pool size (which determines their
   per-unit share). This asymmetric payoff is intentional: payers take on price
@@ -169,7 +167,7 @@ Once a market is created, `mu` cannot be changed. This immutability is by design
   parameters.
 </Warning>
 
-If you are unsure which `mu` to use, start with `10_000` for single-asset exposure or `3_000` for diversified index exposure, and model the funding rates at your expected `rho` using the formula above before committing to a deployment.
+If you are unsure which `mu` to use, start with a conservative value, then model the funding rates at your expected `E` using the formula above before committing to a deployment.
 
 ---
 

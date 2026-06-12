@@ -6,12 +6,16 @@ description: "NullV1Router is the recommended Null V1 entrypoint, bundling oracl
 
 The `NullV1Router` contract is the recommended entrypoint for most interactions with Null V1. Rather than calling the factory or pools directly, you route all market creation, liquidity deposits, and redemptions through here. The router bundles oracle price updates with your transaction, enforces slippage limits and deadlines atomically, and handles the ERC-4626 asset flow for you. Calling pools directly bypasses slippage protection and oracle freshness guarantees, which is why the router exists.
 
+<Note>
+For usage patterns and examples, read [Router](/developers-tab/router). This page is the exact API reference.
+</Note>
+
 ## Oracle Update Data
 
 Every mutating function on the router accepts a `bytes[] calldata updateData` parameter. This is an array of signed price update payloads consumed by the oracle (e.g. Pyth Network off-chain prices or Chainlink Data Streams). The router forwards these bytes to the oracle contract and pays any required update fee from its own ETH balance before modifying market state.
 
-- For **push-based oracles** (Pyth, Chainlink Data Streams): fetch the latest signed price payload from the oracle provider's API and pass it here.
-- For **static or on-chain pull oracles**: pass an empty array `[]` — no update fee is required and no ETH needs to be attached.
+- For **updatable oracles** (Pyth, Chainlink Data Streams): fetch the latest signed price payload from the oracle provider's API and pass it here.
+- For **onchain or stateless oracles**: pass an empty array `[]`. No update fee is required.
 
 <Note>
   The router must hold enough ETH to cover the oracle update fee. Fund the router with a small ETH balance before use. If the balance is insufficient, the transaction reverts with `InsufficientUpdateFeeBalance`.
@@ -38,7 +42,7 @@ Deploys a new market (via the factory) after applying any oracle updates. Equiva
 </ParamField>
 
 <ParamField path="mu" type="uint24" required>
-  The drift parameter μ for the market's funding rate dynamics.
+  The Receiver funding multiplier, in parts per million, for the market's funding curve.
 </ParamField>
 
 <ParamField path="updateData" type="bytes[]" required>

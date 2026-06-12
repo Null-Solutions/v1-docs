@@ -1,78 +1,25 @@
 ---
-title: "Null V1 Protocol Documentation"
+title: "Null V1 documentation"
 sidebarTitle: "Home"
-description: "Null V1 is a collateral-backed directional perpetuals protocol. Take directional exposure or provide liquidity — all without liquidation risk."
+description: "Find the canonical Null V1 documentation paths for learning, using, integrating, and referencing the protocol."
 ---
 
-Null V1 is an on-chain perpetuals protocol that lets you take directional exposure to any oracle-priced asset or earn yield by backing those positions — all through standard ERC-4626 pool share tokens. There are no liquidations, no position structs, and no off-chain keepers: every settlement happens automatically when the pool state updates.
+This page is kept for older links. The canonical documentation entry point is [Null V1](/Null).
 
 <CardGroup cols={2}>
-  <Card title="Introduction" icon="bolt" href="/introduction">
-    Understand the protocol design, the receiver and payer roles, and how
-    no-liquidation settlement works.
+  <Card title="Start here" icon="bolt" href="/Null">
+    Open the main Null V1 documentation home.
   </Card>
-  <Card title="How It Works" icon="gears" href="/how-it-works">
-    Walk through the full lifecycle: deposit, state update, funding and
-    returns settlement, and redemption.
-  </Card>
-  <Card title="Markets" icon="chart-line" href="/markets/creating-a-market">
-    Learn how markets are identified by asset, oracle, and mu tuples, and
-    how to create one via NullV1Factory.
-  </Card>
-  <Card title="Contracts" icon="code" href="/contracts/factory">
-    Explore the core contract surface: Factory, Market, Pool, Router,
-    and Lens.
-  </Card>
-</CardGroup>
 
-## Get Started in Four Steps
-
-Whether you want directional upside exposure or steady funding yield, you can be live in minutes. Follow the steps below to go from zero to an active position.
-
-<Steps>
-  <Step title="Choose a Market">
-    Every Null V1 market is identified by a `(asset, oracle, mu)` tuple.
-    Browse existing markets through **NullV1Lens** or create a new one with
-    **NullV1Factory**. Pick a market whose oracle, collateral, and funding
-    intensity match your strategy.
-  </Step>
-  <Step title="Deposit via Router">
-    Call `NullV1Router` with your chosen collateral (any ERC-20 or
-    ERC-4626 yield-bearing token such as waUSDC). The router routes your
-    deposit into either the **receiver pool** (directional long) or the
-    **payer pool** (reserve liquidity), and mints ERC-4626 share tokens to
-    your wallet.
-  </Step>
-  <Step title="Monitor via Lens">
-    Use **NullV1Lens** read calls to inspect live pool ratios, current
-    funding APR, accrued returns, and net settlement values — all in a
-    single multicall-friendly interface. No subgraph required.
-  </Step>
-  <Step title="Redeem When Ready">
-    Call `redeem` or `withdraw` on the ERC-4626 pool contract at any
-    time. The pool settles any outstanding funding and price returns
-    against your shares before transferring collateral back to you.
-    There are no lock-ups or cooldown periods.
-  </Step>
-</Steps>
-
-## Core Topics
-
-<CardGroup cols={2}>
-  <Card title="Depositing" icon="arrow-down" href="/depositing">
-    Step-by-step guide to depositing collateral into receiver or payer
-    pools through NullV1Router.
+  <Card title="Learn" icon="book-open" href="/learn/overview">
+    Understand the protocol design, Receiver and Payer roles, funding, settlement, and risk.
   </Card>
-  <Card title="Redeeming" icon="arrow-up" href="/redeeming">
-    How to convert your ERC-4626 pool shares back to collateral, including
-    partial and full redemptions.
+
+  <Card title="Use Null" icon="arrow-right-to-bracket" href="/quick-start">
+    Follow the practical deposit, redeem, and fee guides.
   </Card>
-  <Card title="Funding & Returns" icon="percent" href="/mechanics/funding">
-    Deep-dive into how funding flows from receivers to payers and how
-    oracle price moves settle between pools.
-  </Card>
-  <Card title="Oracles" icon="satellite-dish" href="/markets/oracles">
-    Supported oracle integrations: Pyth, Chainlink Data Streams, Uniswap
-    V3 TWAP, and block base fee.
+
+  <Card title="Developers" icon="code" href="/developers-tab/overview">
+    Build with the router, pools, market lifecycle, UI reads, and indexer flows.
   </Card>
 </CardGroup>

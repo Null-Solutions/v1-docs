@@ -154,17 +154,18 @@ Understanding the revert errors from the factory helps you handle failures grace
 
 <Warning>
   The `mu` parameter is immutable. If you deploy a market with the wrong `mu`,
-  you cannot update it — you must deploy a new market with a different `mu`. Plan
-  your parameterisation carefully before calling `createMarket`.
+  you cannot update it. You must deploy a new market with a different `mu`. Plan
+  your parameterization carefully before calling `createMarket`.
 </Warning>
 
 ---
 
 ## Direct Factory vs. Router
 
-You can call `factory.createMarket(asset, oracle, mu)` directly, but this approach does **not** update the oracle price before initialisation. For pull-based oracles (Pyth, Chainlink Data Streams) you should always prefer the router so that the oracle price is current at the moment of market creation. For purely on-chain oracles such as Uniswap V3 TWAP or Base Fee, both paths are equivalent.
+You can call `factory.createMarket(asset, oracle, mu)` directly, but this approach does **not** update the oracle price before initialization. For updatable oracles, prefer the router so that the oracle price is current at the moment of market creation. For purely on-chain oracles such as Uniswap V3 TWAP or Base Fee, both paths are equivalent.
 
 <Tip>
-  Use the router for all market creation in production. It adds minimal overhead
-  and ensures oracle freshness regardless of oracle type.
+  Use the router for market creation when the oracle accepts `updateData`. The
+  current router pays update fees from its own ETH balance, so make sure the
+  deployed router is funded before relying on fee-charging oracle updates.
 </Tip>
