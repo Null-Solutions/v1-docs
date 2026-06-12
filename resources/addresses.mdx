@@ -1,9 +1,55 @@
 ---
-title: "Addresses"
-description: "Canonical Null V1 contract addresses across all supported networks."
-sidebarTitle: "Addresses"
+title: "Live Deployments"
+description: "Canonical live Null V1 deployment addresses, supported networks, start blocks, and integration constants."
+sidebarTitle: "Live Deployments"
 ---
 
-# Addresses
+This page is the canonical place for deployed Null V1 addresses. Use these values when building against the live app, indexer, or contracts.
 
-Canonical Null V1 contract addresses across supported networks.
+## Current Status
+
+| Network | Chain ID | Status | Explorer |
+| --- | ---: | --- | --- |
+| Sepolia | `11155111` | Live testnet deployment | [Sepolia Etherscan](https://sepolia.etherscan.io) |
+| Ethereum Mainnet | `1` | Not live | [Etherscan](https://etherscan.io) |
+| Base | `8453` | Not live | [BaseScan](https://basescan.org) |
+
+## Sepolia Contracts
+
+| Contract | Address | Notes |
+| --- | --- | --- |
+| `NullV1Factory` | [`0x9576F9e02F8b5a6aC96dd06ACA3E67A5dd278e3E`](https://sepolia.etherscan.io/address/0x9576F9e02F8b5a6aC96dd06ACA3E67A5dd278e3E) | Canonical market registry and market factory. |
+| `NullV1Router` | [`0xa12e648305d7297A58389b0577e93c18D1a16971`](https://sepolia.etherscan.io/address/0xa12e648305d7297A58389b0577e93c18D1a16971) | Periphery entrypoint for create, deposit, redeem, slippage checks, deadlines, and oracle update data. |
+| `NullV1Lens` | [`0xA907BC4C59e9187D2754B4D62Eaa54cFFed168e7`](https://sepolia.etherscan.io/address/0xA907BC4C59e9187D2754B4D62Eaa54cFFed168e7) | Read-only market previews for UIs, indexers, and bots. |
+| `NullV1Multicall` | [`0x7F6f239B942331A3815d451C8Ea993acDfFb7BC0`](https://sepolia.etherscan.io/address/0x7F6f239B942331A3815d451C8Ea993acDfFb7BC0) | Batch preview helper used by indexers and dashboards. |
+| `MockUSDC` | [`0x5A316865F2C9c261aD1B254C46788b6356d2F135`](https://sepolia.etherscan.io/address/0x5A316865F2C9c261aD1B254C46788b6356d2F135) | Test collateral used by the current Sepolia deployment. |
+
+## Indexer Source
+
+The public indexer tracks the Sepolia `NullV1Factory` from block `10976251`.
+
+Dynamic markets are discovered from the factory's `MarketCreated` event. Each market deploys its own Receiver pool and Payer pool, so pool addresses should be read from the market, factory events, Lens responses, or the indexer rather than hardcoded.
+
+## Integration Constants
+
+```ts
+export const NULL_V1_SEPOLIA = {
+  chainId: 11155111,
+  startBlock: 10976251,
+  factory: "0x9576F9e02F8b5a6aC96dd06ACA3E67A5dd278e3E",
+  router: "0xa12e648305d7297A58389b0577e93c18D1a16971",
+  lens: "0xA907BC4C59e9187D2754B4D62Eaa54cFFed168e7",
+  multicall: "0x7F6f239B942331A3815d451C8Ea993acDfFb7BC0",
+  collateral: {
+    mockUsdc: "0x5A316865F2C9c261aD1B254C46788b6356d2F135",
+  },
+} as const;
+```
+
+## What To Hardcode
+
+Hardcode shared infrastructure addresses like `NullV1Factory`, `NullV1Router`, `NullV1Lens`, and `NullV1Multicall` per chain.
+
+Do not hardcode market pool addresses unless you intentionally pin to one specific market. Receiver and Payer pools are deployed per market and should normally be discovered from `NullV1Factory`, `NullV1Market`, `NullV1Lens`, or indexer data.
+
+See [Integrator Quickstart](/developers-tab/integrator-quickstart), [Router](/developers-tab/router), and [Indexer Integration](/contracts/integration/indexer) for how these addresses fit into a full integration.
