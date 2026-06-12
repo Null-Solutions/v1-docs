@@ -1,0 +1,152 @@
+---
+title: "Market update"
+description: "Understand the exact Null V1 market update order used before pool actions."
+sidebarTitle: "Market update"
+---
+
+# Market update
+
+Every state-changing pool action calls `market.updateState()` before it mints shares, burns shares, or records user balance changes.
+
+The market delegates settlement math to `NullV1Math.computeUpdate`.
+
+## Execution order
+
+The implementation order is:
+
+1. Validate the oracle price.
+2. Apply yield-fee accounting if share-price tracking is enabled.
+3. Reconcile the actual market collateral balance against recorded accounting.
+4. Compute funding and price settlement as a single net transfer.
+5. Store the new timestamp and oracle price.
+
+In code terms:
+
+```solidity
+updated = _updatePoolsForYield(state, currentSharePrice, yieldFee);
+updated = _reconcileExternalBalanceChanges(updated, balance);
+updated = _updatePoolsForFundingAndReturns(updated, price, mu);
+updated.timestamp = block.timestamp;
+updated.price = price;
+```
+
+## Price validation
+
+The oracle price must be nonzero. Null oracles normalize prices to `1e36`.
+
+If the oracle price is zero, the update reverts. The market is not partially updated.
+
+## Yield-fee accounting
+
+Yield-fee accounting is only active when `state.sharePrice` is nonzero. This is used for ERC-4626 collateral share-price tracking.
+
+When share-price tracking is on and the current share price has increased, the protocol can charge a configured `yieldFee` on measured collateral yield. The fee is deducted pro rata from Receiver and Payer pools and added to `protocolFees`.
+
+This step happens before balance reconciliation and before Receiver/Payer settlement.
+
+## Reconciliation
+
+The market passes `asset.balanceOf(address(this))` into the math library. The library excludes `protocolFees` and compares remaining actual collateral against recorded Receiver plus Payer pool balances.
+
+If actual collateral is higher than recorded pool value, the gain is allocated proportionally across Receiver and Payer.
+
+If actual collateral is lower than recorded pool value, the loss is deducted proportionally. Any rounding remainder is deducted from the largest pool first.
+
+If both pools are empty, actual collateral is treated as protocol fees. This avoids dividing by zero and prevents unassigned assets from being redistributed into empty pools later.
+
+## Funding
+
+Funding is paid from Receiver to Payer.
+
+The funding APR is:
+
+```text
+fundingApr = min(receiverPool / payerPool * mu / 1e6, 100%)
+```
+
+The funding amount is scaled by elapsed time:
+
+```text
+funding = receiverPool * fundingApr * elapsed / 365 days
+```
+
+Funding returns zero if:
+
+- `block.timestamp <= previous timestamp`;
+- either pool is empty;
+- the computed funding APR is zero.
+
+## Price settlement
+
+Price settlement compares the new oracle price to the previous stored price.
+
+The raw price transfer is based on Receiver notional:
+
+```text
+receiverNotional = receiverPool * 1e36 / previousPrice
+receiverPnl = priceDelta * receiverNotional / 1e36
+```
+
+If the price is up, the transfer is from Payer to Receiver. If the price is down, the transfer is from Receiver to Payer.
+
+## Circuit breaker
+
+The implementation computes a time-scaled maximum price delta:
+
+```text
+maxAllowedDelta = previousPrice * 700 * elapsed / (10_000 * 1 hour)
+```
+
+If the actual absolute price delta exceeds `maxAllowedDelta`, the price-transfer leg returns zero for that update.
+
+Funding still applies, and the market stores the new price at the end of the update.
+
+## Netted solvency bound
+
+Funding and price settlement are netted before collateral moves between pools.
+
+```text
+net transfer into Receiver = price transfer from Payer to Receiver - funding from Receiver to Payer
+```
+
+If the net transfer is positive, Receiver receives value and Payer loses value. The transfer is capped at `payerPool`.
+
+If the net transfer is negative, Receiver pays value and Payer receives value. The transfer is capped at `receiverPool`.
+
+This matches the whitepaper invariant:
+
+```text
+N = max(-R, min(U, P))
+```
+
+where `U` is the unconstrained net transfer into Receiver, `R` is the reconciled Receiver pool, and `P` is the reconciled Payer pool.
+
+## Persistence and events
+
+After settlement, the market stores the updated `MarketState` and emits `StateUpdated`:
+
+```solidity
+event StateUpdated(
+    uint256 indexed timestamp,
+    uint256 receiverPoolAssets,
+    uint256 payerPoolAssets,
+    uint256 price,
+    uint256 protocolFees,
+    uint256 sharePrice
+);
+```
+
+Pool actions continue only after this state has been persisted.
+
+## Integration implications
+
+- Previews can become stale because execution updates the market first.
+- Indexers should treat `StateUpdated` as the canonical accounting checkpoint.
+- Empty or one-sided markets do not settle normal funding or price transfers.
+- The circuit breaker suppresses directional price settlement, not funding.
+- Solvency is applied to the netted transfer, not to funding and price movement separately.
+
+## API reference
+
+- [Market reference](/contracts/market): state fields, events, fee reads, and pool discovery.
+- [Factory reference](/contracts/factory): canonical market lookup by `(asset, oracle, mu)`.

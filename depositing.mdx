@@ -64,7 +64,7 @@ const deadline = BigInt(Math.floor(Date.now() / 1000) + 5 * 60);
 
 ## Oracle update data
 
-Some markets use **push oracles** that require a signed price payload to be submitted alongside each transaction. Pass that payload as `updateData`. For markets using **static or pull oracles** (where price is always up-to-date on-chain), pass an empty array.
+Some markets use **updatable oracles** that require a signed price payload to be submitted alongside each transaction. Pass that payload as `updateData`. For markets using onchain or stateless oracles, pass an empty array.
 
 ```ts
 // Static oracle — no update needed
@@ -75,7 +75,7 @@ const updateData = await pythConnection.getPriceFeedsUpdateData([priceFeedId]);
 ```
 
 <Note>
-If your wallet does not hold enough ETH to cover the oracle update fee, the router reverts with `InsufficientUpdateFeeBalance(balance, required)`. Make sure your transaction includes sufficient `msg.value` when using a push oracle that charges a fee.
+The current router pays oracle update fees from the router's ETH balance. If that balance is insufficient, the router reverts with `InsufficientUpdateFeeBalance(balance, required)`. Check the deployment's operational setup before relying on push-oracle `updateData`.
 </Note>
 
 ## ERC-4626 collateral (automatic wrapping)
@@ -184,7 +184,7 @@ contract DepositExample {
 
 ## Direct ERC-4626 deposit (advanced)
 
-If you want to bypass the router and interact with the pool contract directly, use the standard ERC-4626 `deposit` function. You are responsible for approving the pool's **underlying vault token** (not the user-facing asset) and for updating the oracle yourself before the call if required.
+If you want to bypass the router and interact with the pool contract directly, use the standard ERC-4626 `deposit` function. You are responsible for approving the market asset accepted by the pool and for making sure any push-oracle price has already been updated before the pool action runs.
 
 ```ts
 const pool  = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, signer);

@@ -1,0 +1,95 @@
+---
+title: "Risks and parameters"
+description: "Learn the main Null V1 risk controls, failure modes, and deployment parameters."
+sidebarTitle: "Risks and parameters"
+---
+
+# Risks and parameters
+
+Null V1 is fully collateralized, but market outcomes still depend on liquidity, oracle quality, funding settings, and price movement. This page explains the main controls and failure modes.
+
+## Full collateralization
+
+Full collateralization is the primary solvency invariant. The protocol can move value between pools, but neither pool can pay more than it has.
+
+If Payer owes more than the Payer pool contains, Payer is depleted and the remaining amount is not paid. If Receiver owes more than the Receiver pool contains, Receiver is depleted and the remaining amount is not paid.
+
+This prevents protocol debt. It does not prevent one side from losing all of its pool value.
+
+## Pool depletion
+
+The exposure ratio controls how quickly Payer can be depleted by an upward move in the reference asset.
+
+Ignoring funding and circuit-breaker effects, Payer is depleted when:
+
+```text
+price move >= 1 / E
+```
+
+If `E = 5`, an upward move of about 20% can deplete Payer. If `E = 20`, an upward move of about 5% can deplete Payer.
+
+Higher `E` can make Receiver funding cheaper while still giving Payer a useful funding APR, but it also concentrates directional risk into Payer capital.
+
+## Oracle risk
+
+Each market depends on its oracle. The oracle must provide a valid normalized price. If the oracle cannot provide a valid price, market updates that depend on that price revert until a valid price is available.
+
+Oracle quality matters because price settlement moves collateral between pools. Integrators should display the oracle source, market asset, and market parameters so users can understand what they are taking exposure to.
+
+Some updatable oracle wrappers include a stale-price escape path. During an ordinary stale period, price reads revert and market actions that need a valid price cannot proceed. After a prolonged stale period, currently 10 days in the Pyth and Chainlink wrappers, the oracle can return the last stored price so users are not permanently locked by a retired or unavailable feed.
+
+The escape path is a liveness mechanism, not a guarantee of fair value. If the last stored price is far from the current offchain market, users still bear that basis risk.
+
+## Circuit breaker
+
+The circuit breaker filters abnormal price moves. If the price move is larger than the allowed time-scaled bound, the price-transfer leg is set to zero for that update.
+
+Funding still applies. The market also stores the new price as the next baseline.
+
+In v1, the paper describes a reference limit of 7% over a 1 hour window. The implementation applies the allowed move linearly with elapsed time.
+
+The circuit breaker does not protect against continuous drift. If a market moves inside the allowed bound over many updates, those moves can settle over time.
+
+## Collateral risk
+
+Market collateral can be a plain ERC-20 or an ERC-4626 vault share. ERC-4626 collateral can add base yield, but it also introduces wrapper risk. If the underlying vault loses value, each collateral share can become worth less even if Null's Receiver/Payer settlement behaves correctly.
+
+Rebasing collateral is not suitable for pool accounting because token balances can change without explicit transfers. Use non-rebasing wrappers for yield-bearing collateral.
+
+## Empty or one-sided markets
+
+A normal Null payoff requires capital on both sides. If either pool has no balance, funding and price-transfer calculations return zero.
+
+The market can still accept actions through the pools, but the two-sided synthetic exposure only begins once both Receiver and Payer have capital.
+
+## Fees
+
+Entry and exit fees leave the two-pool system. They are routed to the protocol owner rather than redistributed between Receiver and Payer.
+
+Deposits and redeems use fee-on-total accounting. Mints and withdrawals use fee-on-raw accounting. Integrators should rely on ERC-4626 preview functions for estimates, then apply slippage controls for execution because the market updates before the action completes.
+
+Some markets may also use yield-bearing collateral and a yield fee. Yield-fee accounting is separate from Receiver-to-Payer funding and price settlement.
+
+## Funding parameters
+
+The funding usage multiplier, `mu`, determines how aggressively Receiver funding responds to the exposure ratio.
+
+Lower `mu` can make Receiver exposure cheaper, but may not attract enough Payer capital. Higher `mu` can attract Payer capital, but makes Receiver exposure more expensive.
+
+The funding cap prevents Receiver funding from growing without limit in heavily imbalanced markets.
+
+## Healthy markets
+
+Healthy markets usually have:
+
+- enough Payer liquidity to back Receiver demand;
+- enough Receiver demand to make Payer funding meaningful;
+- an oracle suitable for the reference asset;
+- external venues that allow Payers to hedge, if they choose;
+- clear frontend display of `E`, funding, oracle, fees, and circuit-breaker behavior.
+
+Null does not hide these tradeoffs. It exposes them in the accounting so users and integrators can reason about them directly.
+
+## Summary
+
+Null removes undercollateralized debt from the market design, but not economic risk. Users still face price exposure, pool depletion risk, oracle risk, funding cost, and parameter risk. The safest way to evaluate a market is to look at both sides together: collateral, `E`, funding, oracle quality, and the circuit breaker.

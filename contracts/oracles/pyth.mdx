@@ -4,7 +4,7 @@ sidebarTitle: "Pyth"
 description: "Integrate the NullV1PythOracle: fetch Hermes update bytes, submit via the router, and handle staleness and error conditions."
 ---
 
-The `NullV1PythOracle` wraps a Pyth Network price feed and normalizes its output to the protocol's 1e36 price scale. It is a pull-based oracle, meaning that fresh price data must be fetched from the Pyth Hermes API off-chain and submitted on-chain before each pool operation. The router handles the submission automatically when you pass `updateData` to `depositMarket` or `redeemMarket` — you only need to supply the bytes and ensure your transaction carries enough ETH to cover the Pyth update fee.
+The `NullV1PythOracle` wraps a Pyth Network price feed and normalizes its output to the protocol's 1e36 price scale. It is an updatable oracle, meaning that fresh price data must be fetched from the Pyth Hermes API offchain and submitted onchain before each pool operation. The router handles the submission automatically when you pass `updateData` to `depositMarket` or `redeemMarket`; the current router pays the Pyth update fee from its own ETH balance.
 
 ## Display Key
 

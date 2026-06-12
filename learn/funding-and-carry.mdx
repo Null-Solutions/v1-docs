@@ -1,0 +1,128 @@
+---
+title: "Funding and carry"
+description: "Understand Null V1 funding, collateral yield, exposure ratios, and how Payers can think about hedged carry."
+sidebarTitle: "Funding and carry"
+---
+
+# Funding and carry
+
+Funding is the market's capital-allocation signal. Receivers pay Payers because Receiver exposure consumes Payer risk capacity.
+
+When Receiver demand is high relative to Payer liquidity, funding rises. This can attract more Payer capital. When Payer liquidity is abundant, funding falls and Receiver exposure becomes cheaper.
+
+## Exposure ratio drives funding
+
+The exposure ratio is:
+
+```text
+E = reconciled Receiver pool / reconciled Payer pool
+```
+
+`E` tells you how much Receiver exposure each unit of Payer capital backs.
+
+Null computes Receiver funding from `E`:
+
+```text
+Receiver funding APR = min(mu * E, funding cap)
+```
+
+`mu` is the market's funding usage multiplier. It is selected when the market is created and is stored on that market.
+
+Payer receives the same funding payment, but measured against the smaller Payer pool. Before the funding cap binds:
+
+```text
+Payer funding APR = mu * E^2
+```
+
+This square relationship is important. Receiver funding grows linearly with `E`, while Payer funding grows with `E^2` because the payment is earned on a smaller capital base.
+
+## Funding cap and empty pools
+
+Receiver funding APR is capped at 100% APR. This prevents the Receiver-side funding rate from growing without limit in extreme imbalances.
+
+Funding is zero when either side is empty:
+
+- If the Receiver pool is empty, there is no Receiver capital to pay funding.
+- If the Payer pool is empty, the exposure ratio is undefined, so funding returns zero.
+
+This means a one-sided market can accept deposits, but it does not behave like a normal two-sided Null market until both pools have capital.
+
+## Funding example
+
+Suppose:
+
+```text
+Receiver pool = 1,000
+Payer pool    = 200
+E             = 5
+mu            = 0.20%
+```
+
+Receiver funding APR is:
+
+```text
+0.20% * 5 = 1.00%
+```
+
+Receiver pays 1% APR on 1,000 units, or 10 units per year. Payer receives the same 10 units on a 200 unit pool, which is 5% APR.
+
+## Collateral yield
+
+Some markets may use yield-bearing collateral. Collateral yield is not paid by Receiver to Payer or by Payer to Receiver. It is earned by the collateral itself and reflected when the market reconciles actual collateral against recorded balances.
+
+Before price movement, the simple carry view is:
+
+```text
+Receiver carry = collateral yield - Receiver funding
+Payer carry    = collateral yield + Payer funding
+```
+
+If collateral yield is high enough, it can offset some or all of Receiver funding. Payer receives both collateral yield and funding before directional price exposure.
+
+## Payer hedging
+
+Payer has the opposite price exposure to Receiver. A market maker can hedge that exposure externally.
+
+For a Payer balance `B`, the simplified external long hedge target is:
+
+```text
+H = B * E
+```
+
+Example:
+
+```text
+Payer balance = 10
+E             = 5
+Hedge target  = 50
+```
+
+The Payer position behaves like a 50 unit short position. The market maker can buy 50 units of the tracked asset externally. If the asset rises, the external long can offset the Payer loss. If it falls, the Payer gain can offset the external long loss.
+
+The hedge is optional and external. Null supplies the Payer position and funding stream; it does not execute or maintain the hedge.
+
+## Deployment calibration
+
+Market deployers choose `mu` to set the funding curve. A practical calibration method is:
+
+1. Choose a representative healthy exposure ratio, `E*`.
+2. Choose a target Payer funding APR.
+3. Set `mu` so that Payer funding reaches that target around `E*`.
+
+In simplified form:
+
+```text
+mu = target Payer funding APR / (E*)^2
+```
+
+For example, if a deployer wants Payers to earn 5% APR when `E = 5`, then:
+
+```text
+mu = 5% / 25 = 0.20%
+```
+
+The live market can move away from `E*`. The multiplier only sets the curve. Funding then responds to the actual live ratio.
+
+## Summary
+
+Funding links Receiver demand and Payer liquidity. Higher Receiver demand relative to Payer capital raises both Receiver funding cost and Payer funding revenue. The same ratio also concentrates Payer price risk, which is why funding and risk must be understood together.

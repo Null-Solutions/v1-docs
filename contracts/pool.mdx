@@ -4,7 +4,11 @@ sidebarTitle: "Pool"
 description: "NullV1Pool is an ERC-4626 tokenised vault for receiver or payer positions in a Null V1 market, with virtual-share inflation-attack protection."
 ---
 
-Each Null V1 market deploys exactly two `INullV1Pool` contracts — one for the receiver side and one for the payer side. Both are fully compliant [ERC-4626](https://eips.ethereum.org/EIPS/eip-4626) tokenised vaults, which means any protocol that supports the standard (aggregators, yield routers, portfolio managers) can integrate positions without custom logic. Shares are standard ERC-20 tokens and can be freely transferred, delegated, or held in multisigs. Before executing any mutating call (`deposit`, `mint`, `withdraw`, `redeem`), the pool first calls `market.updateState()` to synchronise the oracle price and settle PnL — so the exchange rate you previewed on-chain always matches what you receive.
+Each Null V1 market deploys exactly two `INullV1Pool` contracts: one for the Receiver side and one for the Payer side. Both are ERC-4626 compatible vaults, which means any protocol that supports the standard can integrate positions without custom logic. Shares are standard ERC-20 tokens and can be freely transferred, delegated, or held in multisigs. Before executing any mutating call (`deposit`, `mint`, `withdraw`, `redeem`), the pool first calls `market.updateState()` so execution uses current market accounting.
+
+<Note>
+For integration guidance, read [Pools and ERC-4626](/developers-tab/pools-and-erc4626). This page is the function reference.
+</Note>
 
 ## Pool Kind
 
@@ -14,8 +18,8 @@ Returns which side of the market this pool represents.
 
 ```solidity
 enum NullV1PoolKind {
-    Receiver, // 0 — receives funding payments when price is above the share price
-    Payer     // 1 — pays funding; benefits when price is below the share price
+    Receiver, // 0 - receives the reference return and pays funding
+    Payer     // 1 - backs Receiver exposure and receives funding
 }
 ```
 

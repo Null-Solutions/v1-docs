@@ -1,0 +1,181 @@
+---
+title: "Integrator quickstart"
+description: "Discover a Null V1 market, read its pools, preview actions, and execute deposits or redemptions."
+sidebarTitle: "Integrator quickstart"
+---
+
+# Integrator quickstart
+
+This guide shows the standard integration flow for a Null V1 market.
+
+## 1. Choose market inputs
+
+A v1 market is identified by:
+
+```text
+asset
+oracle
+mu
+```
+
+`asset` is the ERC-20 market collateral. It may also be an ERC-4626 vault share token if the market uses wrapped yield-bearing collateral.
+
+`oracle` provides the reference price. All Null oracles return prices normalized to `1e36`.
+
+`mu` is the Receiver funding usage multiplier in parts per million. It controls how aggressively Receiver funding rises as Receiver demand grows relative to Payer liquidity.
+
+## 2. Discover or create the market
+
+Read the factory first:
+
+```solidity
+address market = factory.getMarket(asset, oracle, mu);
+```
+
+If it returns `address(0)`, the market has not been deployed for that tuple.
+
+```solidity
+INullV1Market market = factory.createMarket(IERC20(asset), INullV1Oracle(oracle), mu);
+```
+
+The router can also create a market and optionally update an updatable oracle before creation:
+
+```solidity
+INullV1Market market = router.createMarket(factory, asset, oracle, mu, updateData);
+```
+
+## 3. Read market metadata
+
+After you have a market address, read:
+
+```solidity
+IERC20 asset = market.asset();
+INullV1Oracle oracle = market.oracle();
+uint24 mu = market.mu();
+INullV1Pool receiverPool = market.receiverPool();
+INullV1Pool payerPool = market.payerPool();
+```
+
+Read the accounting state for balances and the last stored oracle price:
+
+```solidity
+(
+    uint256 timestamp,
+    uint256 receiverPoolAssets,
+    uint256 payerPoolAssets,
+    uint256 price,
+    uint256 protocolFees,
+    uint256 sharePrice
+) = market.state();
+```
+
+Use `receiverPoolAssets` and `payerPoolAssets` to display the exposure ratio:
+
+```text
+E = receiverPoolAssets / payerPoolAssets
+```
+
+Handle `payerPoolAssets == 0` as a one-sided market.
+
+## 4. Preview the action
+
+Pools implement ERC-4626 previews:
+
+```solidity
+uint256 receiverShares = receiverPool.previewDeposit(receiverAssets);
+uint256 payerShares = payerPool.previewDeposit(payerAssets);
+```
+
+Previews use the current recorded state. Execution updates the market first, so final shares or assets can differ if the oracle price, elapsed time, collateral balance, or fees change before the transaction lands.
+
+For transactions, pass slippage limits through the router or enforce your own minimums when calling pools directly.
+
+## 5. Deposit
+
+You can deposit into one side directly:
+
+```solidity
+asset.approve(address(receiverPool), receiverAssets);
+uint256 shares = receiverPool.deposit(receiverAssets, user);
+```
+
+Or deposit into one or both sides through the router:
+
+```solidity
+asset.approve(address(router), totalAssets);
+
+(uint256 receiverShares, uint256 payerShares) = router.depositMarket(
+    market,
+    receiverAssets,
+    payerAssets,
+    minReceiverShares,
+    minPayerShares,
+    deadline,
+    updateData
+);
+```
+
+Use direct pool calls when you only need plain ERC-4626 behavior. Use the router when you need combined Receiver/Payer deposits, push-oracle update data, deadlines, slippage checks, or ERC-4626 collateral wrapping.
+
+## 6. Redeem
+
+You can redeem directly from one pool:
+
+```solidity
+uint256 assets = receiverPool.redeem(receiverShares, user, user);
+```
+
+Or redeem from one or both pools through the router:
+
+```solidity
+(uint256 receiverAssets, uint256 payerAssets) = router.redeemMarket(
+    market,
+    receiverShares,
+    payerShares,
+    minReceiverAssets,
+    minPayerAssets,
+    deadline,
+    updateData
+);
+```
+
+When the market asset is an ERC-4626 vault share, the router redeems market-asset shares and sends the underlying asset to the user.
+
+## 7. Track positions
+
+Track user balances with standard ERC-20 share balances:
+
+```solidity
+receiverPool.balanceOf(user);
+payerPool.balanceOf(user);
+```
+
+Track market changes with:
+
+- `StateUpdated` on the market;
+- ERC-4626 `Deposit` and `Withdraw` events on each pool;
+- `MarketCreated` on the factory;
+- `FeesUpdated` and `FeesCollected` on the market.
+
+Position value is proportional to pool value:
+
+```text
+user pool value = user shares / total shares * pool totalAssets()
+```
+
+Because `totalAssets()` reads market accounting, indexers should combine share balances with market state updates.
+
+## Checklist
+
+- Read the canonical market from `getMarket(asset, oracle, mu)`.
+- Read both pool addresses from the market.
+- Preview the ERC-4626 action.
+- Account for the market update that runs before execution.
+- Use router minimums or direct-call checks for slippage.
+- Track both share balances and market `StateUpdated` events.
+
+## API reference
+
+- [Factory reference](/contracts/factory): discover and create canonical markets.
+- [Market reference](/contracts/market): read market state, pools, fees, and oracle metadata.
+- [Router reference](/contracts/router): deposit, redeem, market creation, deadlines, and slippage checks.

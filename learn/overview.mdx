@@ -1,9 +1,46 @@
 ---
-title: "Learn"
-description: "Learn about the Null V1 protocol."
+title: "Learn Null V1"
+description: "Understand Null V1 markets, Receiver and Payer positions, funding, settlement, collateral, and risk controls."
 sidebarTitle: "Overview"
 ---
 
-# Learn
+# Learn Null V1
 
-Educational content about Null V1.
+Null V1 is a non-custodial protocol for creating synthetic exposure to oracle-priced assets. A market has two pooled sides:
+
+- **Receiver pool:** receives the return of the reference asset and pays funding.
+- **Payer pool:** backs Receiver exposure, receives funding, and takes the opposite price risk.
+
+Both sides are represented by ERC-4626 compatible shares. A share is a proportional claim on the current value of one pool, not a private bilateral swap with a separate entry price.
+
+## The core idea
+
+Null turns a total return swap into a pooled onchain market. In a traditional total return swap, one receiver and one payer agree to exchange the return of a reference asset. In Null, all Receivers are aggregated into one pool, all Payers are aggregated into another pool, and the market contract settles the two pools against each other.
+
+This design gives users synthetic exposure without requiring the protocol to lend or create debt. Gains and losses are always paid from collateral already held by one of the pools.
+
+## How value moves
+
+Each market update does these important things:
+
+1. Validates the latest oracle price.
+2. Accounts for collateral share-price yield and any configured yield fee when yield tracking is enabled.
+3. Reconciles recorded pool balances against the actual collateral held by the market.
+4. Computes the reference asset return from the oracle price.
+5. Computes funding from Receiver to Payer.
+6. Nets price settlement and funding, then caps the transfer by available collateral.
+
+If the reference price rises, value tends to move from Payer to Receiver. If the reference price falls, value tends to move from Receiver to Payer. Funding always moves from Receiver to Payer because Receiver exposure uses Payer collateral as backing capital.
+
+## Why full collateralization matters
+
+The protocol cannot create an undercollateralized receivable. If one side owes more than it has, the transfer is truncated at that side's available collateral. A large price move can deplete a pool, but it cannot make the depleted side negative.
+
+This is the central Null invariant: synthetic exposure is created by redistributing existing collateral, not by extending credit.
+
+## What to read next
+
+- [Receiver and Payer](/learn/receiver-and-payer): learn the two sides of a Null market.
+- [How markets update](/learn/how-markets-update): follow reconciliation, price settlement, funding, and solvency.
+- [Funding and carry](/learn/funding-and-carry): understand the exposure ratio, funding curve, collateral yield, and hedged Payer strategies.
+- [Risks and parameters](/learn/risks-and-parameters): learn how oracle checks, circuit breakers, fees, and deployment parameters shape markets.

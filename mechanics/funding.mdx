@@ -1,141 +1,17 @@
 ---
-title: "Funding Mechanics: Continuous Rate & Utilization"
+title: "Funding mechanics"
 sidebarTitle: "Funding"
-description: "Learn how Null V1 funding flows continuously from receivers to payers, how utilization drives the rate, and how mu amplifies funding intensity."
+description: "Find the current Null V1 funding and carry explanation."
 ---
 
-Funding is the continuous cost receivers pay to payers in exchange for price-return exposure. Rather than a fixed rate agreed at open, the funding rate adjusts dynamically based on pool utilization — the ratio of receiver capital to payer capital at any moment. The higher the utilization, the more receivers pay and the more payers earn.
-
-## How Funding Works
-
-At its core, funding redistributes capital between the two sides of the pool every time the contract state is updated. Receivers pay; payers earn. The rate scales with how "crowded" the receiver side is relative to the payer side.
-
-<Info>
-  Funding accrues continuously between state updates. Any deposit, redeem, or price-oracle interaction triggers a state update that settles all accrued funding since the last checkpoint.
-</Info>
-
-## Utilization and the Funding Rate
-
-The protocol computes a usage factor — how many units of receiver capital exist per unit of payer capital — and then applies the market parameter **mu** to translate that ratio into an annualized rate.
-
-```
-usageFactor = receiverPool / payerPool
-fundingApr  = min(usageFactor * mu / 1_000_000, 100%)
-```
-
-Here, **rho** (ρ) is the instantaneous utilization ratio:
-
-```
-rho = receiverPool / payerPool
-```
-
-So the rate receivers pay is:
-
-```
-receiverFundingApr = min(rho * mu / 1_000_000, 100%)
-```
-
-And payers earn an amplified rate because the same absolute payment is spread over the (smaller) payer pool:
-
-```
-payerFundingApr = receiverFundingApr * rho
-```
-
-The actual settlement amount each period is:
-
-```
-fundingPayment = receiverPool * fundingApr * elapsedTime / 365 days
-```
-
-<Note>
-  All APR values are WAD-scaled internally: `1e18` represents 100%. When reading values from contract storage or events, divide by `1e18` to get a decimal fraction.
-</Note>
-
-## The mu Parameter
-
-**mu** is a market-level constant (set at deployment) that controls funding intensity. A higher mu means funding ramps up more steeply as utilization increases. Two markets with identical utilization but different mu values will have very different funding costs.
-
-| mu value | mu as a % | Meaning |
-|----------|-----------|---------|
-| 10,000   | 1%        | Standard — moderate funding pressure |
-| 3,000    | 0.3%      | Low — gentle funding even at high utilization |
-| 50,000   | 5%        | High — aggressive funding to incentivize payer capital |
-
-## Funding Rates at Different Utilization Levels
-
-The table below shows receiver funding APR and payer funding APR for two representative mu values across a range of rho values.
-
-<Tabs>
-  <Tab title="mu = 10,000 (1%)">
-    | rho (ρ) | Receiver pays | Payer earns |
-    |---------|--------------|-------------|
-    | 1       | 1%           | 1%          |
-    | 2       | 2%           | 4%          |
-    | 3       | 3%           | 9%          |
-    | 4       | 4%           | 16%         |
-    | 5       | 5%           | 25%         |
-    | 10      | 10%          | 100%        |
-  </Tab>
-  <Tab title="mu = 3,000 (0.3%)">
-    | rho (ρ) | Receiver pays | Payer earns |
-    |---------|--------------|-------------|
-    | 1       | 0.3%         | 0.3%        |
-    | 2       | 0.6%         | 1.2%        |
-    | 3       | 0.9%         | 2.7%        |
-    | 4       | 1.2%         | 4.8%        |
-    | 5       | 1.5%         | 7.5%        |
-    | 10      | 3.0%         | 30%         |
-  </Tab>
-</Tabs>
-
-<Tip>
-  Payer earnings grow quadratically with rho because the same dollar payment from a larger receiver pool is distributed across a smaller payer pool. Choosing payer positions at high utilization dramatically amplifies yield.
-</Tip>
-
-## The 100% APR Cap
-
-Funding APR is capped at **100% per year** (represented as `1e18` in WAD notation). This prevents pathological funding rates in edge cases where the receiver pool vastly exceeds the payer pool.
-
-```
-fundingApr = min(rho * mu / 1_000_000, 1e18)   // WAD-scaled
-```
-
-In practice, the cap only activates when utilization is extremely high — for example, with `mu = 10_000`, funding hits the cap when `rho ≥ 100`.
-
-## When Funding Is Zero
-
-Funding is zero whenever either pool is empty:
+This legacy funding page has moved into the main Learn path.
 
 <CardGroup cols={2}>
-  <Card title="Empty Receiver Pool" icon="circle-xmark">
-    No receivers are present, so there is nobody to pay funding. Payers earn nothing.
+  <Card title="Funding and carry" icon="percent" href="/learn/funding-and-carry">
+    Read the canonical explanation of `E`, `mu`, Receiver funding, Payer funding, collateral yield, and hedging.
   </Card>
-  <Card title="Empty Payer Pool" icon="circle-xmark">
-    Division by zero is avoided by returning zero. Receivers pay nothing. The usage factor is undefined when there are no payers, so funding defaults to zero.
+
+  <Card title="Developer update order" icon="code" href="/developers-tab/market-update">
+    See how funding is computed and netted with price settlement in `NullV1Math`.
   </Card>
 </CardGroup>
-
-This means you can enter or exit a pool unilaterally without worrying about funding while the opposite pool is empty — no asymmetric drain occurs.
-
-## Settlement Timing
-
-Funding does not move tokens on every block. Instead, the accrued amount is computed lazily and settled during each state update:
-
-<Steps>
-  <Step title="Checkpoint recorded">
-    When a state update runs, the current timestamp is stored alongside the pool sizes.
-  </Step>
-  <Step title="Elapsed time computed">
-    The next state update computes `elapsedTime = currentTimestamp - lastTimestamp`.
-  </Step>
-  <Step title="Payment calculated and netted">
-    `fundingPayment` is calculated and then **netted** against price returns before any tokens move. See [Price Returns & Net Settlement](/mechanics/price-returns) for details.
-  </Step>
-  <Step title="Pools updated">
-    The net transfer is applied to pool balances, capped by available capital so neither pool goes negative.
-  </Step>
-</Steps>
-
-<Warning>
-  If no state update occurs for a long period, a large accrued funding payment will settle all at once on the next interaction. Integrators should monitor elapsed time if managing large positions.
-</Warning>

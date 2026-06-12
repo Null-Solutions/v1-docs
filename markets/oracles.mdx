@@ -122,15 +122,14 @@ When you call `router.createMarket(...)` or any router function that accepts `up
     ```
 
     ```solidity
-    // On-chain: get the update fee and pass ETH with the transaction
-    uint256 fee = oracle.getUpdateFee(updateData);
-    router.createMarket{value: fee}(factory, asset, oracle, mu, updateData);
+    // On-chain: the router computes the fee and pays it from its ETH balance.
+    router.createMarket(factory, asset, oracle, mu, updateData);
     ```
 
     <Note>
-      Pyth's on-chain verification requires a small ETH fee per update. Call
-      `oracle.getUpdateFee(updateData)` to get the exact amount and include it as
-      `msg.value` in your transaction.
+      Pyth's on-chain verification requires a small ETH fee per update. The
+      current router pays that fee from its own ETH balance, so the router must
+      be funded before fee-charging updates can succeed.
     </Note>
   </Tab>
 

@@ -27,45 +27,114 @@
             "group": "Introduction",
             "pages": [
               "Null",
-              "introduction/null101.mdx",
-              "introduction/products.mdx",
-              "introduction/customer-stories.mdx"
+              "introduction/products.mdx"
             ]
           },
           {
-            "group": "Developers",
+            "group": "Context",
             "pages": [
-              "quick-start",
               "developers/ai-llms.mdx"
-            ]
-          },
-          {
-            "group": "Resources",
-            "pages": [
-              "resources/addresses.mdx",
-              "resources/contracts.mdx",
-              "resources/null-apps-ecosystem.mdx",
-              "resources/audits.mdx",
-              "resources/landing-page.mdx",
-              "resources/data-page.mdx",
-              "resources/whitepapers.mdx",
-              "resources/brand-assets.mdx",
-              "resources/faq.mdx",
-              "resources/disclaimer.mdx"
             ]
           }
         ]
       },
       {
         "tab": "Learn",
-        "pages": [
-          "learn/overview.mdx"
+        "groups": [
+          {
+            "group": "Protocol Concepts",
+            "pages": [
+              "learn/overview.mdx",
+              "learn/receiver-and-payer.mdx",
+              "learn/how-markets-update.mdx"
+            ]
+          },
+          {
+            "group": "Economics and Risk",
+            "pages": [
+              "learn/funding-and-carry.mdx",
+              "learn/risks-and-parameters.mdx"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Use Null",
+        "groups": [
+          {
+            "group": "User Flows",
+            "pages": [
+              "quick-start",
+              "depositing.mdx",
+              "redeeming.mdx",
+              "fees.mdx"
+            ]
+          }
         ]
       },
       {
         "tab": "Developers",
-        "pages": [
-          "developers-tab/overview.mdx"
+        "groups": [
+          {
+            "group": "Start Building",
+            "pages": [
+              "developers-tab/overview.mdx",
+              "developers-tab/integrator-quickstart.mdx"
+            ]
+          },
+          {
+            "group": "Core Flows",
+            "pages": [
+              "developers-tab/market-update.mdx",
+              "developers-tab/pools-and-erc4626.mdx",
+              "developers-tab/router.mdx"
+            ]
+          },
+          {
+            "group": "Build Guides",
+            "pages": [
+              "contracts/integration/ui.mdx",
+              "contracts/integration/indexer.mdx"
+            ]
+          },
+          {
+            "group": "Market Setup",
+            "pages": [
+              "markets/creating-a-market.mdx",
+              "markets/collateral.mdx",
+              "markets/oracles.mdx"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Core Contracts",
+            "pages": [
+              "contracts/factory.mdx",
+              "contracts/market.mdx",
+              "contracts/pool.mdx"
+            ]
+          },
+          {
+            "group": "Periphery",
+            "pages": [
+              "contracts/router.mdx",
+              "contracts/lens.mdx"
+            ]
+          },
+          {
+            "group": "Oracles",
+            "pages": [
+              "contracts/oracles/overview.mdx",
+              "contracts/oracles/pyth.mdx",
+              "contracts/oracles/chainlink.mdx",
+              "contracts/oracles/uniswap-v3.mdx",
+              "contracts/oracles/base-fee.mdx"
+            ]
+          }
         ]
       }
     ]

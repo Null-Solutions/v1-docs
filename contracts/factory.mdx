@@ -4,7 +4,11 @@ sidebarTitle: "Factory"
 description: "NullV1Factory creates unique markets for each (asset, oracle, mu) tuple and serves as the canonical on-chain registry for all deployed Null V1 markets."
 ---
 
-The `INullV1Factory` contract is the entry point for spinning up new Null V1 markets. Every market is identified by a unique combination of its underlying asset, price oracle, and drift parameter (`mu`). The factory enforces uniqueness — attempting to deploy the same triple twice reverts — and stores a mapping so you can look up any existing market address without scanning events. Before calling `createMarket`, check `getMarket` first to avoid unnecessary reverts and gas waste.
+The `INullV1Factory` contract is the entry point for spinning up new Null V1 markets. Every market is identified by a unique combination of its collateral asset, price oracle, and Receiver funding multiplier (`mu`). The factory enforces uniqueness, so attempting to deploy the same tuple twice reverts. It also stores a mapping so you can look up any existing market address without scanning events.
+
+<Note>
+For a deployment walkthrough, read [Creating a market](/markets/creating-a-market). This page is the function and event reference.
+</Note>
 
 ## Functions
 
@@ -21,7 +25,7 @@ Returns the address of the market deployed for a given `(asset, oracle, mu)` tri
 </ParamField>
 
 <ParamField path="mu" type="uint24" required>
-  The drift parameter (μ) expressed in basis-point-like units that governs the funding rate dynamics of the market.
+  The Receiver funding multiplier expressed in parts per million.
 </ParamField>
 
 ```solidity
@@ -46,7 +50,7 @@ Deploys a new market together with its paired receiver and payer pools. Reverts 
 </ParamField>
 
 <ParamField path="mu" type="uint24" required>
-  The drift parameter μ. Must fall within the protocol-accepted range; values outside that range revert with `InvalidMu`.
+  The Receiver funding multiplier. Must be nonzero; `mu == 0` reverts with `InvalidMu`.
 </ParamField>
 
 Returns `INullV1Market market` — the address of the freshly deployed market contract.
@@ -80,7 +84,7 @@ Emitted once when a new market is successfully deployed.
 </ResponseField>
 
 <ResponseField name="mu" type="uint24 (indexed)">
-  The drift parameter used to configure the market's funding rate.
+  The Receiver funding multiplier used to configure the market's funding curve.
 </ResponseField>
 
 <ResponseField name="market" type="address">
