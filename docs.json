@@ -1,0 +1,98 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Null V1",
+  "theme": "luma",
+  "colors": {
+    "primary": "#1e75bc",
+    "light": "#8cbcdc",
+    "dark": "#040404"
+  },
+  "logo": {
+    "light": "https://media.brand.dev/b88c1398-116e-4486-82a8-f32bee28c3ec.svg",
+    "dark": "https://media.brand.dev/b88c1398-116e-4486-82a8-f32bee28c3ec.svg"
+  },
+  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/Null-Solutions/v1-contracts"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Get Started",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "Null",
+              "introduction/null101.mdx",
+              "introduction/products.mdx",
+              "introduction/customer-stories.mdx"
+            ]
+          },
+          {
+            "group": "Developers",
+            "pages": [
+              "quick-start",
+              "developers/ai-llms.mdx"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/addresses.mdx",
+              "resources/contracts.mdx",
+              "resources/null-apps-ecosystem.mdx",
+              "resources/audits.mdx",
+              "resources/landing-page.mdx",
+              "resources/data-page.mdx",
+              "resources/whitepapers.mdx",
+              "resources/brand-assets.mdx",
+              "resources/faq.mdx",
+              "resources/disclaimer.mdx"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Contracts",
+        "groups": [
+          {
+            "group": "Core",
+            "pages": [
+              "contracts/factory",
+              "contracts/market",
+              "contracts/pool"
+            ]
+          },
+          {
+            "group": "Periphery",
+            "pages": [
+              "contracts/router",
+              "contracts/lens"
+            ]
+          },
+          {
+            "group": "Oracles",
+            "pages": [
+              "contracts/oracles/overview",
+              "contracts/oracles/pyth",
+              "contracts/oracles/chainlink",
+              "contracts/oracles/uniswap-v3",
+              "contracts/oracles/base-fee"
+            ]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "contracts/integration/indexer",
+              "contracts/integration/ui"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+---
+title: "Price Circuit Breaker: How It Works"
+sidebarTitle: "Circuit Breaker"
+description: "Learn how Null V1's price circuit breaker limits single-block manipulation and caps the PnL settled per update window to protect pool liquidity."
+---
+
+Null V1 includes a price circuit breaker that limits how much profit-and-loss can be settled in a single oracle update. Without this guardrail, a momentary price spike — even one that reverses immediately — could drain an entire pool in a single transaction. The circuit breaker enforces a maximum rate of price change over time, ensuring that settlement keeps pace with real market movement rather than flash manipulations.
+
+## Why It Exists
+
+Oracle prices can be pushed to extreme values in a single block by an attacker who controls liquidity in the underlying price feed. If the protocol settled PnL instantly against the full price move, the payer pool could be emptied before any honest participant could react. The circuit breaker converts a potentially catastrophic instantaneous event into a bounded, time-proportional loss — one that liquidity providers can reasonably anticipate.
+
+## The Parameters
+
+Two constants govern the circuit breaker:
+
+| Constant | Value | Meaning |
+|---|---|---|
+| `MAX_PRICE_CHANGE_BPS` | `700` | Maximum price change per full window: **7%** |
+| `PRICE_CHANGE_WINDOW` | `3600` | Rolling window length in seconds: **1 hour** |
+
+## The Formula
+
+For each oracle update, the protocol computes the maximum price move it will settle based on how much time has elapsed since the previous update:
+
+```
+allowedDelta = oldPrice × MAX_PRICE_CHANGE_BPS × elapsed
+               ──────────────────────────────────────────
+                    MAX_BASIS_POINTS × PRICE_CHANGE_WINDOW
+```
+
+Substituting the constants:
+
+```
+allowedDelta = oldPrice × 700 × elapsed
+               ───────────────────────────
+                    10000 × 3600
+```
+
+The allowed move scales **linearly** with elapsed time. If only 30 minutes have passed, the circuit breaker allows at most 3.5% movement. After a full hour, the full 7% is permitted.
+
+## What Happens When It Triggers
+
+When the observed price delta exceeds `allowedDelta`, the update is handled as follows:
+
+<Steps>
+  <Step title="Transfer set to zero">
+    The protocol returns a transfer amount of `0` for that update cycle. No PnL is settled between the receiver pool and the payer pool for this move.
+  </Step>
+  <Step title="Funding still accrues">
+    Funding payments between the pools continue to run normally. The circuit breaker only suppresses the price-return transfer — it does not pause the market.
+  </Step>
+  <Step title="Reconciliation still runs">
+    Any pending reconciliation between pools is still processed. Only the directional price transfer is zeroed out.
+  </Step>
+  <Step title="Timestamp and new price are stored">
+    The contract records the new oracle price **and** the current timestamp, even though no transfer occurred. The next update will measure elapsed time and price movement from this new baseline — not from the pre-spike value.
+  </Step>
+</Steps>
+
+<Note>
+Storing the new price even when the circuit breaker fires means the protocol "resets" its reference point. Subsequent updates measure drift from the post-spike price, which prevents an attacker from repeatedly triggering the breaker from the same stale baseline.
+</Note>
+
+## Concrete Example
+
+Suppose the index price is **$1,000** and an oracle update arrives 30 minutes (1,800 seconds) after the last one, reporting a new price of **$1,100** — a 10% jump.
+
+**Step 1 — Compute `allowedDelta`:**
+
+```
+allowedDelta = 1000 × 700 × 1800 / (10000 × 3600)
+             = 1,260,000,000 / 36,000,000
+             = 35
+```
+
+The protocol will settle at most a **$35** move (3.5%).
+
+**Step 2 — Compare to actual delta:**
+
+```
+priceDelta = |1100 − 1000| = 100
+```
+
+`100 > 35`, so the circuit breaker fires. The transfer for this update is **zero**.
+
+**Step 3 — Next update arrives 30 minutes later**, price is still $1,100 (no further move):
+
+```
+allowedDelta = 1100 × 700 × 1800 / (10000 × 3600) = 38.5
+priceDelta   = 0
+```
+
+No breaker, but no transfer either because the price didn't move. Over a **full hour** from the spike, the allowed delta grows to:
+
+```
+1100 × 700 × 3600 / (10000 × 3600) = 77  (≈ 7% of 1100)
+```
+
+Once that full hour elapses from the new baseline, the protocol can settle up to 7% of movement again.
+
+<Warning>
+The circuit breaker protects against **sudden, large price jumps** in a short window. It does **not** prevent continuous drift. If a price genuinely moves 7% every hour for several hours, each update settles in full. Design your position sizing around sustained trend risk, not just spike risk.
+</Warning>
+
+## What the Circuit Breaker Does Not Cover
+
+<Accordion title="Continuous price drift">
+  If an asset trends steadily — say, falling 2% per hour for 12 hours — every update passes the circuit breaker check and full PnL is settled each time. The breaker addresses flash manipulation, not directional market moves. You should size positions according to the volatility of the underlying index.
+</Accordion>
+
+<Accordion title="Oracle staleness">
+  If the oracle stops publishing prices entirely, the circuit breaker is never evaluated because no updates arrive. A separate **stale-price escape period** (10 days of no updates) allows users to redeem using the last known price. This mechanism is independent of the circuit breaker and is described in the [Risks](/security/risks) page.
+</Accordion>
+
+<Accordion title="Funding rate risk">
+  The circuit breaker only affects the price-return transfer. It does not cap the funding rate paid between pools. In highly imbalanced markets, funding can be significant regardless of whether the circuit breaker has fired.
+</Accordion>
+
+<Tip>
+You can inspect the raw circuit breaker logic in `NullV1Math`. The relevant function computes `allowedDelta` and returns a transfer of `0` whenever the observed delta exceeds it — no state is rolled back, and the market continues operating normally.
+</Tip>

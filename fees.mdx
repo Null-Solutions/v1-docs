@@ -1,0 +1,128 @@
+---
+title: "Null V1 Fee Structure: Entry, Exit, and Yield"
+sidebarTitle: "Fees"
+description: "Understand how Null V1 entry, exit, and yield fees work, their on-chain maximums, and how to read current fee values before depositing or redeeming."
+---
+
+Null V1 charges up to three types of fees across its pools: an entry fee on deposits, an exit fee on redemptions, and a yield fee on collateral yield for markets backed by yield-bearing ERC-4626 collateral. All fee values are expressed in basis points (bps), where 1 bp = 0.01%. The protocol owner sets each fee, but every fee is bounded by an on-chain constant that cannot be exceeded — giving you a hard guarantee on the worst-case cost before you commit capital.
+
+<Note>
+All fee parameters are set by the protocol owner and are bounded by immutable on-chain constants. No fee can ever exceed its corresponding maximum, regardless of any future governance action.
+</Note>
+
+## Entry fee
+
+The entry fee is deducted from the assets you deposit **before** your shares are calculated. This means you receive fewer shares than a fee-free deposit would produce.
+
+| Property | Value |
+|---|---|
+| Maximum | `500` bps (5%) |
+| Applied on | `deposit` and `mint` calls |
+| Collected by | Protocol owner, immediately at deposit time |
+| On-chain constant | `MAX_ENTRY_FEE = 500` |
+
+**Example:** If the entry fee is 50 bps (0.5%) and you deposit 1,000 USDC, the effective deposit used to calculate your shares is 995 USDC. The remaining 5 USDC goes to the protocol.
+
+To read the current entry fee for a market:
+
+```ts
+const entryFeeBps = await market.entryFee(); // e.g. 50 for 0.5%
+```
+
+## Exit fee
+
+The exit fee is deducted from the assets you receive **when you redeem shares or withdraw assets**. Your shares are burned in full, but the assets returned to you are reduced by the fee.
+
+| Property | Value |
+|---|---|
+| Maximum | `500` bps (5%) |
+| Applied on | `redeem` and `withdraw` calls |
+| Collected by | Protocol owner, immediately at redemption time |
+| On-chain constant | `MAX_EXIT_FEE = 500` |
+
+**Example:** If the exit fee is 30 bps (0.3%) and your shares are worth 1,000 USDC, you receive 997 USDC. The remaining 3 USDC goes to the protocol.
+
+To read the current exit fee for a market:
+
+```ts
+const exitFeeBps = await market.exitFee(); // e.g. 30 for 0.3%
+```
+
+## Yield fee
+
+The yield fee applies **only** to markets where the collateral is a yield-bearing ERC-4626 token (for example waUSDC). It is charged as a percentage of the collateral yield that accrues inside the pool — not on your principal. Plain ERC-20 collateral markets always have a yield fee of zero.
+
+| Property | Value |
+|---|---|
+| Maximum | `5000` bps (50%) |
+| Applied on | Yield accrued by the ERC-4626 collateral wrapper |
+| Collected by | Protocol owner, via explicit `market.collectFees()` call |
+| On-chain constant | `MAX_YIELD_FEE = 5000` |
+| Accrues in | `state.protocolFees` |
+
+Unlike the entry and exit fees, the yield fee does not leave the contract immediately. It accumulates in `state.protocolFees` over time and must be explicitly claimed:
+
+```ts
+// Anyone can call collectFees; proceeds go to the protocol owner
+await market.collectFees();
+```
+
+To read the current yield fee for a market:
+
+```ts
+const yieldFeeBps = await market.yieldFee(); // e.g. 1000 for 10%; 0 for plain ERC-20 markets
+```
+
+<Note>
+If the market's collateral is a plain ERC-20 token (not an ERC-4626 wrapper), the yield fee is always `0` and `market.collectFees()` has no effect on your position.
+</Note>
+
+## Reading all fees at once
+
+You can read all three fee values in a single multicall or sequential read before you commit capital:
+
+```ts
+const [entryFee, exitFee, yieldFee] = await Promise.all([
+  market.entryFee(),
+  market.exitFee(),
+  market.yieldFee(),
+]);
+
+console.log(`Entry fee:  ${Number(entryFee)  / 100}%`);
+console.log(`Exit fee:   ${Number(exitFee)   / 100}%`);
+console.log(`Yield fee:  ${Number(yieldFee)  / 100}%`);
+```
+
+## How preview functions account for fees
+
+Both `previewDeposit` and `previewRedeem` already incorporate the relevant fee, so you do not need to apply any manual deduction when computing slippage parameters.
+
+<CodeGroup>
+
+```ts previewDeposit (entry fee included)
+// Returns shares AFTER the entry fee is deducted from assets
+const sharesOut = await receiverPool.previewDeposit(assetsIn);
+```
+
+```ts previewRedeem (exit fee included)
+// Returns assets AFTER the exit fee is deducted from the gross redemption value
+const assetsOut = await receiverPool.previewRedeem(sharesIn);
+```
+
+</CodeGroup>
+
+<Tip>
+Always use `previewDeposit` and `previewRedeem` — rather than manually dividing by the pool rate — when computing your `minReceiverShares`, `minPayerShares`, `minReceiverAssets`, or `minPayerAssets` values. This ensures your slippage floor correctly accounts for the current fee.
+</Tip>
+
+## Fee summary
+
+<Note>
+All maximums are enforced by immutable on-chain constants. The protocol owner can only set fees at or below these ceilings.
+</Note>
+
+| Fee type | Basis points max | Percentage max | Applies to | Collected |
+|---|---|---|---|---|
+| Entry fee | 500 | 5% | All markets | Immediately on deposit |
+| Exit fee | 500 | 5% | All markets | Immediately on redeem |
+| Yield fee | 5000 | 50% | ERC-4626 collateral markets only | Via `market.collectFees()` |

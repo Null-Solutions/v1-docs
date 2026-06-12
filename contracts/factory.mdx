@@ -1,0 +1,166 @@
+---
+title: "NullV1Factory: Deploy & Discover Markets"
+sidebarTitle: "Factory"
+description: "NullV1Factory creates unique markets for each (asset, oracle, mu) tuple and serves as the canonical on-chain registry for all deployed Null V1 markets."
+---
+
+The `INullV1Factory` contract is the entry point for spinning up new Null V1 markets. Every market is identified by a unique combination of its underlying asset, price oracle, and drift parameter (`mu`). The factory enforces uniqueness — attempting to deploy the same triple twice reverts — and stores a mapping so you can look up any existing market address without scanning events. Before calling `createMarket`, check `getMarket` first to avoid unnecessary reverts and gas waste.
+
+## Functions
+
+### `getMarket`
+
+Returns the address of the market deployed for a given `(asset, oracle, mu)` triple, or `address(0)` if no such market exists yet.
+
+<ParamField path="asset" type="address" required>
+  The ERC-20 token address used as collateral for the market.
+</ParamField>
+
+<ParamField path="oracle" type="address" required>
+  The oracle contract address that supplies the external reference price.
+</ParamField>
+
+<ParamField path="mu" type="uint24" required>
+  The drift parameter (μ) expressed in basis-point-like units that governs the funding rate dynamics of the market.
+</ParamField>
+
+```solidity
+address market = factory.getMarket(asset, oracle, mu);
+if (market == address(0)) {
+    // market has not been deployed yet
+}
+```
+
+---
+
+### `createMarket`
+
+Deploys a new market together with its paired receiver and payer pools. Reverts if the market already exists or if any parameter fails validation.
+
+<ParamField path="asset" type="IERC20" required>
+  The ERC-20 collateral token. Must be a non-zero address.
+</ParamField>
+
+<ParamField path="oracle" type="INullV1Oracle" required>
+  The price oracle for the market. Must be a non-zero address.
+</ParamField>
+
+<ParamField path="mu" type="uint24" required>
+  The drift parameter μ. Must fall within the protocol-accepted range; values outside that range revert with `InvalidMu`.
+</ParamField>
+
+Returns `INullV1Market market` — the address of the freshly deployed market contract.
+
+<Note>
+  `createMarket` is permissionless. Any address can deploy a new market for a valid `(asset, oracle, mu)` triple, making integration straightforward for new asset pairs.
+</Note>
+
+```solidity
+INullV1Market market = factory.createMarket(
+    IERC20(assetAddress),
+    INullV1Oracle(oracleAddress),
+    mu
+);
+```
+
+---
+
+## Events
+
+### `MarketCreated`
+
+Emitted once when a new market is successfully deployed.
+
+<ResponseField name="asset" type="address (indexed)">
+  The ERC-20 collateral token address for the new market.
+</ResponseField>
+
+<ResponseField name="oracle" type="address (indexed)">
+  The oracle contract address assigned to this market.
+</ResponseField>
+
+<ResponseField name="mu" type="uint24 (indexed)">
+  The drift parameter used to configure the market's funding rate.
+</ResponseField>
+
+<ResponseField name="market" type="address">
+  The address of the newly deployed `INullV1Market` contract.
+</ResponseField>
+
+<ResponseField name="receiverPool" type="address">
+  The ERC-4626 pool contract for the receiver (long funding) side.
+</ResponseField>
+
+<ResponseField name="payerPool" type="address">
+  The ERC-4626 pool contract for the payer (short funding) side.
+</ResponseField>
+
+```solidity
+// Listen for new markets across all assets and oracles
+factory.on("MarketCreated", (asset, oracle, mu, market, receiverPool, payerPool) => {
+    console.log("New market deployed at", market);
+});
+```
+
+---
+
+## Errors
+
+| Error | Description |
+|---|---|
+| `ZeroAsset()` | The `asset` argument is the zero address. |
+| `ZeroOracle()` | The `oracle` argument is the zero address. |
+| `InvalidMu(uint24 mu)` | The `mu` value is outside the accepted protocol range. |
+| `MarketExists(address asset, address oracle, uint24 mu)` | A market for this exact triple has already been deployed. |
+
+---
+
+## Usage Pattern: Discover or Create
+
+A common integration pattern is to try `getMarket` first and fall back to `createMarket` if the market does not exist yet.
+
+<CodeGroup>
+
+```solidity Solidity
+INullV1Factory factory = INullV1Factory(FACTORY_ADDRESS);
+
+address existing = factory.getMarket(asset, oracle, mu);
+
+INullV1Market market;
+if (existing != address(0)) {
+    market = INullV1Market(existing);
+} else {
+    market = factory.createMarket(
+        IERC20(asset),
+        INullV1Oracle(oracle),
+        mu
+    );
+}
+```
+
+```typescript TypeScript (viem)
+import { createPublicClient, http } from "viem";
+
+const market = await publicClient.readContract({
+  address: FACTORY_ADDRESS,
+  abi: factoryAbi,
+  functionName: "getMarket",
+  args: [assetAddress, oracleAddress, mu],
+});
+
+if (market === "0x0000000000000000000000000000000000000000") {
+  // Deploy a new market via the router or direct factory call
+  const hash = await walletClient.writeContract({
+    address: FACTORY_ADDRESS,
+    abi: factoryAbi,
+    functionName: "createMarket",
+    args: [assetAddress, oracleAddress, mu],
+  });
+}
+```
+
+</CodeGroup>
+
+<Tip>
+  Index `MarketCreated` events from the factory's deployment block to build a complete list of all live markets without repeatedly querying `getMarket` for every possible tuple.
+</Tip>

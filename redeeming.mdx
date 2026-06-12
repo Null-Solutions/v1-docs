@@ -1,0 +1,217 @@
+---
+title: "Redeeming Null V1 Pool Shares for Collateral"
+sidebarTitle: "Redeeming"
+description: "Convert your Null V1 receiver or payer pool shares back to collateral via the router, with slippage protection and automatic ERC-4626 unwrapping."
+---
+
+Redeeming turns your pool shares back into collateral. When you call `router.redeemMarket`, the protocol settles any outstanding funding payments and mark/index PnL for the current block, then burns your shares and returns the corresponding assets. The router handles ERC-4626 unwrapping automatically, so if the market's collateral is a yield-bearing token like waUSDC, you receive plain USDC without any extra steps.
+
+## Shares-in vs. assets-out
+
+Null V1 gives you two ways to exit a pool position:
+
+| Method | You specify | You receive |
+|---|---|---|
+| `redeemMarket` (router) | Exact share amounts | Asset amounts determined by pool state |
+| `pool.withdraw` (direct ERC-4626) | Exact asset amounts | Share amounts determined by pool state |
+
+For most users the router's `redeemMarket` function is the right choice. You burn a precise number of shares and accept whatever assets the pool's current rate implies, subject to the slippage floor you set. Use `pool.withdraw` directly when you need to receive an exact asset amount (for example, to repay a precise loan).
+
+## Previewing assets before you redeem
+
+Call `previewRedeem` on the pool contract to estimate how many assets you will receive for a given number of shares. The preview accounts for the exit fee, so it reflects the actual amount that will land in your wallet.
+
+```ts
+const receiverPool = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, provider);
+const payerPool    = new ethers.Contract(payerPoolAddress,    nullV1PoolAbi, provider);
+
+const estimatedReceiverAssets = await receiverPool.previewRedeem(receiverShares);
+const estimatedPayerAssets    = await payerPool.previewRedeem(payerShares);
+```
+
+<Note>
+`previewRedeem` deducts the exit fee before returning the estimate. The assets you receive will be less than a fee-free calculation would suggest. See [Fees](/fees) for the exit fee constants and how to read the current fee values.
+</Note>
+
+## Slippage protection
+
+Set `minReceiverAssets` and `minPayerAssets` to establish a floor on the assets you are willing to accept. If the pool rate has moved against you between your simulation and the on-chain execution, the router reverts rather than giving you less than you specified.
+
+```ts
+const slippageBps = 50n; // 0.5% tolerance
+
+const minReceiverAssets = estimatedReceiverAssets * (10_000n - slippageBps) / 10_000n;
+const minPayerAssets    = estimatedPayerAssets    * (10_000n - slippageBps) / 10_000n;
+```
+
+When slippage is exceeded, the router reverts with a typed error:
+
+- `SlippageReceiverAssets(expected, actual)` — receiver pool would have returned fewer assets than `minReceiverAssets`.
+- `SlippagePayerAssets(expected, actual)` — payer pool would have returned fewer assets than `minPayerAssets`.
+
+<Warning>
+Passing `minReceiverAssets = 0` or `minPayerAssets = 0` disables slippage protection for that pool. Only do this in test environments or automated scripts where you have independently validated the pool rate.
+</Warning>
+
+## Deadline
+
+The `deadline` parameter is a Unix timestamp in seconds. The router reverts with `TransactionTooOld(deadline)` if the transaction is mined after the deadline. This prevents your redemption from sitting in the mempool and executing at a stale, unfavorable rate.
+
+```ts
+// Expire after 5 minutes
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 5 * 60);
+```
+
+## Redeeming into a single pool
+
+You can redeem from the receiver pool, the payer pool, or both in one call. To exit only one pool, set the other pool's share amount and minimum assets to zero.
+
+```ts
+// Redeem only from the receiver pool
+const receiverShares = myReceiverShares;
+const payerShares    = 0n;
+const minReceiverAssets = estimatedReceiverAssets * 9950n / 10_000n;
+const minPayerAssets    = 0n;
+```
+
+## Oracle update data
+
+Like deposits, redemptions may require a fresh price payload for push-oracle markets. Pass `[]` for static oracles, or supply a signed update for push oracles such as Pyth.
+
+```ts
+// Static oracle — no update needed
+const updateData = [];
+
+// Push oracle — fetch fresh attestation
+const updateData = await pythConnection.getPriceFeedsUpdateData([priceFeedId]);
+```
+
+## ERC-4626 collateral (automatic unwrapping)
+
+When the market's collateral is a yield-bearing ERC-4626 token (for example waUSDC), the router unwraps it back to the underlying asset (USDC) before transferring funds to you. The flow is:
+
+1. The router burns your shares and retrieves waUSDC from the pool.
+2. The router unwraps waUSDC → USDC.
+3. USDC arrives in your wallet.
+
+For plain ERC-20 collateral markets there is no unwrapping — you receive the collateral token directly.
+
+## State update on redemption
+
+Every call to `redeemMarket` triggers an on-chain state update for the market: funding payments are accrued and any mark/index price divergence is settled for all open positions before shares are converted. This means the assets you receive reflect the most current pool value, not a snapshot from a previous block.
+
+## Full redemption example
+
+<Tabs>
+  <Tab title="ethers.js">
+```ts
+import { ethers } from "ethers";
+
+const provider = new ethers.JsonRpcProvider(RPC_URL);
+const signer   = await provider.getSigner();
+
+const router       = new ethers.Contract(ROUTER_ADDRESS,  nullV1RouterAbi, signer);
+const receiverPool  = new ethers.Contract(RECEIVER_POOL, nullV1PoolAbi,   provider);
+
+// Shares to redeem
+const receiverShares = await receiverPool.balanceOf(await signer.getAddress());
+const payerShares    = 0n; // not redeeming from payer
+
+// Preview and apply 0.5% slippage tolerance
+const estimatedAssets   = await receiverPool.previewRedeem(receiverShares);
+const minReceiverAssets = estimatedAssets * 9950n / 10_000n;
+const minPayerAssets    = 0n;
+
+// Approve router to transfer shares on your behalf
+await receiverPool.approve(ROUTER_ADDRESS, receiverShares);
+
+const deadline   = BigInt(Math.floor(Date.now() / 1000) + 300);
+const updateData = []; // static oracle
+
+const tx = await router.redeemMarket(
+  MARKET_ADDRESS,
+  receiverShares,
+  payerShares,
+  minReceiverAssets,
+  minPayerAssets,
+  deadline,
+  updateData
+);
+
+const receipt = await tx.wait();
+console.log("Redemption confirmed in block", receipt.blockNumber);
+```
+  </Tab>
+  <Tab title="Solidity">
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {INullV1Router} from "./interfaces/INullV1Router.sol";
+import {INullV1Market} from "./interfaces/INullV1Market.sol";
+import {INullV1Pool}   from "./interfaces/INullV1Pool.sol";
+
+contract RedeemExample {
+    INullV1Router public immutable router;
+
+    constructor(address _router) {
+        router = INullV1Router(_router);
+    }
+
+    function redeemAll(
+        INullV1Market market,
+        uint256 minReceiverAssets,
+        uint256 minPayerAssets,
+        uint256 deadline,
+        bytes[] calldata updateData
+    ) external returns (uint256 receiverAssets, uint256 payerAssets) {
+        INullV1Pool receiverPool = market.receiverPool();
+        INullV1Pool payerPool    = market.payerPool();
+
+        uint256 receiverShares = receiverPool.balanceOf(msg.sender);
+        uint256 payerShares    = payerPool.balanceOf(msg.sender);
+
+        // Transfer shares to this contract so the router can burn them
+        if (receiverShares > 0) receiverPool.transferFrom(msg.sender, address(this), receiverShares);
+        if (payerShares    > 0) payerPool.transferFrom(msg.sender, address(this), payerShares);
+
+        // Approve the router
+        if (receiverShares > 0) receiverPool.approve(address(router), receiverShares);
+        if (payerShares    > 0) payerPool.approve(address(router), payerShares);
+
+        (receiverAssets, payerAssets) = router.redeemMarket(
+            market,
+            receiverShares,
+            payerShares,
+            minReceiverAssets,
+            minPayerAssets,
+            deadline,
+            updateData
+        );
+
+        // Forward collateral to the original caller
+        IERC20 asset = market.asset();
+        asset.transfer(msg.sender, receiverAssets + payerAssets);
+    }
+}
+```
+  </Tab>
+</Tabs>
+
+## Direct ERC-4626 redemption (advanced)
+
+You can bypass the router and call the pool's ERC-4626 functions directly. Use `redeem` when you know the exact share count, or `withdraw` when you need a precise asset amount.
+
+```ts
+const pool = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, signer);
+
+// Redeem by shares
+const assets = await pool.redeem(shares, receiverAddress, ownerAddress);
+
+// Withdraw by assets
+const sharesBurned = await pool.withdraw(assets, receiverAddress, ownerAddress);
+```
+
+<Tip>
+Direct ERC-4626 calls skip the router's slippage checks and deadline enforcement. If you go this route, add your own guards or use a private RPC endpoint to reduce the risk of front-running.
+</Tip>

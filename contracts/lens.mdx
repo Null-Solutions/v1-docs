@@ -1,0 +1,224 @@
+---
+title: "NullV1Lens: Read-Only Market Previews"
+sidebarTitle: "Lens"
+description: "NullV1Lens delivers read-only market state previews and price simulations for UIs and indexers, including WAD-scaled funding APR, with no state mutation."
+---
+
+The `NullV1Lens` contract is a read-only utility designed for off-chain consumers: frontends, indexers, analytics dashboards, and automated monitoring bots. Its functions compute the current or hypothetical market state without submitting any state-changing transaction. This means you can call Lens methods via `eth_call` at zero gas cost and receive rich data — pool balances, share price, total supply, and annualised funding rate — in a single RPC request. When you want to display live market conditions or model the impact of a hypothetical oracle price, Lens is the right tool.
+
+## Data Structures
+
+### `MarketState`
+
+A snapshot of the raw market state at a given oracle price.
+
+<ResponseField name="timestamp" type="uint256">
+  The block timestamp of the last on-chain state update (or the simulated timestamp for `simulateState`).
+</ResponseField>
+
+<ResponseField name="receiverPool" type="uint256">
+  Total assets attributed to the receiver pool after PnL settlement at the given price.
+</ResponseField>
+
+<ResponseField name="payerPool" type="uint256">
+  Total assets attributed to the payer pool after PnL settlement at the given price.
+</ResponseField>
+
+<ResponseField name="price" type="uint256">
+  The oracle price used to compute this state, in the oracle's native precision.
+</ResponseField>
+
+<ResponseField name="protocolFees" type="uint256">
+  Cumulative uncollected protocol fees at the time of the snapshot.
+</ResponseField>
+
+<ResponseField name="sharePrice" type="uint256">
+  The internal share price (WAD-scaled, 1e18 = 1.0) computed at this state.
+</ResponseField>
+
+---
+
+### `SimulateResponse`
+
+An extended response that bundles market state with liquidity and funding metrics.
+
+<ResponseField name="state" type="MarketState">
+  The full `MarketState` struct as described above.
+</ResponseField>
+
+<ResponseField name="totalAssets" type="uint256">
+  The combined assets across both pools (receiver + payer), representing the total value locked in the market.
+</ResponseField>
+
+<ResponseField name="receiverTotalSupply" type="uint256">
+  The current total share supply of the receiver pool ERC-20 token.
+</ResponseField>
+
+<ResponseField name="payerTotalSupply" type="uint256">
+  The current total share supply of the payer pool ERC-20 token.
+</ResponseField>
+
+<ResponseField name="fundingApr" type="uint256">
+  The annualised funding rate expressed as a WAD-scaled value. `1e18` represents 100% APR. For example, `5e16` represents 5% APR.
+</ResponseField>
+
+<Note>
+  `fundingApr` is WAD-scaled: divide by `1e18` and multiply by 100 to express it as a human-readable percentage. A value of `5e16` means 5% annualised funding.
+</Note>
+
+---
+
+## Functions
+
+### `previewState`
+
+Returns the current `MarketState` computed from the market's last settled oracle price. No oracle update is performed — this is a pure read of the existing on-chain state.
+
+<ParamField path="market" type="address" required>
+  The address of the `INullV1Market` contract to inspect.
+</ParamField>
+
+Returns `MarketState memory` — a snapshot of the current market state.
+
+```solidity
+NullV1Lens.MarketState memory ms = lens.previewState(marketAddress);
+console.log("Current share price:", ms.sharePrice); // WAD-scaled
+```
+
+---
+
+### `simulateState`
+
+Computes a hypothetical `MarketState` as if the oracle had reported `externalPrice` right now. Useful for modelling the effect of price movements on pool balances without waiting for a real oracle update.
+
+<ParamField path="market" type="address" required>
+  The address of the market to simulate.
+</ParamField>
+
+<ParamField path="externalPrice" type="uint256" required>
+  The hypothetical oracle price to use, expressed in the oracle's native precision.
+</ParamField>
+
+Returns `MarketState memory` — the simulated market state at the given price.
+
+```solidity
+// How would the market look if the price dropped 10%?
+uint256 simulatedPrice = currentPrice * 90 / 100;
+NullV1Lens.MarketState memory ms = lens.simulateState(marketAddress, simulatedPrice);
+```
+
+---
+
+### `previewMarket`
+
+Returns a full `SimulateResponse` for the market at its current settled price, including total assets, pool supplies, and the live funding APR. This is the single most useful call for building a market dashboard.
+
+<ParamField path="market" type="address" required>
+  The address of the market to preview.
+</ParamField>
+
+Returns `SimulateResponse memory` containing state, total assets, supplies, and `fundingApr`.
+
+---
+
+### `simulateMarket`
+
+Returns a full `SimulateResponse` computed at a hypothetical oracle price. Combine this with `previewMarket` to show users how changing market conditions would affect funding rates and pool balances.
+
+<ParamField path="market" type="address" required>
+  The address of the market to simulate.
+</ParamField>
+
+<ParamField path="price" type="uint256" required>
+  The hypothetical oracle price to evaluate, in the oracle's native precision.
+</ParamField>
+
+Returns `SimulateResponse memory` with all fields populated for the simulated price.
+
+---
+
+## Reading Funding APR
+
+The snippet below demonstrates a complete off-chain workflow: fetch the current market data, decode `fundingApr`, and format it for display.
+
+<CodeGroup>
+
+```solidity Solidity
+NullV1Lens lens = NullV1Lens(LENS_ADDRESS);
+
+NullV1Lens.SimulateResponse memory resp = lens.previewMarket(marketAddress);
+
+// fundingApr is WAD-scaled: 1e18 == 100%
+// To express as basis points: fundingApr * 10_000 / 1e18
+uint256 aprBps = resp.fundingApr * 10_000 / 1e18;
+```
+
+```typescript TypeScript (viem)
+import { createPublicClient, http, formatUnits } from "viem";
+
+const resp = await publicClient.readContract({
+  address: LENS_ADDRESS,
+  abi: lensAbi,
+  functionName: "previewMarket",
+  args: [marketAddress],
+});
+
+// fundingApr is WAD-scaled (1e18 = 100%)
+const fundingAprPercent = Number(formatUnits(resp.fundingApr, 18)) * 100;
+
+console.log(`Funding APR: ${fundingAprPercent.toFixed(2)}%`);
+console.log(`Receiver pool assets: ${formatUnits(resp.state.receiverPool, 18)}`);
+console.log(`Payer pool assets:    ${formatUnits(resp.state.payerPool, 18)}`);
+console.log(`Total TVL:            ${formatUnits(resp.totalAssets, 18)}`);
+```
+
+```typescript TypeScript (ethers)
+import { ethers } from "ethers";
+
+const lens = new ethers.Contract(LENS_ADDRESS, lensAbi, provider);
+const resp = await lens.previewMarket(marketAddress);
+
+const fundingAprPercent =
+  (Number(resp.fundingApr) / 1e18) * 100;
+
+console.log(`Funding APR: ${fundingAprPercent.toFixed(2)}%`);
+```
+
+</CodeGroup>
+
+---
+
+## Simulating Price Impact
+
+Use `simulateMarket` to power an interactive price impact chart or a liquidation threshold calculator without touching on-chain state.
+
+```typescript TypeScript (viem)
+// Sweep across a range of prices and compute funding APR at each point
+const priceSteps = [0.8, 0.9, 1.0, 1.1, 1.2].map(
+  (multiplier) => BigInt(Math.round(currentPrice * multiplier))
+);
+
+const simulations = await Promise.all(
+  priceSteps.map((p) =>
+    publicClient.readContract({
+      address: LENS_ADDRESS,
+      abi: lensAbi,
+      functionName: "simulateMarket",
+      args: [marketAddress, p],
+    })
+  )
+);
+
+simulations.forEach((sim, i) => {
+  const aprPct = (Number(sim.fundingApr) / 1e18) * 100;
+  console.log(`Price ×${priceSteps[i]}: APR = ${aprPct.toFixed(2)}%`);
+});
+```
+
+<Tip>
+  Lens functions are ideal candidates for [multicall](https://github.com/mds1/multicall) batching. Bundle `previewMarket` calls for every market in a single RPC request to build a complete market overview page with a single network round-trip.
+</Tip>
+
+<Note>
+  Lens reads are based on the last settled on-chain state. For markets with push-based oracles (Pyth, Chainlink Data Streams), the displayed state may lag the live oracle price by one block or one update cycle. Use `simulateMarket` with the latest off-chain price to show the most up-to-date projection while the on-chain state catches up.
+</Note>
