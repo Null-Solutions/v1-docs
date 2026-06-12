@@ -14,9 +14,8 @@ These three parameters are set at market creation and can never be changed. They
 
 <ParamField path="asset" type="address" required>
   The ERC-20 token used as collateral in this market. All deposits, withdrawals,
-  and pool balances are denominated in this token. For yield-bearing markets the
-  asset should be a non-rebasing ERC-4626 wrapper (e.g. `waUSDC`). See
-  [Collateral](/markets/collateral) for supported types.
+  and pool balances are denominated in this token. See [Collateral](/markets/collateral)
+  for integration notes.
 </ParamField>
 
 <ParamField path="oracle" type="address" required>
@@ -66,15 +65,6 @@ Fee values are set by the protocol owner and can be updated post-deployment, sub
   Maximum value: **500 bp (5%)**. Exit fees are routed to the protocol owner
   and are not redistributed between the two pools.
 </ParamField>
-
-<ParamField path="yieldFee" type="uint16">
-  Protocol fee taken as a percentage of yield earned by the pools on
-  yield-bearing collateral. Expressed in **basis points**. Maximum value: **5000
-  bp (50%)**. Only relevant for markets using ERC-4626 yield-bearing assets; has
-  no effect on plain ERC-20 collateral markets.
-</ParamField>
-
----
 
 ## Understanding mu
 
@@ -185,5 +175,4 @@ address receiverPool = address(market.receiverPool()); // receiver LP pool
 address payerPool   = address(market.payerPool());    // payer LP pool
 uint16  entryFee    = market.entryFee();              // basis points
 uint16  exitFee     = market.exitFee();               // basis points
-uint16  yieldFee    = market.yieldFee();              // basis points
 ```

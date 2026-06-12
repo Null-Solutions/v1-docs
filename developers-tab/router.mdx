@@ -72,7 +72,7 @@ The router:
 
 1. checks `deadline`;
 2. optionally updates the market oracle;
-3. pulls market assets from the caller;
+3. pulls market assets from the caller, wrapping ERC-4626 underlying when needed;
 4. deposits into the Receiver pool if `receiverAssets > 0`;
 5. deposits into the Payer pool if `payerAssets > 0`;
 6. verifies returned shares against `minReceiverShares` and `minPayerShares`.
@@ -104,7 +104,7 @@ The router:
 2. optionally updates the market oracle;
 3. redeems Receiver shares if `receiverShares > 0`;
 4. redeems Payer shares if `payerShares > 0`;
-5. pushes market assets to the caller;
+5. pushes market assets to the caller, unwrapping ERC-4626 market assets when needed;
 6. verifies returned assets against `minReceiverAssets` and `minPayerAssets`.
 
 If returned assets are below the provided minimums, the call reverts with:
@@ -116,21 +116,21 @@ SlippagePayerAssets(expected, actual)
 
 ## ERC-4626 market assets
 
-Some markets may use an ERC-4626 vault share as the market asset. The router detects this optimistically by calling `asset()` on the market asset.
+Core markets still hold the market asset directly. If that asset is an ERC-4626 vault share, the router improves the user path by accepting the vault underlying on deposit and returning the vault underlying on redemption.
 
 On deposit:
 
-1. the router pulls the vault's underlying token from the user;
-2. deposits the underlying into the ERC-4626 market asset;
+1. the router pulls the vault underlying from the user;
+2. deposits it into the ERC-4626 market asset;
 3. deposits the received market-asset shares into the selected Null pool.
 
 On redemption:
 
 1. the router redeems Null pool shares for market-asset shares;
-2. redeems those market-asset shares from the ERC-4626 vault;
+2. redeems those shares from the ERC-4626 vault;
 3. sends the underlying token to the user.
 
-If `asset()` is unavailable, the router treats the market asset as a plain ERC-20.
+If the market asset does not expose `asset()`, the router treats it as a plain ERC-20.
 
 ## Deadlines
 
@@ -146,9 +146,7 @@ Use short deadlines for user-facing transactions so stale quotes do not execute 
 
 ## Approvals
 
-For plain ERC-20 market assets, users approve the router to spend the market asset.
-
-For ERC-4626 market assets, users approve the router to spend the underlying asset. The router handles wrapping into the market asset before depositing into Null pools.
+For plain ERC-20 markets, users approve the router to spend the market asset. For ERC-4626 market assets, users approve the router to spend the vault underlying.
 
 ## Operational notes
 

@@ -4,7 +4,7 @@ sidebarTitle: "Market"
 description: "NullV1Market is the core accounting authority that holds collateral, tracks pool balances, settles oracle prices, and distributes protocol fees."
 ---
 
-The `INullV1Market` contract sits at the heart of every Null V1 market. It owns the collateral deposited across both the Receiver and Payer pools, maintains the authoritative on-chain state (balances, oracle price, share price, and accrued fees), and enforces the fee schedule. Both pools call back into the market to synchronize state before every mutating operation. You will rarely call the market directly as an end-user, but understanding its interface is essential when building integrations, dashboards, or automated fee-collection bots.
+The `INullV1Market` contract sits at the heart of every Null V1 market. It owns the collateral deposited across both the Receiver and Payer pools, maintains the authoritative on-chain state, and enforces the fee schedule. Both pools call back into the market to synchronize state before every mutating operation. You will rarely call the market directly as an end-user, but understanding its interface is essential when building integrations and dashboards.
 
 <Note>
 For the update sequence and integration implications, read [Market update](/developers-tab/market-update). This page is the function and event reference.
@@ -28,16 +28,12 @@ Returns a snapshot of the full market state at the current block. Calling this f
   The total assets attributed to the Payer pool after settlement.
 </ResponseField>
 
+<ResponseField name="protocolFees" type="uint256">
+  Protocol-owned assets accounted outside Receiver/Payer settlement.
+</ResponseField>
+
 <ResponseField name="price" type="uint256">
   The oracle price used in the most recent state update, expressed in the oracle's native precision.
-</ResponseField>
-
-<ResponseField name="protocolFees" type="uint256">
-  Accumulated but not yet collected protocol fees denominated in the collateral token.
-</ResponseField>
-
-<ResponseField name="sharePrice" type="uint256">
-  The internal share price (WAD-scaled, 1e18 = 1.0) computed at the last state update.
 </ResponseField>
 
 ```solidity
@@ -45,17 +41,10 @@ Returns a snapshot of the full market state at the current block. Calling this f
     uint256 timestamp,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
-    uint256 price,
     uint256 protocolFees,
-    uint256 sharePrice
+    uint256 price
 ) = market.state();
 ```
-
----
-
-### `currentSharePrice()`
-
-Returns the live share price computed from the latest oracle reading without requiring a full state update transaction. Use this for read-only pricing in UIs and keepers.
 
 ---
 
@@ -74,31 +63,25 @@ Returns the live share price computed from the latest oracle reading without req
 
 ## Fees
 
-Null V1 markets collect three distinct fees, each capped by a protocol-enforced maximum. All fee values are expressed in basis points (1 bp = 0.01%).
+Null V1 markets collect entry, exit, and collateral fees, each capped by a protocol-enforced maximum. All fee values are expressed in basis points (1 bp = 0.01%).
 
 | Accessor | Constant cap | Maximum |
 |---|---|---|
 | `entryFee()` | `MAX_ENTRY_FEE` | 500 bp (5%) |
 | `exitFee()` | `MAX_EXIT_FEE` | 500 bp (5%) |
-| `yieldFee()` | `MAX_YIELD_FEE` | 5000 bp (50%) |
+| `collateralFee()` | `MAX_COLLATERAL_FEE` | 500 bp (5% annualized) |
 
 <Note>
-  `updateFees()` is restricted to the protocol owner. If any other address calls it, the transaction reverts with `NotProtocolOwner(address caller, address protocolOwner)`.
+  `updateFees()` and `sweepFees()` are restricted to the protocol owner. If any other address calls either function, the transaction reverts with `NotProtocolOwner(address caller, address protocolOwner)`.
 </Note>
 
-### `collectFees()`
+### `sweepFees()`
 
-Transfers all accrued protocol fees from the market to the protocol owner and returns the collected amount. Anyone may call this function — there is no access restriction — making it straightforward for off-chain keepers to trigger collection.
+Transfers accrued `protocolFees` from the market to the protocol owner and returns the amount swept. Entry and exit fees are transferred immediately when deposits and redemptions are recorded; collateral fees accrue during state updates until this function is called.
 
 ```solidity
-uint256 collected = market.collectFees();
+uint256 swept = market.sweepFees();
 ```
-
-<Tip>
-  Monitor the `protocolFees` field returned by `state()` and trigger `collectFees()` when the balance crosses a meaningful threshold to avoid large single transfers and simplify accounting.
-</Tip>
-
----
 
 ## Events
 
@@ -118,19 +101,13 @@ Emitted each time the market's internal state is refreshed, typically triggered 
   The payer pool's total assets after the update.
 </ResponseField>
 
-<ResponseField name="price" type="uint256">
-  The oracle price used for this state update.
-</ResponseField>
-
 <ResponseField name="protocolFees" type="uint256">
   The cumulative uncollected protocol fees as of this update.
 </ResponseField>
 
-<ResponseField name="sharePrice" type="uint256">
-  The share price (WAD-scaled) computed during this update.
+<ResponseField name="price" type="uint256">
+  The oracle price used for this state update.
 </ResponseField>
-
----
 
 ### `FeesUpdated`
 
@@ -144,15 +121,13 @@ Emitted when the protocol owner changes the market's fee schedule.
   The new exit fee in basis points.
 </ResponseField>
 
-<ResponseField name="yieldFee" type="uint16">
-  The new yield fee in basis points.
+<ResponseField name="collateralFee" type="uint16">
+  The new annualized collateral fee in basis points.
 </ResponseField>
-
----
 
 ### `FeesCollected`
 
-Emitted when accrued protocol fees are swept out of the market.
+Emitted when protocol fees are transferred out of the market.
 
 <ResponseField name="fee" type="uint256">
   The total amount of collateral token transferred to the protocol owner.
@@ -164,7 +139,7 @@ Emitted when accrued protocol fees are swept out of the market.
 
 | Error | Trigger condition |
 |---|---|
-| `NotProtocolOwner(address caller, address protocolOwner)` | A restricted function (e.g. `updateFees`) was called by an address that is not the protocol owner. |
+| `NotProtocolOwner(address caller, address protocolOwner)` | A restricted function (e.g. `updateFees` or `sweepFees`) was called by an address that is not the protocol owner. |
 | `ZeroAsset()` | The market was initialised with a zero asset address (deployment-time guard). |
 | `ZeroOraclePrice()` | The oracle returned a zero price during a state update. |
 | `InvalidFee(uint256 fee, uint256 maxFee)` | A proposed fee value exceeds the corresponding maximum constant. |

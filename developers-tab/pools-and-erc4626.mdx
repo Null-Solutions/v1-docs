@@ -36,7 +36,7 @@ function market() external view returns (INullV1Market);
 
 ```solidity
 function totalAssets() public view returns (uint256) {
-    (, uint256 receiverPoolAssets, uint256 payerPoolAssets,,,) = _market.state();
+    (, uint256 receiverPoolAssets, uint256 payerPoolAssets,,) = _market.state();
     return _poolAssetsForKind(receiverPoolAssets, payerPoolAssets);
 }
 ```
@@ -128,8 +128,7 @@ Router calls are best when:
 
 - you want to deposit or redeem both sides in one transaction;
 - you need deadline and slippage checks;
-- the market uses an updatable oracle and needs `updateData`;
-- the market asset is an ERC-4626 vault share and users interact in the underlying asset.
+- the market uses an updatable oracle and needs `updateData`.
 
 ## API reference
 

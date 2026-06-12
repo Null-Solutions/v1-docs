@@ -24,7 +24,7 @@ Use `NullV1Lens.previewMarket` as the single source of truth for all live market
 
 ```solidity
 struct SimulateResponse {
-    MarketState state; // {timestamp, receiverPool, payerPool, price, protocolFees, sharePrice}
+    MarketState state; // {timestamp, receiverPool, payerPool, protocolFees, price}
     uint256 totalAssets;
     uint256 receiverTotalSupply;
     uint256 payerTotalSupply;
@@ -63,7 +63,6 @@ async function fetchMarketState(market: string) {
   return {
     receiverPoolAssets: response.state.receiverPool,
     payerPoolAssets:    response.state.payerPool,
-    sharePrice:         response.state.sharePrice,
     fundingAprPct,      // percentage, e.g. 3.00
     priceHuman,         // human-readable price
     receiverTotalSupply: response.receiverTotalSupply,
@@ -91,7 +90,6 @@ async function fetchMarketState(market: string) {
   return {
     receiverPoolAssets:  response.state.receiverPool,
     payerPoolAssets:     response.state.payerPool,
-    sharePrice:          response.state.sharePrice,
     fundingAprPct,
     receiverTotalSupply: response.receiverTotalSupply,
     payerTotalSupply:    response.payerTotalSupply,
@@ -149,7 +147,7 @@ async function getUserValue(
 }
 ```
 
-If the market uses **ERC-4626 collateral**, the pool balances are in wrapper token units. To display the value in underlying terms, multiply by the wrapper's conversion rate:
+If the market asset is an **ERC-4626 vault share**, the pool balances are in wrapper token units. To display the value in underlying terms, multiply by the wrapper's conversion rate:
 
 ```typescript
 const wrapperRate = await wrapper.convertToAssets(BigInt(1e18)); // rate per 1e18 shares
@@ -271,7 +269,6 @@ Cache these values on page load — they are static per market and incur no mean
 | Value | Scale | Display Conversion |
 |---|---|---|
 | `state.price` | 1e36 | `price / 1e36` |
-| `state.receiverPool` / `state.payerPool` | Collateral token units | Multiply by `convertToAssets(1e18) / 1e18` for ERC-4626 collateral |
-| `state.sharePrice` | Collateral token units | Display directly or convert for ERC-4626 |
+| `state.receiverPool` / `state.payerPool` | Collateral token units | Multiply by `convertToAssets(1e18) / 1e18` for ERC-4626 market assets |
 | `fundingApr` | WAD (1e18 = 100%) | `fundingApr / 1e18 * 100` → `%` string |
 | `pool.balanceOf(user)` | Share token units | Pass to `previewRedeem` for collateral value |

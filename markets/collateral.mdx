@@ -1,16 +1,16 @@
 ---
-title: "Collateral Types for Null V1 Markets"
+title: "Collateral for Null V1 Markets"
 sidebarTitle: "Collateral"
-description: "Explore supported collateral types in Null V1: plain ERC-20 tokens, ERC-4626 yield-bearing wrappers, and why rebasing tokens require wrapping."
+description: "Understand how Null V1 markets use ERC-20 collateral and reconcile actual token balances."
 ---
 
-Null V1 markets accept two categories of collateral: plain ERC-20 tokens and non-rebasing ERC-4626 yield-bearing wrappers. The distinction matters because the protocol tracks pool balances in the units of whatever token is deposited — if that token accrues value internally (as ERC-4626 wrappers do), both pool participants passively earn the underlying yield on top of their funding cashflows. Choosing the right collateral type for your market affects everything from user experience to the net APR arithmetic, so this page walks through both options and their tradeoffs.
+Null V1 markets use one ERC-20 token as collateral. The factory accepts the market asset address at creation, and all core deposits, redemptions, pool balances, fees, and settlement transfers are denominated in that token.
 
 ---
 
-## Plain ERC-20 Collateral
+## ERC-20 Collateral
 
-Any standard ERC-20 token can serve as collateral for a Null V1 market. There is no whitelist — the factory accepts any non-zero address. Plain ERC-20 collateral markets are the simplest to reason about: pool balances are static (they do not grow unless funding is accruing), and the oracle price is the only thing that shifts economics over time.
+Any standard ERC-20 token can serve as collateral for a Null V1 market. There is no whitelist in the factory beyond the non-zero address check. Integrators should still choose assets carefully: decimals, transfer behavior, rebasing behavior, and external risk all affect user experience.
 
 <CardGroup cols={2}>
   <Card title="Examples" icon="coins">
@@ -18,106 +18,49 @@ Any standard ERC-20 token can serve as collateral for a Null V1 market. There is
     - WETH
     - DAI
     - WBTC
-    - Any non-rebasing ERC-20
+    - Yield-bearing ERC-20s that expose balance changes through `balanceOf`
   </Card>
   <Card title="Characteristics" icon="list-check">
     - Pool balances denominated in token units
-    - No passive yield for LPs
-    - `yieldFee` has no effect
-    - Simplest integration path
+    - Direct pool calls use the market asset
+    - Router calls can wrap/unwrap ERC-4626 market assets
+    - Actual balance changes are reconciled before pool actions
+    - No core collateral share-price accounting
   </Card>
 </CardGroup>
 
 ---
 
-## ERC-4626 Yield-Bearing Wrappers
+## Balance Reconciliation
 
-When a market is created with an ERC-4626 compliant vault token as collateral, liquidity providers passively earn the vault's underlying yield on top of their funding cashflows. The protocol holds balances in **wrapper units** (also called "shares"), not in the underlying asset. Because the share price grows over time, the effective value of each LP's position increases without any on-chain accounting changes in the protocol itself.
+Before every state-changing pool action, the market compares its actual token balance with the recorded Receiver and Payer pool balances. If the actual balance is higher, the external gain is allocated pro rata across both pools. If the actual balance is lower, the external loss is deducted pro rata.
 
-<CardGroup cols={2}>
-  <Card title="Examples" icon="coins">
-    - `waUSDC` (wrapped Aave USDC)
-    - `wstETH` (wrapped staked ETH)
-    - Any non-rebasing ERC-4626 vault
-  </Card>
-  <Card title="Characteristics" icon="list-check">
-    - Pool balances denominated in share units
-    - Passive yield accrues inside the token
-    - `yieldFee` takes a cut of yield for the protocol
-    - Oracle is unaffected by share price
-  </Card>
-</CardGroup>
-
-### How Yield-Bearing Collateral Works
-
-Because the protocol stores balances in wrapper (share) units rather than underlying asset units, yield accrues automatically:
-
-1. A user deposits `waUSDC` shares into a pool.
-2. The pool records the deposit in share units.
-3. Over time, each `waUSDC` share is redeemable for more USDC (the Aave lending yield accrues).
-4. When the user withdraws, they receive more USDC-equivalent value than they deposited — without any protocol-level accounting for the yield.
-
-<Note>
-  The oracle does not need to account for the share price of the wrapper. Null
-  V1 oracles price the **underlying asset** (e.g. AAPL in USD), not the wrapper
-  token. The wrapper's share-price growth is entirely separate from the oracle's
-  responsibility.
-</Note>
-
-### Net Carry for LPs in Yield-Bearing Markets
-
-With yield-bearing collateral, the net annual return for each side of the pool combines the wrapper's underlying yield with the funding cashflow:
-
-| Role | Net APR Formula |
-|------|----------------|
-| **Receiver LP** | `yieldAPR − fundingAPR` |
-| **Payer LP** | `yieldAPR + fundingAPR * E` |
-
-Where `fundingAPR = mu / 1_000_000 * E`, `E = receiverPool / payerPool`, and `yieldAPR` is the underlying yield of the ERC-4626 wrapper.
+This is how Null accounts for donations, rebases, fee-on-transfer effects, or other balance changes that happen outside explicit pool deposits and redemptions.
 
 <Tip>
-  For receiver LPs, yield-bearing collateral can partially or fully offset the
-  funding cost. For example, if `waUSDC` yields 5% and the funding rate is 3%,
-  the net cost to receivers is only 2%. Payers benefit even more: they earn both
-  yield and the amplified funding payment.
+  If the collateral token's `balanceOf(market)` grows over time, that growth is
+  reflected through reconciliation. The market does not track a collateral
+  share-price checkpoint.
 </Tip>
 
 ---
 
-## Rebasing Tokens Are Not Supported
+## Token Selection Risks
 
-Tokens that implement rebasing — where the holder's **balance** changes directly rather than through an exchange rate — are **not compatible** with Null V1. The protocol cannot correctly track pool balances when the token itself silently adjusts them.
-
-<Warning>
-  Do **not** use raw rebasing tokens as collateral (e.g. `aUSDC` from Aave v2,
-  `stETH` from Lido). The protocol will not function correctly because pool
-  share accounting assumes token balances only change through explicit
-  deposits and withdrawals.
-</Warning>
-
-### What to Do Instead
-
-Wrap the rebasing token in a non-rebasing ERC-4626 compatible vault before using it as collateral. Most major DeFi protocols provide official wrappers:
-
-| Rebasing Token | Non-Rebasing Wrapper |
-|---|---|
-| `aUSDC` (Aave v2) | `waUSDC` (Aave v3 wrapped) |
-| `stETH` (Lido) | `wstETH` (Lido wrapped) |
-| `aDAI` (Aave v2) | `waDAI` (Aave v3 wrapped) |
-
-The wrapper handles the rebase internally, exposing a stable balance interface to the protocol while preserving all the yield for token holders.
+Reconciliation keeps accounting tied to actual collateral, but it does not make every ERC-20 equally good collateral. Rebasing tokens, fee-on-transfer tokens, tokens with blacklists, and tokens with external strategy risk can change market outcomes in ways users need to understand.
 
 ---
 
 ## Depositing and Withdrawing
 
-The core pools accept the market asset directly. If the market asset is an ERC-4626 wrapper, direct pool callers deposit and withdraw wrapper shares.
+The core pools accept the market asset directly. If the market asset is an ERC-4626 vault share, direct pool callers deposit and withdraw vault shares.
+
+`NullV1Router` can make ERC-4626 markets easier for users: on deposit it accepts the vault underlying and wraps it into the market asset; on redemption it unwraps the market asset and returns the underlying.
 
 <Note>
-  The Null V1 Router improves the user path for ERC-4626 market assets. On
-  deposit, it can pull the underlying token, wrap it into the market asset, and
-  deposit the wrapper shares into the selected Null pool. On redemption, it can
-  unwrap the market asset and return the underlying token to the user.
+  Receiver and Payer positions are still ERC-4626-compatible pool shares. This
+  ERC-4626 behavior belongs to the Null pool tokens, not to the market
+  collateral asset.
 </Note>
 
 ---
@@ -125,16 +68,16 @@ The core pools accept the market asset directly. If the market asset is an ERC-4
 ## Choosing Collateral: Summary
 
 <CardGroup cols={2}>
-  <Card title="Use plain ERC-20 when..." icon="circle-check">
-    - The market does not need passive yield
+  <Card title="Use an asset when..." icon="circle-check">
+    - Users understand the collateral risk
     - You want the simplest possible integration
-    - The asset has no natural yield wrapper (e.g. WBTC)
-    - You want `yieldFee` to be a no-op
+    - The token has predictable transfer behavior
+    - The oracle and collateral denomination make sense together
   </Card>
-  <Card title="Use ERC-4626 wrapper when..." icon="circle-check">
-    - You want LPs to earn underlying yield (e.g. lending yield)
-    - You are building a stablecoin-denominated market on a yield-bearing stablecoin
-    - You want to partially offset the funding cost for receiver LPs
-    - The protocol taking a `yieldFee` is acceptable
+  <Card title="Be careful when..." icon="triangle-alert">
+    - Balances can rebase or change externally
+    - Transfers charge fees or have hooks
+    - The collateral relies on an external yield strategy
+    - The token has admin controls that can affect transfers
   </Card>
 </CardGroup>

@@ -9,34 +9,23 @@ A Null market updates before every deposit, mint, withdrawal, or redemption. Thi
 The market update has a fixed order:
 
 1. Validate the latest oracle price.
-2. Account for collateral share-price yield and any configured yield fee when yield tracking is enabled.
-3. Reconcile recorded pool balances against actual collateral.
-4. Compute funding and price settlement on the reconciled balances.
-5. Net the two legs into one transfer.
-6. Bound the transfer by available collateral.
-7. Store the new market state.
+2. Reconcile recorded pool balances against actual collateral.
+3. Compute funding and price settlement on the reconciled balances.
+4. Net the two legs into one transfer.
+5. Bound the transfer by available collateral.
+6. Store the new market state.
 
-<img src="/images/diagrams/market-update-sequence.svg" alt="Chart showing the Null V1 market update sequence: validate price, account for yield, reconcile collateral, compute settlement legs, net and bound the transfer, store state, then process the user action." style={{ width: "100%", maxWidth: "100%", height: "auto" }} />
+<img src="/images/diagrams/market-update-sequence.svg" alt="Chart showing the Null V1 market update sequence: validate price, reconcile collateral, compute settlement legs, net and bound the transfer, store state, then process the user action." style={{ width: "100%", maxWidth: "100%", height: "auto" }} />
 
 <Note>
 In words: the market becomes current first, then the user action happens. That means deposits, redemptions, mints, and withdrawals use up-to-date pool values.
 </Note>
-
-## Yield-fee accounting
-
-Some markets use wrapped yield-bearing collateral, such as an ERC-4626 vault share. In that case, the market's token unit balance may not grow when collateral earns yield. Instead, each collateral share becomes worth more underlying value.
-
-When share-price tracking is enabled, the market reads the current collateral share price before reconciliation. If the share price has increased, the market can charge the configured `yieldFee` on measured yield, deduct that fee pro rata from Receiver and Payer pool balances, and add it to `protocolFees`.
-
-This step happens before balance reconciliation, funding, and price settlement. If yield tracking is off, the step is skipped.
 
 ## Reconciliation
 
 Reconciliation asks one question: does the market actually hold the collateral it thinks it holds?
 
 The market has recorded Receiver and Payer balances. It also has an actual token balance. If the actual balance is higher than the recorded total, the difference may represent donations, rebases, direct token transfers, or other raw-balance gains. If it is lower, the difference is an external loss.
-
-For wrapped ERC-4626 collateral, ordinary collateral yield is handled through share-price accounting above rather than by assuming the market's raw token balance increased.
 
 The difference is allocated across Receiver and Payer in proportion to their recorded pool sizes.
 
@@ -125,4 +114,4 @@ Depositors enter after the latest price movement and funding have been reflected
 
 ## Summary
 
-The market update is deterministic: validate price, account for yield-fee/share-price changes when enabled, reconcile actual collateral, compute price movement and funding, net them, apply the solvency bound, and then process user actions. This order keeps pool shares tied to real collateral and prevents stale accounting.
+The market update is deterministic: validate price, reconcile actual collateral, compute price movement and funding, net them, apply the solvency bound, and then process user actions. This order keeps pool shares tied to real collateral and prevents stale accounting.

@@ -42,7 +42,7 @@ In words: users deposit collateral, receive pool shares, and the market update m
 Each market update does these important things:
 
 1. Validates the latest oracle price.
-2. Accounts for collateral share-price yield and any configured yield fee when yield tracking is enabled.
+2. Reconciles recorded pool balances against the collateral actually held by the market.
 3. Reconciles recorded pool balances against the actual collateral held by the market.
 4. Computes the reference asset return from the oracle price.
 5. Computes funding from Receiver to Payer.
