@@ -1,0 +1,24 @@
+---
+title: Receiver and Payer roles
+---
+flowchart LR
+  oracle["Oracle price"]
+  update["Market update<br/><small>settles price movement and funding</small>"]
+  receiver["Receiver pool<br/><small>gets reference return<br/>pays funding</small>"]
+  payer["Payer pool<br/><small>backs exposure<br/>receives funding</small>"]
+
+  oracle --> update
+  update --> receiver
+  update --> payer
+  payer -- price rises --> receiver
+  receiver -- price falls --> payer
+  receiver -. funding .-> payer
+
+  classDef dark fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
+  classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
+  classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;
+  classDef soft fill:#FFFFFF,color:#0B0E15,stroke:#DDE3EA,stroke-width:1px;
+  class update dark;
+  class receiver receiver;
+  class payer payer;
+  class oracle soft;
