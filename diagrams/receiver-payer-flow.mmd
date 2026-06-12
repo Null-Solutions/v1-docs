@@ -2,12 +2,13 @@
 title: Receiver and Payer roles
 ---
 flowchart LR
-  receiver["Receiver pool<br/><small>wants synthetic exposure</small>"]
-  payer["Payer pool<br/><small>supplies backing capital</small>"]
+  receiver(("Receiver<br/>pool"))
+  payer(("Payer<br/>pool"))
 
+  payer -- "backs exposure" --> receiver
   payer -- "price up" --> receiver
   receiver -- "price down" --> payer
-  receiver -- "funding" --> payer
+  receiver -- "funding payment" --> payer
 
   classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
   classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;

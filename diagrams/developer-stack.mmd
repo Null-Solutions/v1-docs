@@ -3,11 +3,11 @@ title: Developer stack
 ---
 flowchart LR
   app["App / bot / script<br/><small>Router writes, Lens reads</small>"]
-  receiver["Receiver pool<br/><small>ERC-4626 shares</small>"]
-  payer["Payer pool<br/><small>ERC-4626 shares</small>"]
+  receiver(("Receiver<br/>pool"))
+  payer(("Payer<br/>pool"))
 
-  app --> receiver
-  app --> payer
+  app -- "mint / redeem<br/>Receiver shares" --> receiver
+  app -- "mint / redeem<br/>Payer shares" --> payer
   receiver -- "market accounting" --> payer
   payer -- "market accounting" --> receiver
 
