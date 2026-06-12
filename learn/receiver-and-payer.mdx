@@ -8,8 +8,6 @@ A Null market has two sides: Receiver and Payer. They mirror the two sides of a 
 
 ## Market roles at a glance
 
-<img src="/images/diagrams/receiver-payer-flow.svg" alt="Diagram showing an oracle price updating the Null market, which settles value between the Receiver pool and Payer pool. Payer pays Receiver when price rises, Receiver pays Payer when price falls, and Receiver always pays funding to Payer." />
-
 <Note>
 In words: the oracle feeds the market update. Price movement can move value in either direction, but funding always flows from Receiver to Payer.
 </Note>
@@ -52,8 +50,6 @@ E = Receiver pool value / Payer pool value
 `E` measures how much Receiver exposure each unit of Payer capital backs.
 
 If the Receiver pool has 1,000 units and the Payer pool has 200 units, then `E = 5`. A 2% move in the reference asset changes Receiver value by about 2%, but it changes Payer value by about 10% before funding and caps, because the same value transfer lands in a smaller pool.
-
-<img src="/images/diagrams/exposure-ratio.svg" alt="Diagram showing an exposure ratio example where Receiver has 1,000 units, Payer has 200 units, E equals 5, and a 2% reference price move is a 2% impact to Receiver but a 10% impact to Payer before funding and caps." />
 
 <Note>
 In words: `E` is not just a formula. It tells you how concentrated Payer risk is and why Payer funding can be attractive when Receiver demand is high.

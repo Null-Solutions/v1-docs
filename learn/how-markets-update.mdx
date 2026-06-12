@@ -16,8 +16,6 @@ The market update has a fixed order:
 6. Bound the transfer by available collateral.
 7. Store the new market state.
 
-<img src="/images/diagrams/market-update-sequence.svg" alt="Diagram showing the Null V1 market update sequence: validate price, account for yield, reconcile collateral, compute funding and price settlement, net and bound the transfer, store state, and then process the user action." />
-
 <Note>
 In words: the market becomes current first, then the user action happens. That means deposits, redemptions, mints, and withdrawals use up-to-date pool values.
 </Note>
