@@ -2,9 +2,9 @@
 title: Market update sequence
 ---
 flowchart LR
-  receiver(("Receiver<br/>pool"))
-  update["Market update<br/><small>price, yield, funding, bounds</small>"]
-  payer(("Payer<br/>pool"))
+  receiver(("Receiver"))
+  update["Market update"]
+  payer(("Payer"))
 
   receiver -- "current assets" --> update
   payer -- "current assets" --> update

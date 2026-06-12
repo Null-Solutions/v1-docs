@@ -2,9 +2,9 @@
 title: Funding and carry
 ---
 flowchart LR
-  receiver(("Receiver<br/>pool"))
-  payer(("Payer<br/>pool"))
-  funding["Funding rate<br/><small>set by pool imbalance</small>"]
+  receiver(("Receiver"))
+  payer(("Payer"))
+  funding["Funding rate"]
 
   receiver -- "pays funding" --> payer
   funding -. "sets Receiver cost" .-> receiver
