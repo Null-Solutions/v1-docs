@@ -57,40 +57,27 @@
         ]
       },
       {
-        "tab": "Contracts",
-        "groups": [
-          {
-            "group": "Core",
-            "pages": [
-              "contracts/factory",
-              "contracts/market",
-              "contracts/pool"
-            ]
-          },
-          {
-            "group": "Periphery",
-            "pages": [
-              "contracts/router",
-              "contracts/lens"
-            ]
-          },
-          {
-            "group": "Oracles",
-            "pages": [
-              "contracts/oracles/overview",
-              "contracts/oracles/pyth",
-              "contracts/oracles/chainlink",
-              "contracts/oracles/uniswap-v3",
-              "contracts/oracles/base-fee"
-            ]
-          },
-          {
-            "group": "Integration",
-            "pages": [
-              "contracts/integration/indexer",
-              "contracts/integration/ui"
-            ]
-          }
+        "tab": "Learn",
+        "pages": [
+          "learn/overview.mdx"
+        ]
+      },
+      {
+        "tab": "Receive",
+        "pages": [
+          "receive/overview.mdx"
+        ]
+      },
+      {
+        "tab": "Pay",
+        "pages": [
+          "pay/overview.mdx"
+        ]
+      },
+      {
+        "tab": "Developers",
+        "pages": [
+          "developers-tab/overview.mdx"
         ]
       }
     ]
