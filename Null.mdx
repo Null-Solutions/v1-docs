@@ -1,14 +1,16 @@
 ---
 title: "Null V1"
 sidebarTitle: "Introduction"
-description: "Start with Null V1, a fully collateralized protocol for pooled oracle-referenced synthetic exposure."
+description: "Mint fully collateralized synthetic assets with immutable market rules, pooled backing, and optional yield-bearing collateral."
 ---
 
 # Null V1
 
-Null V1 is a non-custodial protocol for creating oracle-referenced synthetic exposure with pooled collateral. Each market has a Receiver pool and a Payer pool. Receivers get the reference asset return and pay funding. Payers back that exposure, receive funding, and take the opposite price risk.
+Null V1 lets anyone mint fully collateralized synthetic assets for any supported oracle price. A market is immutable once created: its collateral asset, oracle, and funding multiplier are fixed, so Receivers know exactly what rules govern their exposure.
 
-The core invariant is full collateralization. The protocol can redistribute collateral between pools, but it cannot create debt or an undercollateralized receivable.
+Receivers deposit collateral to mint ERC-4626 shares that track the reference asset return. If the collateral is yield-bearing, the position can also carry the collateral's base APR while paying funding. Payers supply the backing pool, earn that funding, and take the opposite price risk.
+
+Every gain is paid from collateral already inside the market. Null can redistribute value between Receiver and Payer pools, but it cannot create debt, liquidate users, or mint an undercollateralized claim.
 
 ## Choose your path
 
