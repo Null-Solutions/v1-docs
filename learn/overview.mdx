@@ -31,7 +31,7 @@ Null turns a total return swap into a pooled onchain market. In a traditional to
 
 This design gives users synthetic exposure without requiring the protocol to lend or create debt. Gains and losses are always paid from collateral already held by one of the pools.
 
-<img src="/images/diagrams/protocol-overview.png" alt="Chart showing the Null V1 protocol: users deposit collateral, the market reads oracle prices, Receiver and Payer shares represent pool claims, funding flows from Receiver to Payer, and settlement is bounded by collateral." />
+<img src="/images/diagrams/protocol-overview.svg" alt="Chart showing the Null V1 protocol: users deposit collateral, the market reads oracle prices, Receiver and Payer shares represent pool claims, funding flows from Receiver to Payer, and settlement is bounded by collateral." />
 
 <Note>
 In words: users deposit collateral, receive pool shares, and the market update moves value between pools according to oracle returns and funding. The protocol can redistribute collateral, but it cannot create debt.

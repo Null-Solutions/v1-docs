@@ -19,38 +19,18 @@ const diagrams = [
 
 mkdirSync(outputDir, { recursive: true });
 
-const commonArgs = [
-  '--configFile',
-  config,
-  '--backgroundColor',
-  '#F6F7F9',
-];
-
 for (const name of diagrams) {
-  const input = resolve(root, 'diagrams', `${name}.mmd`);
-
   execFileSync(
     mmdc,
     [
       '--input',
-      input,
-      '--output',
-      resolve(outputDir, `${name}.png`),
-      ...commonArgs,
-      '--scale',
-      '2',
-    ],
-    { stdio: 'inherit' },
-  );
-
-  execFileSync(
-    mmdc,
-    [
-      '--input',
-      input,
+      resolve(root, 'diagrams', `${name}.mmd`),
       '--output',
       resolve(outputDir, `${name}.svg`),
-      ...commonArgs,
+      '--configFile',
+      config,
+      '--backgroundColor',
+      'transparent',
     ],
     { stdio: 'inherit' },
   );
