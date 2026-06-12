@@ -2,14 +2,14 @@
 title: Market update sequence
 ---
 flowchart LR
-  receiver["Receiver pool"]
+  receiver(("Receiver<br/>pool"))
   update["Market update<br/><small>price, yield, funding, bounds</small>"]
-  payer["Payer pool"]
+  payer(("Payer<br/>pool"))
 
-  receiver --> update
-  payer --> update
-  update -- "net settlement" --> receiver
-  update -- "net settlement" --> payer
+  receiver -- "current assets" --> update
+  payer -- "current assets" --> update
+  update -- "settled assets" --> receiver
+  update -- "settled assets" --> payer
 
   classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
   classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;

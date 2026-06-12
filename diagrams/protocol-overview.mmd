@@ -2,12 +2,12 @@
 title: How Null V1 works
 ---
 flowchart LR
-  receiver["Receiver pool<br/><small>gets synthetic asset return<br/>pays funding</small>"]
-  payer["Payer pool<br/><small>backs the synthetic return<br/>receives funding</small>"]
+  receiver(("Receiver<br/>pool"))
+  payer(("Payer<br/>pool"))
 
-  receiver -- "funding" --> payer
-  payer -- "price rises" --> receiver
-  receiver -- "price falls" --> payer
+  receiver -- "pays funding" --> payer
+  payer -- "price rises<br/>return moves to Receiver" --> receiver
+  receiver -- "price falls<br/>value moves to Payer" --> payer
 
   classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
   classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;
