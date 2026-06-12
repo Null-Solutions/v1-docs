@@ -63,18 +63,6 @@
         ]
       },
       {
-        "tab": "Receive",
-        "pages": [
-          "receive/overview.mdx"
-        ]
-      },
-      {
-        "tab": "Pay",
-        "pages": [
-          "pay/overview.mdx"
-        ]
-      },
-      {
         "tab": "Developers",
         "pages": [
           "developers-tab/overview.mdx"
