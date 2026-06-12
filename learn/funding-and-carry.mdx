@@ -34,6 +34,12 @@ Payer funding APR = mu * E^2
 
 This square relationship is important. Receiver funding grows linearly with `E`, while Payer funding grows with `E^2` because the payment is earned on a smaller capital base.
 
+<img src="/images/diagrams/funding-carry.svg" alt="Diagram showing funding and carry: exposure ratio feeds the funding curve, Receiver funding is a cost, Payer funding is income, and optional collateral yield applies through collateral accounting rather than as a Receiver-to-Payer payment." />
+
+<Note>
+In words: funding is the payment between pools; collateral yield is separate. Receiver carry is collateral yield minus funding, while Payer carry is collateral yield plus funding before price movement.
+</Note>
+
 ## Funding cap and empty pools
 
 Receiver funding APR is capped at 100% APR. This prevents the Receiver-side funding rate from growing without limit in extreme imbalances.

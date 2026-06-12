@@ -1,0 +1,70 @@
+<svg width="1200" height="640" viewBox="0 0 1200 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Null V1 protocol overview</title>
+  <desc id="desc">Users deposit collateral into Receiver and Payer pools. The Null market reads oracle prices, updates pool values, issues ERC-4626 shares, and enforces bounded settlement so value only moves from collateral already inside the market.</desc>
+  <defs>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#0B0E15" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#45A5FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrowDark" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#1B252D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="640" rx="34" fill="#F6F7F9"/>
+  <circle cx="1052" cy="120" r="126" fill="#B1DFFF" fill-opacity="0.18"/>
+  <circle cx="142" cy="560" r="144" fill="#B1DFFF" fill-opacity="0.13"/>
+  <text x="64" y="78" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="34" letter-spacing="-0.02em">How Null V1 works</text>
+  <text x="64" y="114" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="18">Collateral enters two pools. Oracle updates move value between them, but settlement is always capped by collateral on hand.</text>
+
+  <g filter="url(#softShadow)">
+    <rect x="64" y="188" width="236" height="132" rx="30" fill="white"/>
+    <text x="94" y="234" fill="#45A5FF" font-family="Inter, Arial, sans-serif" font-size="16">INPUT</text>
+    <text x="94" y="270" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="25" letter-spacing="-0.01em">Collateral</text>
+    <text x="94" y="300" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">ERC-20 or ERC-4626-backed asset</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="428" y="154" width="344" height="236" rx="34" fill="#0B0E15"/>
+    <text x="470" y="210" fill="#B1DFFF" font-family="Inter, Arial, sans-serif" font-size="16">CORE MARKET</text>
+    <text x="470" y="250" fill="white" font-family="Inter, Arial, sans-serif" font-size="30" letter-spacing="-0.02em">NullV1Market</text>
+    <text x="470" y="286" fill="#C9D0D9" font-family="Inter, Arial, sans-serif" font-size="16">validates oracle prices, accounts for yield, reconciles collateral, settles funding and returns</text>
+    <rect x="470" y="324" width="260" height="38" rx="19" fill="#B1DFFF" fill-opacity="0.16"/>
+    <text x="494" y="349" fill="#B1DFFF" font-family="Inter, Arial, sans-serif" font-size="15">bounded settlement, no debt</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="906" y="172" width="230" height="132" rx="30" fill="white"/>
+    <text x="936" y="218" fill="#45A5FF" font-family="Inter, Arial, sans-serif" font-size="16">REFERENCE</text>
+    <text x="936" y="254" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="25" letter-spacing="-0.01em">Oracle price</text>
+    <text x="936" y="284" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">normalized market input</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="246" y="448" width="290" height="126" rx="30" fill="white"/>
+    <circle cx="304" cy="511" r="28" fill="#45A5FF"/>
+    <path d="M294 514L304 500L314 514" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="354" y="500" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Receiver shares</text>
+    <text x="354" y="532" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">synthetic return, pays funding</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="664" y="448" width="290" height="126" rx="30" fill="white"/>
+    <circle cx="722" cy="511" r="28" fill="#1B252D"/>
+    <path d="M712 508L722 522L732 508" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="772" y="500" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Payer shares</text>
+    <text x="772" y="532" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">backs exposure, receives funding</text>
+  </g>
+
+  <path d="M300 254H408" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrowBlue)"/>
+  <text x="330" y="232" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="14">deposit</text>
+  <path d="M906 238H792" stroke="#1B252D" stroke-width="4" stroke-linecap="round" marker-end="url(#arrowDark)"/>
+  <text x="824" y="216" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="14">price</text>
+  <path d="M540 390C490 430 444 448 394 448" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrowBlue)"/>
+  <path d="M660 390C710 430 756 448 806 448" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrowBlue)"/>
+  <path d="M536 512H644" stroke="#96AEC4" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 10" marker-end="url(#arrowDark)"/>
+  <text x="562" y="492" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="14">funding</text>
+  <path d="M665 472C620 430 580 430 535 472" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrowBlue)"/>
+  <text x="560" y="430" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="14">price settlement</text>
+</svg>
