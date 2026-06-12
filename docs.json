@@ -21,6 +21,9 @@
   "icons": {
     "library": "lucide"
   },
+  "background": {
+    "decoration": "gradient"
+  },
   "navigation": {
     "tabs": [
       {

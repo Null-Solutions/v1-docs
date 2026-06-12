@@ -6,7 +6,21 @@ description: "Enter a Null V1 market in four steps: choose a side, find a market
 
 Null V1 markets have two sides. Receiver shares get synthetic long exposure to the reference price and pay funding. Payer shares back that exposure, receive funding, and take the opposite price risk.
 
-Use this page as the shortest path from zero to a position.
+Your first position is four steps away.
+
+<CardGroup cols={3}>
+  <Card title="Choose a side" icon="split">
+    Pick Receiver for synthetic exposure, or Payer to back the market and earn funding.
+  </Card>
+
+  <Card title="Bring collateral" icon="wallet">
+    Use the supported collateral for the market. On Sepolia, see the live deployment page for current test collateral.
+  </Card>
+
+  <Card title="Mint shares" icon="sparkles">
+    Deposit through the router and receive ERC-4626 pool shares in your wallet.
+  </Card>
+</CardGroup>
 
 <Steps>
   <Step title="Choose Receiver or Payer">

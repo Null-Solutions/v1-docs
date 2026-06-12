@@ -4,7 +4,23 @@ sidebarTitle: "Overview"
 description: "Understand the Null V1 contract architecture and the main integration surfaces."
 ---
 
-Null V1 separates core accounting from periphery convenience.
+Build against the same contracts that power the Null app.
+
+Null V1 separates core accounting from periphery convenience, so integrations can choose between low-level ERC-4626 pool calls and higher-level router flows.
+
+<CardGroup cols={3}>
+  <Card title="Read live markets" icon="search" href="/contracts/lens">
+    Use Lens and indexer data for pool balances, share values, funding APR, and simulated state.
+  </Card>
+
+  <Card title="Route protected actions" icon="route" href="/developers-tab/router">
+    Use Router for deposits, redemptions, deadlines, slippage checks, and oracle update data.
+  </Card>
+
+  <Card title="Pin deployments" icon="map-pin" href="/resources/addresses">
+    Start from canonical live addresses, chain IDs, start blocks, and shared integration constants.
+  </Card>
+</CardGroup>
 
 The core is intentionally small:
 
@@ -21,6 +37,8 @@ Most integrations need three ideas:
 1. A market is unique for an `(asset, oracle, mu)` tuple.
 2. Users enter and exit through the Receiver or Payer pool, or through the router.
 3. Every state-changing pool action updates the market before shares are minted, burned, or priced.
+
+<img src="/images/landing/market-grid.svg" alt="Abstract landing-page grid representing deployed Null contracts" width="76" />
 
 ## Market stack
 
