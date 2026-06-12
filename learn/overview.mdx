@@ -4,18 +4,34 @@ description: "Understand Null V1 markets, Receiver and Payer positions, funding,
 sidebarTitle: "Overview"
 ---
 
-Null V1 is a non-custodial protocol for creating synthetic exposure to oracle-priced assets. A market has two pooled sides:
+Null V1 is onchain synthetic finance with pooled collateral. A market has two sides:
 
 - **Receiver pool:** receives the return of the reference asset and pays funding.
 - **Payer pool:** backs Receiver exposure, receives funding, and takes the opposite price risk.
 
 Both sides are represented by ERC-4626 compatible shares. A share is a proportional claim on the current value of one pool, not a private bilateral swap with a separate entry price.
 
+<CardGroup cols={3}>
+  <Card title="Two pools" icon="split">
+    Every market has one Receiver pool and one Payer pool. Users mint shares into either side.
+  </Card>
+
+  <Card title="Synthetic tracks spot" icon="chart-line">
+    Oracle settlement moves collateral between pools as the reference price changes.
+  </Card>
+
+  <Card title="Payer earns funding" icon="percent">
+    Funding flows from Receivers to Payers as compensation for backing synthetic exposure.
+  </Card>
+</CardGroup>
+
 ## The core idea
 
 Null turns a total return swap into a pooled onchain market. In a traditional total return swap, one receiver and one payer agree to exchange the return of a reference asset. In Null, all Receivers are aggregated into one pool, all Payers are aggregated into another pool, and the market contract settles the two pools against each other.
 
 This design gives users synthetic exposure without requiring the protocol to lend or create debt. Gains and losses are always paid from collateral already held by one of the pools.
+
+<img src="/images/landing/market-grid.svg" alt="Abstract landing-page market grid representing pooled Null markets" width="76" />
 
 ## How value moves
 
