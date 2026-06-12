@@ -4,78 +4,40 @@ sidebarTitle: "Introduction"
 description: "Learn how Null V1 eliminates liquidations through bounded pool settlement, and how receiver and payer roles interact via ERC-4626 share tokens."
 ---
 
-Null V1 is a collateral-backed directional perpetuals protocol that removes the two biggest pain points in on-chain perpetuals: liquidation cascades and fragmented position accounting. Instead of isolated margin accounts that get liquidated when collateral runs thin, Null V1 uses paired liquidity pools — a **receiver pool** and a **payer pool** — whose sizes naturally bound each other's losses. Your position is represented by standard ERC-4626 pool share tokens, so every DeFi primitive that understands ERC-4626 (aggregators, vaults, yield routers) works with Null V1 out of the box.
+<Frame>
+  <div
+  style={{
+background: "linear-gradient(135deg, #1e3a8a 0%, #3b6ea5 50%, #6b8caf 100%)",
+borderRadius: "16px",
+padding: "64px 32px",
+textAlign: "center",
+color: "white"
+}}
+>
+  <h1 style={{ color: "white", fontSize: "2.75rem", fontWeight: 600, marginBottom: "1rem", lineHeight: 1.2 }}>
+    Connect to the open return swaps network
+  </h1>
 
-## What Problem Null V1 Solves
+  <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "1.1rem", margin: 0 }}>
+    Directional exposure without liquidations, settled on-chain.
+  </p>
+</div>
+</Frame>
 
-Traditional perpetuals protocols rely on liquidation engines to keep the system solvent. When markets move fast, liquidations can cascade, leaving bad debt and stranded users. Null V1 replaces this model with a simpler invariant: **neither pool can owe more than its own balance**. Funding and price returns are netted and capped against pool sizes on every state update, so losses settle continuously rather than catastrophically.
+<Card title="Null Whitepaper" icon="file-lines" horizontal href="/resources/whitepapers">
+  Explore Null V1's perpetual return swaps design.
+</Card>
 
-<Note>
-  Null V1 has no liquidation mechanism by design. Your maximum loss as a receiver is bounded by the total receiver pool balance at settlement time — you can never be called for additional collateral.
-</Note>
+<Card title="Null 101" icon="graduation-cap" horizontal href="https://null.xyz/blog">
+  New to Null? Start with our introductory articles covering the protocol's core principles and fundamentals.
+</Card>
 
-## Two Roles, One Market
-
-Every Null V1 market has exactly two pools. You choose which side fits your strategy.
-
-| Role | Position | Risk | Reward |
-| --- | --- | --- | --- |
-| **Receiver** | Directional long exposure to the oracle-priced asset | Pays funding to payers when receiver usage is high; loses on adverse price moves, capped at pool size | Gains on favourable price moves; funded by payer pool |
-| **Payer** | Reserve liquidity backing receiver returns | Loses on favourable receiver price moves, capped at payer pool size | Earns continuous funding from receivers; benefits from adverse receiver price moves |
-
-<Tip>
-  Receivers are not simply "longs" in the traditional sense — they never hold the underlying asset. All settlement is in the pool's collateral token (e.g. USDC or waUSDC), with gains and losses calculated from oracle price moves since the last state update.
-</Tip>
-
-## No-Liquidation Design
-
-The no-liquidation guarantee comes from how settlement is structured. On every pool operation, the market calls `updateState()`, which:
-
-1. Calculates the raw price return flowing from payers to receivers (or vice versa) based on oracle price movement.
-2. Calculates the funding owed by receivers to payers based on the pool ratio and `mu`.
-3. **Nets** these two flows before applying them — so a receiver who is owed a price gain and owes funding only moves the difference.
-4. **Caps** the net transfer at the counterparty pool balance — so neither pool can be drained below zero.
-
-Because losses are bounded by pool size and netted before capping, the protocol never needs to force-close a position to protect solvency.
-
-<Warning>
-  The no-liquidation design means that in extreme market conditions the payer pool can be fully consumed by receiver gains, leaving payers with zero collateral. Assess payer pool depth and the current pool ratio (rho) before depositing.
-</Warning>
-
-## ERC-4626 Share Tokens
-
-Your position in either pool is represented by standard ERC-4626 vault shares. This means:
-
-- **`deposit(assets, receiver)`** — deposit collateral, receive shares.
-- **`withdraw(assets, receiver, owner)`** — specify an exact collateral amount to receive.
-- **`redeem(shares, receiver, owner)`** — burn an exact number of shares for collateral.
-- **`convertToAssets(shares)`** — preview your current collateral entitlement including accrued settlement.
-
-You can transfer shares freely, wrap them in other vaults, or use them as collateral in lending markets that support ERC-4626. The share price updates continuously as funding and price returns settle into the pool.
-
-<Info>
-  Each market has two separate ERC-4626 contracts: one for the receiver pool and one for the payer pool. They share the same collateral token but track separate share supplies and pool balances.
-</Info>
-
-## Oracle-Priced Returns
-
-Null V1 markets are priced by pluggable oracle adapters. The oracle determines the asset price used to calculate how much value flows between pools on each state update. Supported integrations include:
-
-- **Pyth** — push-model price feeds with confidence intervals.
-- **Chainlink Data Streams** — low-latency pull-model feeds.
-- **Uniswap V3 TWAP** — manipulation-resistant on-chain prices.
-- **Block base fee** — for markets tracking Ethereum gas prices.
-
-The market itself is stateless with respect to the oracle implementation — any contract implementing the oracle interface can be used when deploying a new market via `NullV1Factory`.
-
-## Next Steps
-
-<CardGroup cols={2}>
-  <Card title="How It Works" icon="gears" href="/how-it-works">
-    Trace a position from deposit through settlement to redemption, and see the exact net settlement formula.
+<Columns cols={2}>
+  <Card title="Researchers & Users" icon="book-open" href="/learn/overview">
+    Understand Null's core concepts and ecosystem fundamentals.
   </Card>
 
-  <Card title="Key Concepts" icon="book" href="/key-concepts">
-    Scan the full glossary of protocol terms: mu, rho, funding APR, net settlement, and more.
+  <Card title="Developers & Integrators" icon="code" href="/developers-tab/overview">
+    Build DeFi apps on Null with end-to-end tutorials, SDKs, and APIs.
   </Card>
-</CardGroup>
+</Columns>
