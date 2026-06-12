@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,13 +20,15 @@ const diagrams = [
 mkdirSync(outputDir, { recursive: true });
 
 for (const name of diagrams) {
+  const output = resolve(outputDir, `${name}.svg`);
+
   execFileSync(
     mmdc,
     [
       '--input',
       resolve(root, 'diagrams', `${name}.mmd`),
       '--output',
-      resolve(outputDir, `${name}.svg`),
+      output,
       '--configFile',
       config,
       '--backgroundColor',
@@ -34,4 +36,11 @@ for (const name of diagrams) {
     ],
     { stdio: 'inherit' },
   );
+
+  const svg = readFileSync(output, 'utf8').replace(
+    /style="max-width: [^;]+; background-color: transparent;"/,
+    'style="width: 100%; height: auto; background-color: transparent;"',
+  );
+
+  writeFileSync(output, svg);
 }
