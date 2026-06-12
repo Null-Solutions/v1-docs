@@ -4,15 +4,17 @@ sidebarTitle: "Overview"
 description: "Understand the Null V1 contract architecture and the main integration surfaces."
 ---
 
-# Developer overview
+Null V1 separates core accounting from periphery convenience.
 
-Null V1 is built around a small core:
+The core is intentionally small:
 
 - `NullV1Factory` deploys canonical markets.
-- `NullV1Market` owns market accounting.
+- `NullV1Market` owns market accounting and uses `NullV1Math` for reconciliation, funding, price settlement, yield-fee accounting, and solvency-bounded transfers.
 - `NullV1Pool` exposes Receiver and Payer ERC-4626 entry points.
-- `NullV1Math` computes reconciliation, funding, price settlement, yield-fee accounting, and solvency-bounded transfers.
-- `NullV1Router` provides periphery helpers for market creation, deposits, redemptions, oracle update data, slippage checks, and ERC-4626 collateral wrapping.
+
+Periphery lives outside the core:
+
+- `NullV1Router` wraps common user flows for market creation, deposits, redemptions, oracle update data, slippage checks, and ERC-4626 collateral wrapping.
 
 Most integrations need three ideas:
 
@@ -24,11 +26,17 @@ Most integrations need three ideas:
 
 When the factory creates a market, it deploys one market contract and two pool contracts.
 
-```text
-NullV1Factory
-  -> NullV1Market
-      -> Receiver NullV1Pool
-      -> Payer NullV1Pool
+```mermaid
+flowchart TD
+  Factory["NullV1Factory"] -->|"deploys"| Market["NullV1Market"]
+  Market --> ReceiverPool["Receiver NullV1Pool"]
+  Market --> PayerPool["Payer NullV1Pool"]
+  ReceiverPool -->|"calls updateState"| Market
+  PayerPool -->|"calls updateState"| Market
+  Router["NullV1Router periphery"] -->|"creates markets"| Factory
+  Router -->|"routes user flows"| ReceiverPool
+  Router -->|"routes user flows"| PayerPool
+  Oracle["Oracle"] -->|"price"| Market
 ```
 
 The market stores the authoritative accounting state:

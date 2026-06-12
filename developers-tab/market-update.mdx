@@ -4,8 +4,6 @@ description: "Understand the exact Null V1 market update order used before pool 
 sidebarTitle: "Market update"
 ---
 
-# Market update
-
 Every state-changing pool action calls `market.updateState()` before it mints shares, burns shares, or records user balance changes.
 
 The market delegates settlement math to `NullV1Math.computeUpdate`.

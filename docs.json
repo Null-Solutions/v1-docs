@@ -3,20 +3,23 @@
   "name": "Null V1",
   "theme": "luma",
   "colors": {
-    "primary": "#1e75bc",
-    "light": "#8cbcdc",
-    "dark": "#040404"
+    "primary": "#45a5ff",
+    "light": "#b1dfff",
+    "dark": "#b8d9fa"
   },
   "logo": {
-    "light": "https://media.brand.dev/b88c1398-116e-4486-82a8-f32bee28c3ec.svg",
-    "dark": "https://media.brand.dev/b88c1398-116e-4486-82a8-f32bee28c3ec.svg"
+    "light": "/images/Logo.svg",
+    "dark": "/images/LogoDark.svg"
   },
-  "favicon": "/favicon.svg",
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/Null-Solutions/v1-contracts"
-    }
+  "favicon": "/images/LogoIcon.svg",
+  "appearance": {
+    "default": "system"
+  },
+  "fonts": {
+    "family": "Inter"
+  },
+  "icons": {
+    "library": "lucide"
   },
   "navigation": {
     "tabs": [
@@ -110,6 +113,12 @@
       {
         "tab": "Reference",
         "groups": [
+          {
+            "group": "Deployments",
+            "pages": [
+              "resources/addresses"
+            ]
+          },
           {
             "group": "Core Contracts",
             "pages": [

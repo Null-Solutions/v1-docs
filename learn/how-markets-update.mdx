@@ -4,8 +4,6 @@ description: "Follow the Null V1 market update: reconciliation, funding, price s
 sidebarTitle: "How markets update"
 ---
 
-# How markets update
-
 A Null market updates before every deposit, mint, withdrawal, or redemption. This keeps share pricing current before a user enters or exits.
 
 The market update has a fixed order:
@@ -17,6 +15,17 @@ The market update has a fixed order:
 5. Net the two legs into one transfer.
 6. Bound the transfer by available collateral.
 7. Store the new market state.
+
+```mermaid
+flowchart TD
+  ValidatePrice["Validate oracle price"] --> YieldFee["Apply yield-fee accounting"]
+  YieldFee --> Reconcile["Reconcile actual collateral"]
+  Reconcile --> ComputeLegs["Compute funding and price settlement"]
+  ComputeLegs --> NetTransfer["Net into one transfer"]
+  NetTransfer --> SolvencyBound["Apply solvency bound"]
+  SolvencyBound --> StoreState["Store timestamp and price"]
+  StoreState --> UserAction["Process user action"]
+```
 
 ## Yield-fee accounting
 

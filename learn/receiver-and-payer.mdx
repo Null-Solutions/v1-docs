@@ -4,9 +4,19 @@ description: "Learn the two sides of a Null V1 market and how pooled shares repl
 sidebarTitle: "Receiver and Payer"
 ---
 
-# Receiver and Payer
-
 A Null market has two sides: Receiver and Payer. They mirror the two sides of a total return swap, but they are pooled instead of matched one-to-one.
+
+## Market roles at a glance
+
+```mermaid
+flowchart LR
+  Oracle["Oracle price"] --> MarketUpdate["Market update"]
+  ReceiverPool["Receiver pool"] -->|"pays funding"| PayerPool["Payer pool"]
+  PayerPool -->|"pays when price rises"| ReceiverPool
+  ReceiverPool -->|"pays when price falls"| PayerPool
+  MarketUpdate --> ReceiverPool
+  MarketUpdate --> PayerPool
+```
 
 ## Receiver
 

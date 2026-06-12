@@ -61,7 +61,7 @@ Null V1 has **no liquidation mechanism**. Your maximum loss in any pool is bound
   Do not deposit more capital than you are prepared to lose entirely. Smart contract exploits — including bugs in the math libraries, reentrancy vectors, or oracle integration — could result in a total or partial loss of deposited funds.
   </Warning>
 
-  If you want to review the code directly, the core logic lives in `NullV1Factory`, `NullV1Market`, `NullV1Pool`, `NullV1Router`, and `NullV1Math`.
+  If you want to review the code directly, core accounting lives in `NullV1Factory`, `NullV1Market`, `NullV1Pool`, and the `NullV1Math` library used by the market. `NullV1Router` is periphery for user-facing flows.
 </Accordion>
 
 <Accordion title="Collateral Risk — ERC-4626 Wrapper">
