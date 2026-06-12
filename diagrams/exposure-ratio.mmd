@@ -2,22 +2,17 @@
 title: Exposure ratio
 ---
 flowchart LR
-  receiver["Receiver pool<br/><strong>1,000</strong>"]
-  payer["Payer pool<br/><strong>200</strong>"]
-  ratio["E = Receiver / Payer<br/><strong>E = 5</strong>"]
-  transfer["2% price move<br/><small>transfers 20 units</small>"]
-  impact["Different percentage impact<br/><small>Receiver: 2% · Payer: 10%</small>"]
+  receiver["Receiver pool<br/><strong>1,000</strong><br/><small>synthetic exposure side</small>"]
+  payer["Payer pool<br/><strong>200</strong><br/><small>backing side</small>"]
+  ratio["Exposure ratio<br/><strong>E = 5</strong><br/><small>Receiver / Payer</small>"]
 
   receiver --> ratio
   payer --> ratio
-  ratio --> transfer
-  transfer --> impact
+  ratio -- "same price move<br/>larger impact on smaller pool" --> payer
 
   classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
   classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;
-  classDef dark fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
-  classDef accent fill:#B1DFFF,color:#0B0E15,stroke:#96AEC4,stroke-width:1px;
+  classDef core fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
   class receiver receiver;
   class payer payer;
-  class ratio dark;
-  class transfer,impact accent;
+  class ratio core;

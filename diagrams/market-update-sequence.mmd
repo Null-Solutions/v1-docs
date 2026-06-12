@@ -2,19 +2,18 @@
 title: Market update sequence
 ---
 flowchart LR
-  price["1. Validate price"]
-  yield["2. Account yield"]
-  reconcile["3. Reconcile collateral"]
-  compute["4. Compute price + funding"]
-  net["5. Net and bound"]
-  store["6. Store state"]
-  action["7. Process user action"]
+  receiver["Receiver pool"]
+  update["Market update<br/><small>price, yield, funding, bounds</small>"]
+  payer["Payer pool"]
 
-  price --> yield --> reconcile --> compute --> net --> store --> action
+  receiver --> update
+  payer --> update
+  update -- "net settlement" --> receiver
+  update -- "net settlement" --> payer
 
-  classDef dark fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
-  classDef soft fill:#FFFFFF,color:#0B0E15,stroke:#DDE3EA,stroke-width:1px;
-  classDef accent fill:#B1DFFF,color:#0B0E15,stroke:#96AEC4,stroke-width:1px;
-  class compute dark;
-  class price,yield,reconcile,net,store soft;
-  class action accent;
+  classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
+  classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;
+  classDef core fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
+  class receiver receiver;
+  class payer payer;
+  class update core;

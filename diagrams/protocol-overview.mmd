@@ -2,25 +2,14 @@
 title: How Null V1 works
 ---
 flowchart LR
-  collateral["Collateral<br/><small>ERC-20 or ERC-4626-backed asset</small>"]
-  oracle["Oracle price<br/><small>normalized reference input</small>"]
-  market["NullV1Market<br/><small>validates price, reconciles collateral,<br/>settles funding and returns</small>"]
-  receiver["Receiver shares<br/><small>synthetic return, pays funding</small>"]
-  payer["Payer shares<br/><small>backs exposure, receives funding</small>"]
-  invariant["Bounded settlement<br/><small>redistributes collateral, never creates debt</small>"]
+  receiver["Receiver pool<br/><small>gets synthetic asset return<br/>pays funding</small>"]
+  payer["Payer pool<br/><small>backs the synthetic return<br/>receives funding</small>"]
 
-  collateral --> market
-  oracle --> market
-  market --> receiver
-  market --> payer
-  receiver -. funding .-> payer
-  payer -- price rises --> receiver
-  receiver -- price falls --> payer
-  market --> invariant
+  receiver -- "funding" --> payer
+  payer -- "price rises" --> receiver
+  receiver -- "price falls" --> payer
 
-  classDef dark fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
-  classDef soft fill:#FFFFFF,color:#0B0E15,stroke:#DDE3EA,stroke-width:1px;
-  classDef accent fill:#B1DFFF,color:#0B0E15,stroke:#96AEC4,stroke-width:1px;
-  class market dark;
-  class collateral,oracle,receiver,payer soft;
-  class invariant accent;
+  classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
+  classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;
+  class receiver receiver;
+  class payer payer;
