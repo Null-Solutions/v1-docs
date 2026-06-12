@@ -2,28 +2,18 @@
 title: Developer stack
 ---
 flowchart LR
-  app["App / bot / script"]
-  router["NullV1Router<br/><small>protected writes</small>"]
-  lens["Lens + indexer<br/><small>reads and previews</small>"]
-  factory["NullV1Factory<br/><small>discover/create markets</small>"]
-  market["NullV1Market<br/><small>core accounting</small>"]
+  app["App / bot / script<br/><small>Router writes, Lens reads</small>"]
   receiver["Receiver pool<br/><small>ERC-4626 shares</small>"]
   payer["Payer pool<br/><small>ERC-4626 shares</small>"]
 
-  app -- writes --> router
-  app -- reads --> lens
-  router --> factory
-  factory --> market
-  router --> market
-  market --> receiver
-  market --> payer
-  lens --> market
-  lens --> receiver
-  lens --> payer
+  app --> receiver
+  app --> payer
+  receiver -- "market accounting" --> payer
+  payer -- "market accounting" --> receiver
 
-  classDef dark fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
-  classDef soft fill:#FFFFFF,color:#0B0E15,stroke:#DDE3EA,stroke-width:1px;
-  classDef accent fill:#B1DFFF,color:#0B0E15,stroke:#96AEC4,stroke-width:1px;
-  class router,market dark;
-  class app,factory,receiver,payer soft;
-  class lens accent;
+  classDef panel fill:#FFFFFF,color:#0B0E15,stroke:#DDE3EA,stroke-width:1px;
+  classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
+  classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;
+  class app panel;
+  class receiver receiver;
+  class payer payer;

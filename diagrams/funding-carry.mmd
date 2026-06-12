@@ -2,21 +2,17 @@
 title: Funding and carry
 ---
 flowchart LR
-  exposure["Exposure ratio<br/><small>E = Receiver / Payer</small>"]
-  curve["Funding curve<br/><small>Receiver APR = min(mu · E, cap)</small>"]
-  receiver["Receiver carry<br/><small>collateral yield - funding</small>"]
-  payer["Payer carry<br/><small>collateral yield + funding</small>"]
-  yield["Collateral yield<br/><small>optional ERC-4626 collateral accounting</small>"]
+  receiver["Receiver pool<br/><small>collateral yield<br/>minus funding paid</small>"]
+  payer["Payer pool<br/><small>collateral yield<br/>plus funding received</small>"]
+  funding["Funding rate<br/><small>set by pool imbalance</small>"]
 
-  exposure --> curve
-  curve -- funding cost --> receiver
-  curve -- funding income --> payer
-  yield -. separate from funding .-> receiver
-  yield -. separate from funding .-> payer
+  receiver -- "pays funding" --> payer
+  funding -. "prices the payment" .-> receiver
+  funding -. "prices the payment" .-> payer
 
-  classDef dark fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
-  classDef soft fill:#FFFFFF,color:#0B0E15,stroke:#DDE3EA,stroke-width:1px;
+  classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
+  classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;
   classDef accent fill:#B1DFFF,color:#0B0E15,stroke:#96AEC4,stroke-width:1px;
-  class curve dark;
-  class exposure,receiver,payer soft;
-  class yield accent;
+  class receiver receiver;
+  class payer payer;
+  class funding accent;
