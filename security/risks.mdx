@@ -1,0 +1,94 @@
+---
+title: "Risk Factors for Null V1 Participants"
+sidebarTitle: "Risks"
+description: "Understand the key risks of providing liquidity to Null V1 markets — from directional price exposure and oracle outages to smart contract and collateral risk."
+---
+
+Every position in Null V1 carries real financial risk. Before depositing into either pool of a market, you should understand the distinct ways you can lose money, the protocol mechanisms that bound those losses, and the scenarios where those bounds may not protect you. This page walks through the major risk categories from the perspective of a liquidity provider.
+
+<Note>
+Null V1 has **no liquidation mechanism**. Your maximum loss in any pool is bounded by the total value of your share of that pool — you cannot lose more than you put in, and you cannot be liquidated by an external party. This is a deliberate design choice, but it means pool participants collectively absorb all losses when they occur.
+</Note>
+
+## Risk Categories
+
+<Accordion title="Directional Risk — Receiver Pool">
+  When you deposit into the **receiver pool**, you gain exposure to price appreciation of the underlying index. If the index price rises, the payer pool transfers value to the receiver pool and your position grows. If the index price **falls**, the receiver pool transfers value to the payer pool and your position shrinks.
+
+  Your losses from price movement are bounded by the total assets in the receiver pool. The protocol cannot transfer more than what the pool holds, so a complete wipeout of your position is only possible if the index moves enough to exhaust the entire pool — an extreme but theoretically possible outcome in highly leveraged or thinly funded markets.
+
+  In addition to directional exposure, receiver pool participants **pay funding continuously** to the payer pool. When the receiver pool is large relative to the payer pool, funding rates are lower; as the imbalance grows, funding becomes a more significant drag on returns even when the index is flat.
+
+  **Factors that increase directional risk for receivers:**
+  - High implied volatility of the underlying index
+  - A large receiver pool relative to the payer pool (amplifies funding costs)
+  - Sustained downward price trends that accumulate across many update windows
+</Accordion>
+
+<Accordion title="Reserve Risk — Payer Pool">
+  When you deposit into the **payer pool**, you benefit when the index price falls, and you are exposed to losses when the index price **rises sharply**. A sustained upward trend — or a sudden large spike that clears the circuit breaker over successive updates — can drain the payer pool.
+
+  The circuit breaker limits how much PnL is settled in any single update window (at most 7% of the reference price per hour), but it does not prevent cumulative losses across many windows. If the index rises by 7% every hour for several hours, each update settles in full, and a small payer pool can be emptied quickly.
+
+  Payer pool participants **earn funding** from the receiver pool. In markets where the payer pool is thin relative to the receiver pool, this funding income can be substantial — but a thin payer pool also means the buffer against a price rise is narrow.
+
+  **Factors that increase reserve risk for payers:**
+  - Rapid and sustained upward price movement in the underlying index
+  - A small payer pool relative to the receiver pool (higher APR but lower buffer)
+  - Circuit breaker triggering repeatedly from a new higher baseline rather than reverting
+</Accordion>
+
+<Accordion title="Oracle Risk — Staleness and Outages">
+  Null V1 markets rely on external oracle price feeds to update state. If the oracle stops publishing prices — due to a network issue, a feed deprecation, or a deliberate attack — the market stops settling PnL and funding. Your position is effectively frozen at its last recorded state.
+
+  **Short outages** (under 10 days) are handled by the protocol passively: no updates occur, but your principal is not at risk from further price movement because no transfers happen without a fresh price. Funding does not accrue during an outage either.
+
+  **Prolonged outages** (10 days or more without an oracle update) trigger the stale-price escape period. After this threshold, you are permitted to redeem your pool shares using the last recorded price, even without a fresh oracle update. This prevents your capital from being permanently locked if an oracle feed is discontinued.
+
+  <Warning>
+  The last recorded price may not reflect the current fair value of the underlying index. If the oracle fails during a large market move, you could redeem at a price that is significantly stale. You bear the basis risk between the last oracle price and the true market value at the time of your redemption.
+  </Warning>
+
+  Oracle update payloads are validated before any market operation is triggered, reducing the risk of malformed or malicious data being processed. However, the protocol cannot verify whether a price is economically accurate — only that it is structurally valid.
+</Accordion>
+
+<Accordion title="Smart Contract Risk">
+  Null V1 is a new protocol. The contracts implement several protective patterns: the factory prevents duplicate markets and rejects zero-value parameters; market accounting calls are gated behind an `onlyPools` modifier so only the pool contracts can update market state; the router enforces user-supplied deadlines and slippage limits; and reentrancy guards wrap the most sensitive operations.
+
+  Despite these measures, you should treat Null V1 as an unaudited protocol and form your own view on the security of the contracts before depositing funds. No security audit guarantees the absence of bugs, and a newly deployed protocol has had less time for vulnerabilities to be discovered and remediated.
+
+  <Warning>
+  Do not deposit more capital than you are prepared to lose entirely. Smart contract exploits — including bugs in the math libraries, reentrancy vectors, or oracle integration — could result in a total or partial loss of deposited funds.
+  </Warning>
+
+  If you want to review the code directly, the core logic lives in `NullV1Factory`, `NullV1Market`, `NullV1Pool`, `NullV1Router`, and `NullV1Math`.
+</Accordion>
+
+<Accordion title="Collateral Risk — ERC-4626 Wrapper">
+  Null V1 pools accept collateral through ERC-4626 yield-bearing vault wrappers. The share price of these wrappers is not guaranteed to remain stable. If the underlying yield strategy experiences a loss event — a drawdown, a liquidation of the underlying vault, or a depeg of the assets it holds — the share price of the wrapper can fall, reducing the effective value of your collateral even if no price transfers have occurred in the Null V1 market itself.
+
+  The yield fee charged by the protocol accrues on **new yield generated after any recovery**. If the wrapper experiences a drawdown and subsequently recovers, you begin paying yield fees again on earnings above the recovery watermark. This means a loss-and-recovery cycle results in you bearing the full downside while sharing a portion of the recovery upside with the protocol.
+
+  **Key questions to ask about your collateral wrapper:**
+  - What is the underlying yield strategy, and what are its failure modes?
+  - Is the wrapper share price rebasing or non-rebasing?
+  - Has the underlying vault experienced drawdowns before?
+</Accordion>
+
+<Accordion title="Liquidity Risk — Thin Markets">
+  In a market where the payer pool is very small relative to the receiver pool, the funding rate paid to payers rises — but the buffer that absorbs price increases shrinks. A single sustained price move can exhaust the payer pool faster than new depositors can respond.
+
+  From the receiver side, a thin payer pool means the maximum gain from a price increase is capped at the payer pool size. In a heavily one-sided market, you may be earning funding but effectively holding a position with a low ceiling on price-return gains.
+
+  There is no guaranteed exit mechanism from either pool. If you need to withdraw and the pool cannot cover your redemption — because total losses have eroded the pool below your deposit value — you will receive less than you put in. Null V1 does not provide a liquidity guarantee or backstop.
+
+  <Tip>
+  Before depositing, check the current pool sizes for the market you are entering. A healthy market has balanced receiver and payer pools, which keeps funding rates moderate and ensures meaningful buffers on both sides.
+  </Tip>
+</Accordion>
+
+## Summary: No Liquidations, But Losses Are Real
+
+<Note>
+Unlike protocols that use per-user margin and liquidation bots, Null V1 pools absorb losses collectively. You cannot be liquidated by another participant. However, if the pool you are in loses value — through adverse price movement, funding drag, or collateral drawdown — your share of that pool decreases proportionally. Your maximum loss is your deposited principal; your minimum loss is zero. Everything in between depends on market conditions, pool balance, and the risks described above.
+</Note>

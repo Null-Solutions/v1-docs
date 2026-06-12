@@ -1,0 +1,202 @@
+---
+title: "Depositing Liquidity into Null V1 Markets"
+sidebarTitle: "Depositing"
+description: "Deposit collateral into Null V1 receiver and payer pools via the router or directly via ERC-4626, with slippage and deadline protection."
+---
+
+Depositing into a Null V1 market means supplying collateral to the receiver pool, the payer pool, or both simultaneously. The `NullV1Router` is the recommended entry point because it wraps ERC-4626 collateral automatically, enforces slippage minimums, and lets you set a transaction deadline — all in a single call. If you prefer more granular control, you can also interact with each `NullV1Pool` directly using the standard ERC-4626 interface.
+
+## Receiver pool vs. payer pool
+
+Each market exposes two independent ERC-4626 pools. When you call `router.depositMarket`, you specify how many assets to deposit into each:
+
+| Parameter | Pool | Effect |
+|---|---|---|
+| `receiverAssets` | Receiver pool | Mints receiver shares proportional to your deposit |
+| `payerAssets` | Payer pool | Mints payer shares proportional to your deposit |
+
+Set either value to `0` to skip that pool entirely. For example, to deposit only into the receiver pool, pass `payerAssets = 0` and `minPayerShares = 0`.
+
+## Previewing shares before you deposit
+
+Before sending a deposit transaction, call `previewDeposit` on the target pool to estimate how many shares you will receive. The preview already accounts for the entry fee, so the number you get back is the exact shares minted (assuming no state change between the preview and the transaction).
+
+```ts
+const receiverPool = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, provider);
+const payerPool    = new ethers.Contract(payerPoolAddress,    nullV1PoolAbi, provider);
+
+// Get share estimates inclusive of entry fee deduction
+const estimatedReceiverShares = await receiverPool.previewDeposit(receiverAssets);
+const estimatedPayerShares    = await payerPool.previewDeposit(payerAssets);
+```
+
+<Note>
+`previewDeposit` reflects the entry fee charged by the protocol. The actual shares minted will be less than a fee-free calculation would suggest. See [Fees](/fees) for the fee constants and how to read the current fee values.
+</Note>
+
+## Slippage protection
+
+The router rejects the transaction if the shares it would mint fall below your specified minimums. This protects you from adverse price movements between your simulation and the on-chain execution.
+
+```ts
+const slippageBps = 50n; // 0.5% tolerance
+const minReceiverShares = estimatedReceiverShares * (10_000n - slippageBps) / 10_000n;
+const minPayerShares    = estimatedPayerShares    * (10_000n - slippageBps) / 10_000n;
+```
+
+If slippage is exceeded the router reverts with a typed error:
+
+- `SlippageReceiverShares(expected, actual)` — the receiver pool would have minted fewer shares than `minReceiverShares`.
+- `SlippagePayerShares(expected, actual)` — the payer pool would have minted fewer shares than `minPayerShares`.
+
+<Warning>
+Setting `minReceiverShares = 0` or `minPayerShares = 0` disables slippage protection for that pool. Only do this in test environments or when you fully trust that no competing transactions will affect the pool ratio.
+</Warning>
+
+## Deadline
+
+The `deadline` parameter is a Unix timestamp (in seconds). If the transaction is included in a block whose `block.timestamp` exceeds this value, the router reverts with `TransactionTooOld(deadline)`. This prevents your transaction from being held in the mempool and executed at a stale price.
+
+```ts
+// Expire after 5 minutes
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 5 * 60);
+```
+
+## Oracle update data
+
+Some markets use **push oracles** that require a signed price payload to be submitted alongside each transaction. Pass that payload as `updateData`. For markets using **static or pull oracles** (where price is always up-to-date on-chain), pass an empty array.
+
+```ts
+// Static oracle — no update needed
+const updateData = [];
+
+// Push oracle (e.g. Pyth) — fetch a fresh price attestation
+const updateData = await pythConnection.getPriceFeedsUpdateData([priceFeedId]);
+```
+
+<Note>
+If your wallet does not hold enough ETH to cover the oracle update fee, the router reverts with `InsufficientUpdateFeeBalance(balance, required)`. Make sure your transaction includes sufficient `msg.value` when using a push oracle that charges a fee.
+</Note>
+
+## ERC-4626 collateral (automatic wrapping)
+
+When the market's collateral is a yield-bearing ERC-4626 token (for example waUSDC), the router accepts the **underlying** token from you and wraps it before depositing into the pool. You never need to hold or approve the wrapper yourself.
+
+The flow is:
+1. You approve the router to spend USDC.
+2. You call `depositMarket` with USDC amounts.
+3. The router wraps USDC → waUSDC.
+4. The router deposits waUSDC into the pool and returns shares to you.
+
+For plain ERC-20 collateral markets there is no wrapping step — the token passes straight through.
+
+## Full deposit example
+
+<Tabs>
+  <Tab title="ethers.js">
+```ts
+import { ethers } from "ethers";
+
+const provider = new ethers.JsonRpcProvider(RPC_URL);
+const signer   = await provider.getSigner();
+
+const router      = new ethers.Contract(ROUTER_ADDRESS,  nullV1RouterAbi, signer);
+const receiverPool = new ethers.Contract(RECEIVER_POOL, nullV1PoolAbi,   provider);
+const payerPool    = new ethers.Contract(PAYER_POOL,    nullV1PoolAbi,   provider);
+const asset        = new ethers.Contract(ASSET_ADDRESS, erc20Abi,        signer);
+
+// Deposit amounts
+const receiverAssets = ethers.parseUnits("1000", 6); // 1,000 USDC into receiver
+const payerAssets    = ethers.parseUnits("0",    6); // nothing into payer
+
+// Preview and apply 1% slippage tolerance
+const expectedShares = await receiverPool.previewDeposit(receiverAssets);
+const minReceiverShares = expectedShares * 9900n / 10_000n;
+const minPayerShares    = 0n;
+
+// Approve router
+await asset.approve(ROUTER_ADDRESS, receiverAssets);
+
+// Set deadline 3 minutes out
+const deadline   = BigInt(Math.floor(Date.now() / 1000) + 180);
+const updateData = []; // static oracle
+
+const tx = await router.depositMarket(
+  MARKET_ADDRESS,
+  receiverAssets,
+  payerAssets,
+  minReceiverShares,
+  minPayerShares,
+  deadline,
+  updateData
+);
+
+const receipt = await tx.wait();
+console.log("Deposit confirmed in block", receipt.blockNumber);
+```
+  </Tab>
+  <Tab title="Solidity">
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {INullV1Router} from "./interfaces/INullV1Router.sol";
+import {INullV1Market} from "./interfaces/INullV1Market.sol";
+import {INullV1Pool}   from "./interfaces/INullV1Pool.sol";
+import {IERC20}        from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract DepositExample {
+    INullV1Router public immutable router;
+
+    constructor(address _router) {
+        router = INullV1Router(_router);
+    }
+
+    function depositReceiverOnly(
+        INullV1Market market,
+        IERC20 asset,
+        uint256 receiverAssets,
+        uint256 minReceiverShares,
+        uint256 deadline,
+        bytes[] calldata updateData
+    ) external returns (uint256 receiverShares) {
+        asset.transferFrom(msg.sender, address(this), receiverAssets);
+        asset.approve(address(router), receiverAssets);
+
+        (receiverShares, ) = router.depositMarket(
+            market,
+            receiverAssets,
+            0,                 // no payer deposit
+            minReceiverShares,
+            0,                 // no payer minimum
+            deadline,
+            updateData
+        );
+
+        // Transfer shares back to the caller
+        INullV1Pool receiverPool = market.receiverPool();
+        receiverPool.transfer(msg.sender, receiverShares);
+    }
+}
+```
+  </Tab>
+</Tabs>
+
+## Direct ERC-4626 deposit (advanced)
+
+If you want to bypass the router and interact with the pool contract directly, use the standard ERC-4626 `deposit` function. You are responsible for approving the pool's **underlying vault token** (not the user-facing asset) and for updating the oracle yourself before the call if required.
+
+```ts
+const pool  = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, signer);
+const vault = new ethers.Contract(vaultTokenAddress,   erc20Abi,      signer);
+
+// Approve the pool to spend the vault token
+await vault.approve(receiverPoolAddress, assets);
+
+// Deposit and receive shares
+const shares = await pool.deposit(assets, signerAddress);
+```
+
+<Tip>
+Use the router for most integrations. Direct ERC-4626 deposits skip slippage enforcement and deadline checks — you must implement those safeguards yourself.
+</Tip>

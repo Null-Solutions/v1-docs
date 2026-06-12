@@ -1,0 +1,182 @@
+---
+title: "NullV1Pool: ERC-4626 Liquidity Shares"
+sidebarTitle: "Pool"
+description: "NullV1Pool is an ERC-4626 tokenised vault for receiver or payer positions in a Null V1 market, with virtual-share inflation-attack protection."
+---
+
+Each Null V1 market deploys exactly two `INullV1Pool` contracts — one for the receiver side and one for the payer side. Both are fully compliant [ERC-4626](https://eips.ethereum.org/EIPS/eip-4626) tokenised vaults, which means any protocol that supports the standard (aggregators, yield routers, portfolio managers) can integrate positions without custom logic. Shares are standard ERC-20 tokens and can be freely transferred, delegated, or held in multisigs. Before executing any mutating call (`deposit`, `mint`, `withdraw`, `redeem`), the pool first calls `market.updateState()` to synchronise the oracle price and settle PnL — so the exchange rate you previewed on-chain always matches what you receive.
+
+## Pool Kind
+
+### `poolKind()`
+
+Returns which side of the market this pool represents.
+
+```solidity
+enum NullV1PoolKind {
+    Receiver, // 0 — receives funding payments when price is above the share price
+    Payer     // 1 — pays funding; benefits when price is below the share price
+}
+```
+
+<ResponseField name="poolKind" type="NullV1PoolKind">
+  `0` for the receiver pool, `1` for the payer pool.
+</ResponseField>
+
+### `market()`
+
+Returns the parent `INullV1Market` that deployed this pool.
+
+---
+
+## Total Assets
+
+### `totalAssets()`
+
+Returns the total collateral owned by this pool's depositors, denominated in the underlying ERC-20 token. This figure is authoritative: it is fetched directly from the market's internal accounting after the latest state update and already reflects all funding PnL, accrued fees, and price movements.
+
+```solidity
+uint256 poolTvl = receiverPool.totalAssets();
+```
+
+<Note>
+  Because `totalAssets()` reflects post-settlement values, the share price you compute from it (`totalAssets / totalSupply`) is the real economic price, not a stale snapshot. Use it confidently in UIs and liquidation bots.
+</Note>
+
+---
+
+## Decimals Offset (Inflation Attack Protection)
+
+The pools use a `decimalsOffset` of **10**. This means that internally, every deposited asset unit is represented by `10^10` virtual share units, making share-donation inflation attacks economically infeasible without any custodial intervention. From an integration perspective:
+
+- Share balances and `totalSupply()` will be much larger (by a factor of `10^10`) relative to the asset amounts.
+- The `previewDeposit` / `previewRedeem` functions already account for this offset, so you do not need to adjust manually.
+- Slippage checks should be performed against the preview functions, not by dividing assets by a naive 1:1 ratio.
+
+---
+
+## ERC-4626 Deposit & Mint
+
+### `deposit(uint256 assets, address receiver)`
+
+Deposits an exact amount of the underlying asset and mints the corresponding shares to `receiver`.
+
+<ParamField path="assets" type="uint256" required>
+  The exact number of underlying token units to deposit.
+</ParamField>
+
+<ParamField path="receiver" type="address" required>
+  The address that will receive the newly minted shares.
+</ParamField>
+
+Returns `uint256 shares` — the number of pool shares minted.
+
+---
+
+### `mint(uint256 shares, address receiver)`
+
+Mints an exact number of shares and pulls the corresponding asset amount from the caller.
+
+<ParamField path="shares" type="uint256" required>
+  The exact number of shares to mint.
+</ParamField>
+
+<ParamField path="receiver" type="address" required>
+  The address that receives the minted shares.
+</ParamField>
+
+Returns `uint256 assets` — the number of underlying token units pulled from the caller.
+
+---
+
+## ERC-4626 Withdraw & Redeem
+
+### `withdraw(uint256 assets, address receiver, address owner)`
+
+Burns the shares necessary to release exactly `assets` underlying tokens to `receiver`. If `owner` is not `msg.sender`, an ERC-20 allowance from `owner` to `msg.sender` is required.
+
+<ParamField path="assets" type="uint256" required>
+  The exact number of underlying token units to withdraw.
+</ParamField>
+
+<ParamField path="receiver" type="address" required>
+  The address that receives the withdrawn assets.
+</ParamField>
+
+<ParamField path="owner" type="address" required>
+  The address whose shares are burned to fund the withdrawal.
+</ParamField>
+
+Returns `uint256 shares` — the number of shares burned.
+
+---
+
+### `redeem(uint256 shares, address receiver, address owner)`
+
+Burns an exact number of shares and transfers the corresponding assets to `receiver`.
+
+<ParamField path="shares" type="uint256" required>
+  The number of shares to burn.
+</ParamField>
+
+<ParamField path="receiver" type="address" required>
+  The address that receives the released underlying assets.
+</ParamField>
+
+<ParamField path="owner" type="address" required>
+  The address whose shares are burned. Requires allowance if different from `msg.sender`.
+</ParamField>
+
+Returns `uint256 assets` — the underlying tokens transferred to `receiver`.
+
+---
+
+## Preview Functions
+
+All four preview functions are view-only and do **not** trigger a state update. They return values based on the most recently settled market state, so treat them as approximate for oracle-dependent markets with a pending price update.
+
+| Function | Input | Output | Description |
+|---|---|---|---|
+| `previewDeposit(uint256 assets)` | assets | shares | Shares minted for a given asset deposit. |
+| `previewMint(uint256 shares)` | shares | assets | Assets required to mint a given number of shares. |
+| `previewWithdraw(uint256 assets)` | assets | shares | Shares burned to withdraw a given asset amount. |
+| `previewRedeem(uint256 shares)` | shares | assets | Assets released when burning a given number of shares. |
+
+```solidity
+// Estimate shares before committing a deposit
+uint256 expectedShares = receiverPool.previewDeposit(1_000e18);
+
+// Add a 0.5% slippage buffer
+uint256 minShares = expectedShares * 995 / 1000;
+
+// Execute via the Router for slippage protection
+router.depositMarket(
+    market,
+    1_000e18, // receiverAssets
+    0,        // payerAssets
+    minShares, // minReceiverShares
+    0,         // minPayerShares
+    block.timestamp + 300,
+    updateData
+);
+```
+
+<Warning>
+  Do not use preview functions as the sole basis for slippage limits in multi-step atomic transactions. Always pass explicit `minShares` / `minAssets` arguments through the Router, which enforces slippage at execution time after the state update has run.
+</Warning>
+
+---
+
+## State Synchronisation
+
+Every mutating call to a pool (`deposit`, `mint`, `withdraw`, `redeem`) internally invokes `market.updateState()` before calculating any exchange rates. This ensures:
+
+1. The oracle price is current.
+2. Funding PnL between the two pools is settled.
+3. Protocol fees are accrued.
+
+As a result, calling these functions on-chain will always execute at the fair post-settlement price, not a stale cached value.
+
+<Tip>
+  Shares are standard ERC-20 tokens — you can hold them in a multisig, use them as collateral in lending protocols that accept ERC-4626, or transfer them peer-to-peer without interacting with the pool contract at all.
+</Tip>

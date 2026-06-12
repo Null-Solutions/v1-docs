@@ -1,0 +1,106 @@
+---
+title: "Base Fee Oracle — Null V1 Gas Price Market Feed"
+sidebarTitle: "Base Fee"
+description: "Use NullV1BaseFeeOracle to price the ETH cost of 10 million gas units from block.basefee — fully on-chain, stateless, always current."
+---
+
+The `NullV1BaseFeeOracle` is the simplest oracle in the Null V1 system. It reads Ethereum's `block.basefee` and returns the ETH cost of executing 10 million gas units at the current base fee, scaled to 1e36. There is no off-chain data, no signed reports, no staleness window, and no update mechanism — the price is recomputed fresh on every block simply by reading the EVM context. This makes it ideal for markets whose underlying value is directly tied to Ethereum network gas prices.
+
+## Price Formula
+
+```
+price = block.basefee * 10_000_000 * 1e18
+```
+
+- **`block.basefee`** is the EIP-1559 base fee for the current block, denominated in wei (1 ETH = 1e18 wei).
+- Multiplying by `10_000_000` gives the total wei cost of 10 million gas units at that base fee.
+- Multiplying by `1e18` scales the result to the protocol's 1e36 price standard.
+
+For example, if `block.basefee = 20 gwei = 20e9 wei`:
+
+```
+price = 20e9 * 10_000_000 * 1e18
+      = 20e9 * 1e7 * 1e18
+      = 20 * 1e34
+      = 0.02 * 1e36
+```
+
+This represents a cost of 0.02 ETH (or 20,000 gwei) to run 10 million gas at 20 gwei/gas.
+
+## No Staleness, No Updates
+
+Because `block.basefee` is a built-in EVM opcode that always reflects the current block, this oracle can never return a stale price. There is no `MAX_PRICE_AGE` check, no escape period, and no `update()` function. Every call to `price()` reads live data.
+
+<Note>
+  `NullV1BaseFeeOracle` implements only `INullV1Oracle` — it does **not** implement `INullV1UpdatableOracle`. There is no `update()` entry point and no `priceId()`. The router recognizes this and skips the update step entirely when this oracle is attached to a pool.
+</Note>
+
+## Using with the Router
+
+Pass an empty `updateData` array when depositing into or redeeming from a Base Fee oracle-backed market:
+
+```solidity
+// No updateData needed — Base Fee oracle reads block.basefee directly
+bytes[] memory updateData = new bytes[](0);
+
+router.depositMarket{value: depositAmount}(
+    marketId,
+    depositAmount,
+    minShares,
+    updateData   // empty
+);
+```
+
+## Reading the Price Directly
+
+You can read the current gas-cost price at any time with a simple view call:
+
+```solidity
+// Returns block.basefee * 10_000_000 * 1e18
+uint256 gasCostPrice = oracle.price();
+```
+
+This is a pure on-chain read — it executes in a single EVM step with no storage access.
+
+## Interface
+
+`NullV1BaseFeeOracle` implements `INullV1Oracle`. The metadata fields describe the synthetic "asset" being priced:
+
+```solidity
+oracle.baseName()    // e.g. "Ethereum Gas (10M units)"
+oracle.baseSymbol()  // e.g. "GAS10M"
+oracle.quoteName()   // e.g. "Ether"
+oracle.quoteSymbol() // e.g. "ETH"
+```
+
+<Tip>
+  Even though the price is denominated in ETH (wei), it is still returned in the 1e36 scale. Your integration code treats this oracle identically to any other `INullV1Oracle` — no special handling is required for the ETH denomination.
+</Tip>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Gas Cost Markets" icon="chart-line">
+    Create prediction or structured product markets whose payoff depends on whether Ethereum gas prices rise or fall. The base fee oracle provides a real-time, manipulation-resistant price directly from the protocol layer.
+  </Card>
+  <Card title="Gas Hedging" icon="shield">
+    Allow protocols or DAOs with large on-chain operational costs to hedge their gas exposure. A market backed by this oracle lets participants take long or short positions on future gas costs.
+  </Card>
+</CardGroup>
+
+## Deployment
+
+Deploy through the standard factory pattern. No configuration parameters beyond metadata are required — the oracle's behavior is fully determined by `block.basefee`:
+
+```solidity
+address oracle = NullV1BaseFeeOracleFactory(factory).deploy(
+    baseName,      // string — e.g. "Ethereum Gas (10M units)"
+    baseSymbol,    // string — e.g. "GAS10M"
+    quoteName,     // string — e.g. "Ether"
+    quoteSymbol    // string — e.g. "ETH"
+);
+```
+
+<Note>
+  On L2s and sidechains that expose `block.basefee` (e.g. OP Stack chains, Arbitrum), this oracle reads the **L2 base fee**, not Ethereum mainnet's. If your market intends to track L1 mainnet gas costs from an L2 deployment, you will need a different oracle that reads the L1 fee via a cross-chain message or oracle bridge.
+</Note>

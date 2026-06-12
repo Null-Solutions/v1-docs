@@ -1,0 +1,154 @@
+---
+title: "Chainlink Data Streams Oracle — Null V1 RWA Feeds"
+sidebarTitle: "Chainlink"
+description: "Use NullV1ChainlinkOracle for RWA equity markets: fetch Data Streams reports, understand session routing, and handle errors."
+---
+
+The `NullV1ChainlinkOracle` integrates Chainlink Data Streams to bring real-world asset (RWA) equity prices on-chain. It is designed specifically for Chainlink's Advanced v11 24/5 US equity feeds, which provide pricing across three distinct trading sessions: regular market hours, extended hours (pre/post market), and overnight. The oracle reads the `marketStatus` field embedded in each Chainlink report and automatically routes to the correct feed ID for the active session — your integration does not need to manage this routing manually.
+
+## Display Key
+
+The Chainlink Data Streams oracle identifies itself with:
+
+```solidity
+bytes32 public constant DISPLAY_NAME = keccak256("CHAINLINK_DATA_STREAMS");
+```
+
+## Session Feed Architecture
+
+Chainlink's 24/5 equity product exposes three separate feed IDs for each equity asset. At any given moment, only one session is active, and the report's embedded `marketStatus` field indicates which one:
+
+| Session | Feed ID | Active During |
+|---------|---------|---------------|
+| Regular | Primary feed (also returned by `priceId()`) | Standard US equity market hours |
+| Extended | Extended-hours feed ID | Pre-market and after-hours trading |
+| Overnight | Overnight feed ID | Overnight/weekend periods |
+
+When you deploy the oracle, you supply all three feed IDs. The oracle stores them and uses the `marketStatus` field in each incoming report to validate that the submitted report belongs to the currently active session. If a report for the wrong session is submitted, the oracle reverts with `WrongFeedId`.
+
+<Note>
+  You do not need to track market hours in your application. The oracle's routing logic handles session selection automatically using the data embedded in each signed Chainlink report. Always fetch the latest report from the Chainlink Data Streams API and pass it through — the oracle will accept or reject it based on the current session.
+</Note>
+
+## Fetching updateData
+
+Chainlink Data Streams reports are fetched from the Chainlink Data Streams API. Use the primary feed ID (returned by `oracle.priceId()`) to identify the stream, then retrieve the latest signed report:
+
+```
+GET https://api.chain.link/v1/reports/bulk?feedIDs=<feedId1>,<feedId2>,<feedId3>
+```
+
+The API returns signed report bytes. Encode them as a `bytes[]` array to pass as `updateData`. Unlike Pyth, report verification on-chain is **free** — `getUpdateFee(updateData)` always returns `0`.
+
+<CodeGroup>
+```typescript Fetch updateData (TypeScript)
+const primaryFeedId = await oracle.priceId();
+
+// Fetch the latest signed report for the primary feed
+const response = await fetch(
+  `https://api.chain.link/v1/reports/latest?feedID=${primaryFeedId}`,
+  { headers: { Authorization: `Bearer ${CHAINLINK_API_KEY}` } }
+);
+const { report } = await response.json();
+
+// Encode as bytes array for updateData
+const updateData: `0x${string}`[] = [report.fullReport as `0x${string}`];
+
+// Fee is always zero for Chainlink Data Streams
+const fee = await oracle.getUpdateFee(updateData); // returns 0n
+```
+
+```solidity Direct update (Solidity)
+// No ETH required — fee is zero
+oracle.update(updateData);
+
+// Read the price (1e36 scaled)
+uint256 currentPrice = oracle.price();
+```
+</CodeGroup>
+
+## Update Flow
+
+Because verification is free, the update flow is simpler than Pyth:
+
+```solidity
+// 1. Confirm fee is zero (optional, for explicitness)
+uint256 fee = oracle.getUpdateFee(updateData); // always 0
+
+// 2. Submit the signed report — no ETH needed
+oracle.update(updateData);
+
+// 3. Read the current price (1e36 scaled)
+uint256 currentPrice = oracle.price();
+```
+
+<Note>
+  The Null V1 router calls `oracle.update(updateData)` automatically before executing pool operations. When you pass `updateData` to `router.depositMarket(...)` or `router.redeemMarket(...)`, no ETH is needed for the Chainlink fee. You may still need ETH for other protocol fees — check the router documentation for details.
+</Note>
+
+## Staleness and the Escape Period
+
+`MAX_PRICE_AGE` for Chainlink Data Streams is **60 seconds**. If the stored price is older than 60 seconds, `price()` reverts with `StalePrice()`. This tight window reflects the high-frequency nature of Data Streams reports.
+
+After `STALE_PRICE_ESCAPE_PERIOD = 10 days` of no successful updates, the oracle enters escape mode and returns the last stored price instead of reverting. Like the Pyth oracle, this is an emergency backstop to prevent pools from becoming permanently frozen.
+
+<Warning>
+  A 60-second staleness window is intentionally strict. In production, always fetch a fresh report immediately before any transaction that reads the oracle. Caching a report and reusing it across multiple blocks will likely result in `StalePrice()` reverts.
+</Warning>
+
+## Errors
+
+<ResponseField name="InvalidReportVersion(uint16 version)" type="error">
+  Reverts when the submitted Chainlink report uses an unrecognized schema version. `NullV1ChainlinkOracle` expects the Advanced v11 report format. If you're seeing this error, ensure you're fetching from the correct Data Streams endpoint.
+
+  <ParamField path="version" type="uint16">
+    The version number found in the submitted report.
+  </ParamField>
+</ResponseField>
+
+<ResponseField name="UpdateDataEmpty()" type="error">
+  Reverts when `updateData` is a zero-length array. At least one signed report must be provided. Ensure your off-chain fetch completed successfully before constructing the transaction.
+</ResponseField>
+
+<ResponseField name="WrongFeedId(bytes32 expected, bytes32 actual)" type="error">
+  Reverts when the feed ID embedded in the submitted report does not match any of the oracle's three registered feed IDs. This can happen if you submit a report for the wrong asset, or if the active session does not match the submitted report's session.
+
+  <ParamField path="expected" type="bytes32">
+    The feed ID the oracle expected for the active market session.
+  </ParamField>
+  <ParamField path="actual" type="bytes32">
+    The feed ID found in the submitted report.
+  </ParamField>
+</ResponseField>
+
+<ResponseField name="StalePrice()" type="error">
+  Reverts when the stored price is older than `MAX_PRICE_AGE` (60 seconds) and the escape period has not elapsed. Fetch and submit a fresh report from the Chainlink Data Streams API.
+</ResponseField>
+
+<ResponseField name="InvalidPrice()" type="error">
+  Reverts when the price extracted from the Chainlink report is zero or negative. This should not occur for live feeds — if you encounter it, verify that the feed ID is correct and the market is active.
+</ResponseField>
+
+<ResponseField name="DuplicateFeedId()" type="error">
+  Reverts at deployment time when two or more of the three supplied feed IDs are identical. Each session (regular, extended, overnight) must have a distinct feed ID. Review your factory deployment parameters.
+</ResponseField>
+
+## Deployment
+
+Deploy through `NullV1ChainlinkOracleFactory`, supplying all three session feed IDs:
+
+```solidity
+address oracle = NullV1ChainlinkOracleFactory(factory).deploy(
+    regularFeedId,    // bytes32 — standard market hours feed
+    extendedFeedId,   // bytes32 — pre/post market feed
+    overnightFeedId,  // bytes32 — overnight/weekend feed
+    baseName,         // string  — e.g. "Apple Inc."
+    baseSymbol,       // string  — e.g. "AAPL"
+    quoteName,        // string  — e.g. "US Dollar"
+    quoteSymbol       // string  — e.g. "USD"
+);
+```
+
+<Tip>
+  Chainlink publishes the full list of available RWA Advanced v11 24/5 equity feed IDs and their session breakdown in the [Chainlink Data Streams 24/5 US Equities User Guide](https://docs.chain.link/data-streams/rwa-streams/24-5-us-equities-user-guide). Refer to that guide to find the three feed IDs for your target equity.
+</Tip>

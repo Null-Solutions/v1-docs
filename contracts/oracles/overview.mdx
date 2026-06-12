@@ -1,0 +1,124 @@
+---
+title: "Oracle System Overview — Null V1 Oracles"
+sidebarTitle: "Overview"
+description: "Learn how Null V1 oracles work, the 1e36 price scale, the updateData flow, and which oracle type fits your market."
+---
+
+Null V1 uses a modular oracle system where every price feed implements a common interface, `INullV1Oracle`. This shared surface lets the protocol read prices uniformly regardless of the underlying data source — whether that's a pull-based service like Pyth or Chainlink Data Streams, an on-chain Uniswap V3 TWAP, or a fully stateless feed derived from `block.basefee`. Oracles that require off-chain price updates additionally implement `INullV1UpdatableOracle`, which adds a standard `update()` entry point so the router can hydrate the feed before any pool operation.
+
+## Price Scale
+
+All oracles return prices scaled to **1e36**. A price of $3,000 for `AAPL/USD` is represented as `3000 * 1e36`. This fixed scale eliminates per-feed decimal handling in the core protocol — your integration always works with the same magnitude regardless of oracle type.
+
+## The updateData Flow
+
+For pull-based oracles (Pyth and Chainlink Data Streams), price data must be fetched off-chain and submitted on-chain before the pool reads the price. The sequence is:
+
+1. **Fetch** signed update bytes from the relevant off-chain API (Pyth Hermes or Chainlink Data Streams).
+2. **Pass** those bytes as `updateData` in your call to `router.depositMarket(...)` or `router.redeemMarket(...)`.
+3. **The router** calls `oracle.update{value: fee}(updateData)` automatically before executing the pool operation.
+4. **The oracle** stores the validated price, and the pool reads it via `oracle.price()`.
+
+For push-based oracles (Uniswap V3 TWAP and Base Fee), no off-chain data is needed — pass an empty array (`[]`) as `updateData` and the router skips the update step entirely.
+
+<Note>
+  The router handles update fee payment on your behalf. You only need to ensure your transaction includes enough ETH to cover any required fee (e.g. Pyth). Chainlink Data Streams verification is free, so no ETH is needed for those oracles.
+</Note>
+
+## Oracle Types
+
+<CardGroup cols={2}>
+  <Card title="Pyth Oracle" icon="satellite-dish" href="/contracts/oracles/pyth">
+    Pull-based oracle backed by Pyth Network's Hermes API. Supports any asset with a Pyth price feed ID. Requires off-chain update bytes and a small ETH fee per update.
+  </Card>
+  <Card title="Chainlink Data Streams" icon="link" href="/contracts/oracles/chainlink">
+    Pull-based oracle for RWA Advanced v11 equity feeds. Routes between regular, extended, and overnight session feed IDs based on market status. Zero update fee.
+  </Card>
+  <Card title="Uniswap V3 TWAP" icon="arrow-right-arrow-left" href="/contracts/oracles/uniswap-v3">
+    Push-based oracle reading a TWAP from an on-chain Uniswap V3 pool. No off-chain data or update calls required. Ideal for token markets with Uniswap V3 liquidity.
+  </Card>
+  <Card title="Base Fee Oracle" icon="gas-pump" href="/contracts/oracles/base-fee">
+    Stateless on-chain oracle pricing the ETH cost of 10 million gas units from `block.basefee`. No staleness, no updates — refreshes every block automatically.
+  </Card>
+</CardGroup>
+
+## INullV1Oracle Interface
+
+Every oracle in Null V1 implements `INullV1Oracle`. These functions give you the current price and descriptive metadata used by UIs and indexers.
+
+```solidity
+interface INullV1Oracle {
+    function price() external view returns (uint256);
+    function displayName() external view returns (bytes32);
+    function oracleName() external view returns (string memory);
+    function baseName() external view returns (string memory);
+    function baseSymbol() external view returns (string memory);
+    function quoteName() external view returns (string memory);
+    function quoteSymbol() external view returns (string memory);
+}
+```
+
+<ParamField path="price()" type="uint256">
+  Returns the current price of the base asset in the quote asset, scaled to **1e36**. For example, `3000 * 1e36` represents $3,000 per unit.
+</ParamField>
+
+<ParamField path="displayName()" type="bytes32">
+  A keccak256-hashed key identifying the oracle type (e.g. `keccak256("PYTH_CORE_PULL")`). Used by front-ends and indexers to render the correct oracle label without string comparisons.
+</ParamField>
+
+<ParamField path="oracleName()" type="string">
+  A human-readable name for this oracle instance, such as `"NullV1PythOracle"`.
+</ParamField>
+
+<ParamField path="baseName()" type="string">
+  Full name of the base asset (e.g. `"Apple Inc."`). Consumed by UIs and indexers to display asset metadata.
+</ParamField>
+
+<ParamField path="baseSymbol()" type="string">
+  Ticker symbol of the base asset (e.g. `"AAPL"`). Used for display and routing in front-end integrations.
+</ParamField>
+
+<ParamField path="quoteName()" type="string">
+  Full name of the quote asset (e.g. `"US Dollar"`).
+</ParamField>
+
+<ParamField path="quoteSymbol()" type="string">
+  Ticker symbol of the quote asset (e.g. `"USD"`).
+</ParamField>
+
+<Note>
+  Oracle metadata (`baseName`, `baseSymbol`, `quoteName`, `quoteSymbol`) is informational only. The protocol does not use these fields for any on-chain logic — they exist purely so UIs and indexers can display accurate asset information without maintaining a separate registry.
+</Note>
+
+## INullV1UpdatableOracle Interface
+
+Pull-based oracles (Pyth and Chainlink Data Streams) additionally implement `INullV1UpdatableOracle`. This interface standardizes how the router submits off-chain price reports before reading a price.
+
+```solidity
+interface INullV1UpdatableOracle {
+    function update(bytes[] calldata updateData) external payable;
+    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256);
+    function priceId() external view returns (bytes32);
+}
+```
+
+<ParamField path="update(updateData)" type="bytes[] calldata" required>
+  Submits off-chain signed price report bytes to the oracle. The oracle validates the data, checks for staleness, and stores the new price. Must be called (by the router) before `price()` on any block where fresh data is required. Send ETH equal to `getUpdateFee(updateData)` with this call.
+</ParamField>
+
+<ParamField path="getUpdateFee(updateData)" type="bytes[] calldata" required>
+  Returns the amount of ETH (in wei) required to submit the given `updateData`. For Pyth, this delegates to the Pyth contract's fee calculation. For Chainlink Data Streams, this always returns `0`.
+</ParamField>
+
+<ParamField path="priceId()" type="bytes32">
+  The feed identifier registered at oracle deployment. For Pyth this is the Pyth price feed ID; for Chainlink this is the primary (regular-session) feed ID. Used by off-chain tooling to know which feed to query.
+</ParamField>
+
+## Choosing an Oracle
+
+| Oracle | Data Source | updateData Required | Update Fee | Best For |
+|--------|------------|---------------------|------------|----------|
+| Pyth | Pyth Hermes API | Yes | Small ETH fee | Crypto and RWA assets on Pyth |
+| Chainlink Data Streams | Chainlink API | Yes | Free | US equity RWA markets |
+| Uniswap V3 TWAP | On-chain pool | No (`[]`) | None | ERC-20 token markets |
+| Base Fee | `block.basefee` | No (`[]`) | None | Gas-price-indexed markets |

@@ -1,0 +1,243 @@
+---
+title: "NullV1Router: Primary User Entrypoint"
+sidebarTitle: "Router"
+description: "NullV1Router is the recommended Null V1 entrypoint, bundling oracle updates with deposits and redemptions while enforcing slippage limits and deadlines."
+---
+
+The `NullV1Router` contract is the recommended entrypoint for most interactions with Null V1. Rather than calling the factory or pools directly, you route all market creation, liquidity deposits, and redemptions through here. The router bundles oracle price updates with your transaction, enforces slippage limits and deadlines atomically, and handles the ERC-4626 asset flow for you. Calling pools directly bypasses slippage protection and oracle freshness guarantees, which is why the router exists.
+
+## Oracle Update Data
+
+Every mutating function on the router accepts a `bytes[] calldata updateData` parameter. This is an array of signed price update payloads consumed by the oracle (e.g. Pyth Network off-chain prices or Chainlink Data Streams). The router forwards these bytes to the oracle contract and pays any required update fee from its own ETH balance before modifying market state.
+
+- For **push-based oracles** (Pyth, Chainlink Data Streams): fetch the latest signed price payload from the oracle provider's API and pass it here.
+- For **static or on-chain pull oracles**: pass an empty array `[]` — no update fee is required and no ETH needs to be attached.
+
+<Note>
+  The router must hold enough ETH to cover the oracle update fee. Fund the router with a small ETH balance before use. If the balance is insufficient, the transaction reverts with `InsufficientUpdateFeeBalance`.
+</Note>
+
+---
+
+## Functions
+
+### `createMarket`
+
+Deploys a new market (via the factory) after applying any oracle updates. Equivalent to calling `factory.createMarket` directly, but ensures the oracle is fresh before the market is initialised.
+
+<ParamField path="factory" type="INullV1Factory" required>
+  The factory contract to use for deployment. Allows the router to be used with future factory versions.
+</ParamField>
+
+<ParamField path="asset" type="IERC20" required>
+  The ERC-20 collateral token for the new market.
+</ParamField>
+
+<ParamField path="oracle" type="INullV1Oracle" required>
+  The price oracle to associate with the market.
+</ParamField>
+
+<ParamField path="mu" type="uint24" required>
+  The drift parameter μ for the market's funding rate dynamics.
+</ParamField>
+
+<ParamField path="updateData" type="bytes[]" required>
+  Signed oracle price update payloads. Pass `[]` for static oracles.
+</ParamField>
+
+Returns `INullV1Market market` — the address of the newly deployed market.
+
+```solidity
+INullV1Market market = router.createMarket(
+    factory,
+    IERC20(assetAddress),
+    INullV1Oracle(oracleAddress),
+    mu,
+    updateData
+);
+```
+
+---
+
+### `depositMarket`
+
+Deposits assets into one or both pools of a market in a single transaction. The router pulls the specified asset amounts from your wallet, calls the oracle update, settles market state, and mints shares to you — all atomically. Slippage is enforced: if the shares you receive fall below your minimums, the entire transaction reverts.
+
+<ParamField path="market" type="INullV1Market" required>
+  The target market to deposit into.
+</ParamField>
+
+<ParamField path="receiverAssets" type="uint256" required>
+  Amount of collateral to deposit into the receiver pool. Pass `0` to skip.
+</ParamField>
+
+<ParamField path="payerAssets" type="uint256" required>
+  Amount of collateral to deposit into the payer pool. Pass `0` to skip.
+</ParamField>
+
+<ParamField path="minReceiverShares" type="uint256" required>
+  Minimum receiver shares you will accept. Reverts with `SlippageReceiverShares` if not met.
+</ParamField>
+
+<ParamField path="minPayerShares" type="uint256" required>
+  Minimum payer shares you will accept. Reverts with `SlippagePayerShares` if not met.
+</ParamField>
+
+<ParamField path="deadline" type="uint256" required>
+  Unix timestamp after which the transaction is invalid. Reverts with `TransactionTooOld` if `block.timestamp > deadline`.
+</ParamField>
+
+<ParamField path="updateData" type="bytes[]" required>
+  Signed oracle price update payloads. Pass `[]` for static oracles.
+</ParamField>
+
+<ResponseField name="receiverShares" type="uint256">
+  Actual receiver pool shares minted to the caller.
+</ResponseField>
+
+<ResponseField name="payerShares" type="uint256">
+  Actual payer pool shares minted to the caller.
+</ResponseField>
+
+<CodeGroup>
+
+```solidity Solidity
+(uint256 receiverShares, uint256 payerShares) = router.depositMarket(
+    market,
+    500e18,          // receiverAssets
+    500e18,          // payerAssets
+    minReceiverShares,
+    minPayerShares,
+    block.timestamp + 300, // 5-minute deadline
+    updateData
+);
+```
+
+```typescript TypeScript (viem)
+const { result } = await publicClient.simulateContract({
+  address: ROUTER_ADDRESS,
+  abi: routerAbi,
+  functionName: "depositMarket",
+  args: [
+    marketAddress,
+    500n * 10n ** 18n,   // receiverAssets
+    500n * 10n ** 18n,   // payerAssets
+    minReceiverShares,
+    minPayerShares,
+    BigInt(Math.floor(Date.now() / 1000) + 300),
+    updateData,
+  ],
+  account,
+});
+
+const hash = await walletClient.writeContract(result.request);
+```
+
+</CodeGroup>
+
+---
+
+### `redeemMarket`
+
+Burns shares from one or both pools and returns underlying assets to the caller. Mirror image of `depositMarket`: oracle update, state settlement, and slippage enforcement all happen atomically.
+
+<ParamField path="market" type="INullV1Market" required>
+  The market to redeem from.
+</ParamField>
+
+<ParamField path="receiverShares" type="uint256" required>
+  Number of receiver pool shares to burn. Pass `0` to skip.
+</ParamField>
+
+<ParamField path="payerShares" type="uint256" required>
+  Number of payer pool shares to burn. Pass `0` to skip.
+</ParamField>
+
+<ParamField path="minReceiverAssets" type="uint256" required>
+  Minimum underlying assets to receive from the receiver pool. Reverts with `SlippageReceiverAssets` if not met.
+</ParamField>
+
+<ParamField path="minPayerAssets" type="uint256" required>
+  Minimum underlying assets to receive from the payer pool. Reverts with `SlippagePayerAssets` if not met.
+</ParamField>
+
+<ParamField path="deadline" type="uint256" required>
+  Unix timestamp after which the transaction is invalid.
+</ParamField>
+
+<ParamField path="updateData" type="bytes[]" required>
+  Signed oracle price update payloads. Pass `[]` for static oracles.
+</ParamField>
+
+<ResponseField name="receiverAssets" type="uint256">
+  Underlying assets returned from burning receiver shares.
+</ResponseField>
+
+<ResponseField name="payerAssets" type="uint256">
+  Underlying assets returned from burning payer shares.
+</ResponseField>
+
+```solidity
+(uint256 receiverAssets, uint256 payerAssets) = router.redeemMarket(
+    market,
+    myReceiverShares,
+    myPayerShares,
+    minReceiverAssets,
+    minPayerAssets,
+    block.timestamp + 300,
+    updateData
+);
+```
+
+---
+
+### `withdrawEth`
+
+Allows the contract owner to recover ETH held in the router (used to pre-fund oracle update fees). This function is **owner-only**.
+
+<ParamField path="to" type="address" required>
+  The recipient address for the withdrawn ETH.
+</ParamField>
+
+<ParamField path="amount" type="uint256" required>
+  The amount of ETH (in wei) to transfer.
+</ParamField>
+
+---
+
+## ETH Balance Requirement
+
+For markets using push-based oracle providers such as Pyth Network, the oracle contract charges a small ETH fee per price update. The router pays this fee from its own ETH balance. You are responsible for maintaining an adequate balance:
+
+<Steps>
+  <Step title="Estimate the per-update fee">
+    Call the oracle provider's fee estimation function (e.g. `pyth.getUpdateFee(updateData)`) to determine the current cost per update.
+  </Step>
+  <Step title="Fund the router">
+    Send ETH to the router address. A typical approach is to keep a buffer of several weeks of update fees.
+  </Step>
+  <Step title="Monitor balance">
+    Watch for `InsufficientUpdateFeeBalance` reverts and top up the router before the balance runs dry.
+  </Step>
+</Steps>
+
+<Warning>
+  If the router's ETH balance is too low to pay the oracle fee, your deposit or redeem transaction will revert with `InsufficientUpdateFeeBalance(uint256 balance, uint256 required)`. Always check the router's ETH balance in your integration before submitting a transaction.
+</Warning>
+
+---
+
+## Errors
+
+| Error | Description |
+|---|---|
+| `SlippageReceiverShares(uint256 expected, uint256 actual)` | Receiver shares minted were below `minReceiverShares`. |
+| `SlippagePayerShares(uint256 expected, uint256 actual)` | Payer shares minted were below `minPayerShares`. |
+| `SlippageReceiverAssets(uint256 expected, uint256 actual)` | Receiver assets returned were below `minReceiverAssets`. |
+| `SlippagePayerAssets(uint256 expected, uint256 actual)` | Payer assets returned were below `minPayerAssets`. |
+| `TransactionTooOld(uint256 deadline)` | `block.timestamp` exceeded the provided deadline. |
+| `InsufficientUpdateFeeBalance(uint256 balance, uint256 required)` | The router's ETH balance is too low to pay the oracle update fee. |
+
+<Tip>
+  Set your deadline to `block.timestamp + 300` (5 minutes) for standard transactions. For automated keeper scripts running on predictable block intervals, a tighter deadline (60–120 seconds) reduces the risk of stale execution.
+</Tip>

@@ -1,0 +1,185 @@
+---
+title: "How Null V1 Works: Mechanics and Settlement"
+sidebarTitle: "How It Works"
+description: "Follow a position through its full lifecycle — deposit, state update, net settlement, and redemption — and understand the formulas that keep the protocol solvent."
+---
+
+Understanding Null V1 starts with a single rule: every time anyone touches a pool, the market settles. Funding and price returns are calculated, netted, and capped — all in the same transaction as your deposit or redemption. There are no background jobs, no keepers, and no pending rewards to claim. By the time your transaction confirms, your share price already reflects the latest oracle price and any funding that has accrued since the last touch.
+
+## The Position Lifecycle
+
+The four stages below describe what happens from your first deposit to your final redemption.
+
+<Steps>
+  <Step title="Deposit Collateral">
+    Call `deposit` or `mint` on the target ERC-4626 pool (or route through
+    `NullV1Router` if you want the router to handle approvals and
+    multi-hop collateral wrapping). The pool mints shares proportional to
+    your collateral contribution relative to the current pool balance.
+
+    Before minting, the pool calls `market.updateState()` — so the share
+    price you receive already reflects the most recent oracle price and
+    any accrued funding. You will never buy into stale state.
+
+    <Tip>
+      If your collateral is a raw ERC-20 (e.g. USDC) and the pool accepts
+      a yield-bearing wrapper (e.g. waUSDC), use `NullV1Router` to wrap and
+      deposit in a single transaction.
+    </Tip>
+  </Step>
+
+  <Step title="State Update Triggers">
+    `market.updateState()` runs on every pool operation: deposit,
+    withdraw, redeem, and mint. It can also be called permissionlessly at
+    any time by anyone — useful for keeping the share price fresh for
+    off-chain reads.
+
+    During `updateState()`, the market:
+
+    1. Reads the current oracle price.
+    2. Computes raw price returns between receiver and payer pools.
+    3. Computes accrued funding owed by the receiver pool to the payer pool.
+    4. Nets and caps both flows (see below).
+    5. Updates the internal pool balance accounting for both pools.
+  </Step>
+
+  <Step title="Net Settlement">
+    Net settlement is the core of Null V1's no-liquidation guarantee.
+    Rather than applying price returns and funding as two separate
+    transfers that could each exceed pool size, the protocol combines them
+    into a single bounded transfer.
+
+    The formula is:
+
+    ```
+    U = returnsPayerToReceiver - fundingReceiverToPayer
+    N = max(-receiverPool, min(U, payerPool))
+    ```
+
+    Where:
+
+    - `returnsPayerToReceiver` — the raw collateral value of oracle price
+      gains accruing to receivers (negative if price fell).
+    - `fundingReceiverToPayer` — the collateral value of funding owed by
+      receivers to payers since the last update.
+    - `U` — the uncapped net transfer (positive = receivers gain, negative
+      = receivers lose).
+    - `N` — the actual transfer, capped so that neither pool balance goes
+      below zero.
+
+    The cap `max(-receiverPool, min(U, payerPool))` ensures:
+
+    - Receivers cannot lose more than the total receiver pool balance.
+    - Payers cannot lose more than the total payer pool balance.
+
+    <Info>
+      Netting before capping matters. If a receiver is owed $10 in price
+      gains but owes $3 in funding, the net is $7 — not two separate
+      transfers of $10 and $3. This prevents scenarios where a cap on one
+      leg leaves the other leg unsettled.
+    </Info>
+  </Step>
+
+  <Step title="Redeem Shares">
+    Call `redeem(shares, receiver, owner)` or
+    `withdraw(assets, receiver, owner)` on the pool at any time.
+    The pool runs `updateState()` first, then burns your shares and
+    transfers the proportional collateral to `receiver`.
+
+    Your redemption value reflects:
+    - Your share of the pool balance after the latest net settlement.
+    - Any yield earned if the collateral is a yield-bearing ERC-4626
+      token (e.g. waUSDC accrues AAVE supply yield on top of protocol
+      returns).
+
+    There are no lock-up periods, withdrawal queues, or cooldown windows.
+  </Step>
+</Steps>
+
+## Funding Flow
+
+Funding is the continuous payment from receiver pool participants to payer pool participants. It compensates payers for the risk they take on and incentivises pool balance.
+
+The instantaneous funding rate is:
+
+```
+Funding APR = (mu / 1_000_000) * rho
+```
+
+Where `rho = receiverPool / payerPool` is the current pool ratio. When the receiver pool is large relative to the payer pool, rho rises and receivers pay more funding. When pools are balanced, the rate is moderate. This self-correcting mechanism encourages new payer deposits when receiver demand is high.
+
+<Note>
+  `mu` is set at market creation and never changes. It is expressed in
+  parts per million — for example, `mu = 10000` equals a 1% multiplier.
+  A market with `mu = 10000` and `rho = 2.0` would have a funding APR of
+  approximately 2%.
+</Note>
+
+## Price Circuit Breaker
+
+To protect against oracle manipulation or flash-crash data, Null V1 enforces a **7% per-hour** price movement cap. If the oracle reports a price change exceeding 7% relative to the last recorded price within a one-hour window, the market clamps the effective price to the circuit-breaker boundary for that update cycle.
+
+<Warning>
+  During a circuit-breaker clamp, price returns settle at the capped
+  rate, not the raw oracle rate. If the oracle price continues to move
+  beyond the cap across multiple update cycles, the settlement gradually
+  catches up, but receivers do not receive the full instantaneous return
+  in a single block.
+</Warning>
+
+## State Update Sequence Diagram
+
+The following pseudo-code summarises the full `updateState()` execution path:
+
+```solidity
+function updateState() external {
+    uint256 currentPrice   = oracle.getPrice();
+    uint256 elapsed        = block.timestamp - lastUpdateTime;
+
+    // 1. Clamp price to circuit-breaker window
+    uint256 effectivePrice = clampPrice(currentPrice, lastPrice, elapsed);
+
+    // 2. Compute raw price return (positive = price rose)
+    int256 rawReturn = computeReturn(effectivePrice, lastPrice,
+                                     receiverPool, payerPool);
+
+    // 3. Compute funding owed by receivers
+    uint256 funding = computeFunding(mu, rho, elapsed);
+
+    // 4. Net and cap
+    int256 U = rawReturn - int256(funding);
+    int256 N = clamp(U, -int256(receiverPool), int256(payerPool));
+
+    // 5. Apply to pool balances
+    receiverPool = uint256(int256(receiverPool) + N);
+    payerPool    = uint256(int256(payerPool)    - N);
+
+    lastPrice      = effectivePrice;
+    lastUpdateTime = block.timestamp;
+}
+```
+
+<Info>
+  The code above is illustrative. Refer to the deployed `NullV1Market`
+  source for exact implementation details, including precision handling
+  and edge cases when either pool balance is zero.
+</Info>
+
+## Collateral and Yield-Bearing Wrappers
+
+Null V1 pools accept any ERC-20 collateral token. When the collateral is an ERC-4626 yield-bearing wrapper — such as Aave's waUSDC — the underlying yield accrues directly inside the pool balance. This means both receivers and payers earn the wrapper's base yield in addition to (or partially offsetting) protocol-level funding and price returns.
+
+The market itself is agnostic to whether the collateral token is a plain ERC-20 or an ERC-4626 vault. Yield accrual is automatic because the collateral token's `convertToAssets` increases over time, expanding the pool balance denominated in the underlying asset.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Key Concepts" icon="book" href="/key-concepts">
+    Definitions for every term introduced on this page: mu, rho, net
+    settlement, funding APR, and more.
+  </Card>
+  <Card title="Markets" icon="chart-line" href="/markets/creating-a-market">
+    Learn how to deploy a new market with a custom asset, oracle, and mu
+    value using NullV1Factory.
+  </Card>
+</CardGroup>

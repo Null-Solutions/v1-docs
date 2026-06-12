@@ -1,0 +1,263 @@
+---
+title: "Null V1 Oracle Types and Integration Guide"
+sidebarTitle: "Oracles"
+description: "Compare the four Null V1 oracle types — Pyth, Chainlink Data Streams, Uniswap V3 TWAP, and Base Fee — and learn how to integrate each one."
+---
+
+Oracles are the price feeds that tell a Null V1 market how the underlying asset is valued. Every oracle in the protocol implements `INullV1Oracle`, which exposes a single `price()` function returning a `1e36`-scaled price, plus metadata fields that describe the asset pair. Some oracles are **pull-based** and require fresh price payloads (`updateData`) to be submitted with each transaction; others are **push-based** or fully on-chain and need no external data. Choosing the right oracle for your market affects latency, gas cost, data availability, and which assets you can price.
+
+---
+
+## The Price Scale
+
+All Null V1 oracles return prices scaled to `1e36`. This unified scale means the protocol never needs to account for decimal differences between oracle implementations.
+
+```solidity
+// All oracle types implement this interface
+function price() external view returns (uint256); // always 1e36-scaled
+
+// Example: if AAPL = $200.00, price() returns:
+// 200_000000000000000000000000000000000000 (200 × 10^36)
+```
+
+This scale provides sufficient precision for even the smallest price movements while avoiding overflow in fixed-point arithmetic.
+
+---
+
+## INullV1Oracle Interface
+
+Every oracle exposes the following read-only metadata, which the protocol and front-ends use to display market information:
+
+```solidity
+interface INullV1Oracle {
+    function price()         external view returns (uint256); // 1e36-scaled
+    function displayName()   external view returns (bytes32); // e.g. keccak256("PYTH_CORE_PULL")
+    function oracleName()    external view returns (string memory);
+    function baseName()      external view returns (string memory); // e.g. "Apple Inc."
+    function baseSymbol()    external view returns (string memory); // e.g. "AAPL"
+    function quoteName()     external view returns (string memory); // e.g. "US Dollar"
+    function quoteSymbol()   external view returns (string memory); // e.g. "USD"
+}
+```
+
+---
+
+## Updatable Oracles
+
+Pull-based oracles additionally implement `INullV1UpdatableOracle`, which the router calls when `updateData` is provided:
+
+```solidity
+interface INullV1UpdatableOracle is INullV1Oracle {
+    function update(bytes[] calldata updateData) external payable;
+    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256);
+    function priceId() external view returns (bytes32);
+}
+```
+
+When you call `router.createMarket(...)` or any router function that accepts `updateData`, the router calls `oracle.update(updateData)` before proceeding. For static oracles, pass an empty `bytes[]` array — the router will skip the update step.
+
+---
+
+## Available Oracle Types
+
+<CardGroup cols={2}>
+  <Card title="Pyth Network" icon="satellite-dish">
+    **Pull-based.** Uses Pyth's Hermes API to source verifiable price attestations
+    off-chain, then submits them on-chain. Ideal for any asset with a Pyth price
+    feed, including equities, crypto, FX, and commodities. Requires `updateData`
+    on every transaction.
+  </Card>
+  <Card title="Chainlink Data Streams" icon="link">
+    **Pull-based.** Uses Chainlink's Data Streams product with three feed IDs
+    (regular, extended, and overnight) to support equity markets that trade 24/5.
+    Best suited for RWA equity markets requiring institutional-grade price sources.
+    Requires `updateData` on every transaction.
+  </Card>
+  <Card title="Uniswap V3 TWAP" icon="arrow-right-arrow-left">
+    **Push-based.** Reads the time-weighted average price directly from a Uniswap
+    V3 pool's on-chain accumulator. No `updateData` required. Suitable for
+    on-chain assets with sufficient Uniswap V3 liquidity. Prices update passively
+    as swaps occur in the pool.
+  </Card>
+  <Card title="Base Fee Oracle" icon="gas-pump">
+    **Fully on-chain.** Prices the ETH cost of 10 million gas units using the
+    current block's `block.basefee`. Useful for gas cost hedging products.
+    Requires no external data source and no `updateData`.
+  </Card>
+</CardGroup>
+
+---
+
+## Oracle Type Deep Dives
+
+<Tabs>
+  <Tab title="Pyth">
+    ### NullV1PythOracle
+
+    Pyth oracles source prices from Pyth Network's guardian network and publish
+    them via the Hermes REST API. Each price attestation is a signed message that
+    is submitted on-chain and verified by the Pyth contract before the oracle
+    accepts the update.
+
+    **Display key:** `keccak256("PYTH_CORE_PULL")`
+
+    **When to use:** Any asset listed on Pyth — equities, crypto, FX, metal
+    prices, and more. Pyth offers sub-second price latency and covers hundreds of
+    price feeds.
+
+    **updateData required:** Yes — fetch from the Hermes API before each transaction.
+
+    ```typescript
+    // Fetch updateData for a Pyth price feed
+    const priceId = "0xe62df6..."; // Pyth price feed ID for your asset
+
+    const res = await fetch(
+      `https://hermes.pyth.network/api/latest_vaas?ids[]=${priceId}`
+    );
+    const { binary } = await res.json();
+    const updateData = binary.data.map((d: string) => `0x${d}`);
+
+    // Pass updateData to the router
+    await router.write.createMarket([factory, asset, oracle, mu, updateData]);
+    ```
+
+    ```solidity
+    // On-chain: get the update fee and pass ETH with the transaction
+    uint256 fee = oracle.getUpdateFee(updateData);
+    router.createMarket{value: fee}(factory, asset, oracle, mu, updateData);
+    ```
+
+    <Note>
+      Pyth's on-chain verification requires a small ETH fee per update. Call
+      `oracle.getUpdateFee(updateData)` to get the exact amount and include it as
+      `msg.value` in your transaction.
+    </Note>
+  </Tab>
+
+  <Tab title="Chainlink Data Streams">
+    ### NullV1ChainlinkOracle
+
+    Chainlink Data Streams is a pull-based oracle product designed for low-latency
+    price delivery. The Null V1 Chainlink oracle uses **three feed IDs** to handle
+    the equity market calendar: a regular-hours feed, an extended-hours feed, and
+    an overnight/weekend feed. This ensures that RWA equity markets remain priceable
+    around the clock even when the underlying exchange is closed.
+
+    **Display key:** `keccak256("CHAINLINK_DATA_STREAMS")`
+
+    **When to use:** Institutional RWA equity markets (stocks, ETFs) where
+    Chainlink Data Streams feed availability is required. Also suitable for any
+    asset with a Chainlink Data Streams feed.
+
+    **updateData required:** Yes — fetch reports from the Chainlink Data Streams
+    API before each transaction.
+
+    | Feed type | Active period |
+    |---|---|
+    | Regular | Market open hours |
+    | Extended | Pre/after market hours |
+    | Overnight | Weekends and holidays |
+
+    <Note>
+      Unlike Pyth, Chainlink Data Streams verification fees are paid in LINK
+      tokens or via a fee manager contract, depending on the deployment. Consult
+      the Chainlink documentation for the correct fee-payment path on your target
+      chain.
+    </Note>
+  </Tab>
+
+  <Tab title="Uniswap V3 TWAP">
+    ### NullV1UniswapV3Oracle
+
+    The Uniswap V3 TWAP oracle reads directly from an on-chain Uniswap V3 pool's
+    time-weighted average price accumulator. Because the price is derived from
+    on-chain swap history, no off-chain data submission is required. The TWAP
+    window is configurable at deployment time — longer windows are more resistant
+    to manipulation but less responsive to sudden price moves.
+
+    **Display key:** Set at deployment, typically describes the pool pair.
+
+    **When to use:** On-chain crypto assets with a deep Uniswap V3 pool. Not
+    suitable for RWAs or assets without on-chain Uniswap V3 liquidity.
+
+    **updateData required:** No — pass an empty array.
+
+    ```solidity
+    // No updateData needed for TWAP oracles
+    bytes[] memory updateData = new bytes[](0);
+
+    INullV1Market market = router.createMarket(
+        factory, asset, twapOracle, mu, updateData
+    );
+    ```
+
+    <Warning>
+      TWAP oracles can be manipulated by large, well-funded actors willing to
+      move the Uniswap pool price for an extended period. Use a TWAP window of
+      at least 30 minutes for production markets and ensure the underlying pool
+      has deep liquidity.
+    </Warning>
+  </Tab>
+
+  <Tab title="Base Fee">
+    ### NullV1BaseFeeOracle
+
+    The Base Fee oracle prices the cost of executing 10 million gas units at the
+    current block's EIP-1559 base fee. The price is computed entirely on-chain
+    with no external dependencies:
+
+    ```
+    price = block.basefee × 10_000_000 × 1e18
+    ```
+
+    This oracle enables gas cost hedging products — a receiver LP effectively
+    goes long on gas prices, while a payer LP takes the short side.
+
+    **Display key:** Set at deployment.
+
+    **When to use:** Gas cost hedging or any protocol that wants to create a
+    market on Ethereum execution costs. Requires no external data, price feeds,
+    or API keys.
+
+    **updateData required:** No — pass an empty array.
+
+    ```solidity
+    // Base fee oracle is fully on-chain — no updateData required
+    bytes[] memory updateData = new bytes[](0);
+
+    INullV1Market market = router.createMarket(
+        factory, asset, baseFeeOracle, mu, updateData
+    );
+    ```
+
+    <Note>
+      Because `block.basefee` can only be read in the current block, the price
+      returned by the Base Fee oracle is always live. There is no staleness risk
+      for this oracle type.
+    </Note>
+  </Tab>
+</Tabs>
+
+---
+
+## Stale-Price Escape Hatch
+
+All Null V1 oracles participate in the protocol's stale-price escape mechanism. If an oracle's price has not been updated for **10 days**, the protocol enters an emergency redemption mode that allows users to exit their positions at the last known price. This protects liquidity providers from being permanently locked in a market if an oracle source becomes unavailable.
+
+<Warning>
+  The 10-day stale-price window is a last-resort safety measure, not a routine
+  operating condition. For pull-based oracles (Pyth, Chainlink Data Streams) you
+  should ensure your keeper infrastructure updates the oracle price regularly —
+  at minimum once per transaction that interacts with the market.
+</Warning>
+
+---
+
+## Summary Comparison
+
+| Oracle | Type | updateData | Best For |
+|---|---|---|---|
+| `NullV1PythOracle` | Pull | Required | Any Pyth-listed asset; broad coverage |
+| `NullV1ChainlinkOracle` | Pull | Required | RWA equities; 24/5 equity feeds |
+| `NullV1UniswapV3Oracle` | Push | Not required | On-chain crypto with Uniswap V3 pool |
+| `NullV1BaseFeeOracle` | On-chain | Not required | Gas cost hedging products |
