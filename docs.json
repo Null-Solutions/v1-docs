@@ -27,13 +27,13 @@
             "group": "Introduction",
             "pages": [
               "Null",
-              "introduction/products.mdx"
+              "introduction/products"
             ]
           },
           {
             "group": "Context",
             "pages": [
-              "developers/ai-llms.mdx"
+              "developers/ai-llms"
             ]
           }
         ]
@@ -44,16 +44,16 @@
           {
             "group": "Protocol Concepts",
             "pages": [
-              "learn/overview.mdx",
-              "learn/receiver-and-payer.mdx",
-              "learn/how-markets-update.mdx"
+              "learn/overview",
+              "learn/receiver-and-payer",
+              "learn/how-markets-update"
             ]
           },
           {
             "group": "Economics and Risk",
             "pages": [
-              "learn/funding-and-carry.mdx",
-              "learn/risks-and-parameters.mdx"
+              "learn/funding-and-carry",
+              "learn/risks-and-parameters"
             ]
           }
         ]
@@ -65,9 +65,9 @@
             "group": "User Flows",
             "pages": [
               "quick-start",
-              "depositing.mdx",
-              "redeeming.mdx",
-              "fees.mdx"
+              "depositing",
+              "redeeming",
+              "fees"
             ]
           }
         ]
@@ -78,31 +78,31 @@
           {
             "group": "Start Building",
             "pages": [
-              "developers-tab/overview.mdx",
-              "developers-tab/integrator-quickstart.mdx"
+              "developers-tab/overview",
+              "developers-tab/integrator-quickstart"
             ]
           },
           {
             "group": "Core Flows",
             "pages": [
-              "developers-tab/market-update.mdx",
-              "developers-tab/pools-and-erc4626.mdx",
-              "developers-tab/router.mdx"
+              "developers-tab/market-update",
+              "developers-tab/pools-and-erc4626",
+              "developers-tab/router"
             ]
           },
           {
             "group": "Build Guides",
             "pages": [
-              "contracts/integration/ui.mdx",
-              "contracts/integration/indexer.mdx"
+              "contracts/integration/ui",
+              "contracts/integration/indexer"
             ]
           },
           {
             "group": "Market Setup",
             "pages": [
-              "markets/creating-a-market.mdx",
-              "markets/collateral.mdx",
-              "markets/oracles.mdx"
+              "markets/creating-a-market",
+              "markets/collateral",
+              "markets/oracles"
             ]
           }
         ]
@@ -113,26 +113,26 @@
           {
             "group": "Core Contracts",
             "pages": [
-              "contracts/factory.mdx",
-              "contracts/market.mdx",
-              "contracts/pool.mdx"
+              "contracts/factory",
+              "contracts/market",
+              "contracts/pool"
             ]
           },
           {
             "group": "Periphery",
             "pages": [
-              "contracts/router.mdx",
-              "contracts/lens.mdx"
+              "contracts/router",
+              "contracts/lens"
             ]
           },
           {
             "group": "Oracles",
             "pages": [
-              "contracts/oracles/overview.mdx",
-              "contracts/oracles/pyth.mdx",
-              "contracts/oracles/chainlink.mdx",
-              "contracts/oracles/uniswap-v3.mdx",
-              "contracts/oracles/base-fee.mdx"
+              "contracts/oracles/overview",
+              "contracts/oracles/pyth",
+              "contracts/oracles/chainlink",
+              "contracts/oracles/uniswap-v3",
+              "contracts/oracles/base-fee"
             ]
           }
         ]
