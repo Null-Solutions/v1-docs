@@ -8,15 +8,11 @@ A Null market has two sides: Receiver and Payer. They mirror the two sides of a 
 
 ## Market roles at a glance
 
-```mermaid
-flowchart LR
-  Oracle["Oracle price"] --> MarketUpdate["Market update"]
-  ReceiverPool["Receiver pool"] -->|"pays funding"| PayerPool["Payer pool"]
-  PayerPool -->|"pays when price rises"| ReceiverPool
-  ReceiverPool -->|"pays when price falls"| PayerPool
-  MarketUpdate --> ReceiverPool
-  MarketUpdate --> PayerPool
-```
+<img src="/images/diagrams/receiver-payer-flow.svg" alt="Diagram showing an oracle price updating the Null market, which settles value between the Receiver pool and Payer pool. Payer pays Receiver when price rises, Receiver pays Payer when price falls, and Receiver always pays funding to Payer." />
+
+<Note>
+In words: the oracle feeds the market update. Price movement can move value in either direction, but funding always flows from Receiver to Payer.
+</Note>
 
 ## Receiver
 

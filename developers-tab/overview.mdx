@@ -38,24 +38,15 @@ Most integrations need three ideas:
 2. Users enter and exit through the Receiver or Payer pool, or through the router.
 3. Every state-changing pool action updates the market before shares are minted, burned, or priced.
 
-<img src="/images/landing/market-grid.svg" alt="Abstract landing-page grid representing deployed Null contracts" width="76" />
-
 ## Market stack
 
 When the factory creates a market, it deploys one market contract and two pool contracts.
 
-```mermaid
-flowchart TD
-  Factory["NullV1Factory"] -->|"deploys"| Market["NullV1Market"]
-  Market --> ReceiverPool["Receiver NullV1Pool"]
-  Market --> PayerPool["Payer NullV1Pool"]
-  ReceiverPool -->|"calls updateState"| Market
-  PayerPool -->|"calls updateState"| Market
-  Router["NullV1Router periphery"] -->|"creates markets"| Factory
-  Router -->|"routes user flows"| ReceiverPool
-  Router -->|"routes user flows"| PayerPool
-  Oracle["Oracle"] -->|"price"| Market
-```
+<img src="/images/diagrams/developer-stack.svg" alt="Diagram showing the Null V1 developer stack. Apps, bots, and scripts use Router for protected writes, Lens and the indexer for reads, Factory for market discovery, Market for core accounting, and Receiver and Payer pools for ERC-4626 positions." />
+
+<Note>
+In words: use Router for protected writes, Lens and indexer data for reads, and the core contracts as the canonical source for market and pool state.
+</Note>
 
 The market stores the authoritative accounting state:
 

@@ -1,0 +1,68 @@
+<svg width="1200" height="680" viewBox="0 0 1200 680" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Null V1 market update sequence</title>
+  <desc id="desc">The market update validates the oracle price, accounts for yield fees, reconciles collateral, computes funding and price settlement, nets the transfer, applies the solvency bound, stores state, and then processes the user action.</desc>
+  <defs>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#0B0E15" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2L10 6L2 10" stroke="#45A5FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="680" rx="34" fill="#F6F7F9"/>
+  <circle cx="1040" cy="118" r="132" fill="#B1DFFF" fill-opacity="0.18"/>
+  <circle cx="132" cy="620" r="144" fill="#B1DFFF" fill-opacity="0.14"/>
+  <text x="64" y="78" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="34" letter-spacing="-0.02em">Market update sequence</text>
+  <text x="64" y="114" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="18">Every deposit, redemption, mint, or withdrawal starts by bringing the market state current.</text>
+
+  <g filter="url(#softShadow)">
+    <rect x="64" y="164" width="260" height="150" rx="30" fill="white"/>
+    <text x="92" y="210" fill="#45A5FF" font-family="Inter, Arial, sans-serif" font-size="17">01</text>
+    <text x="92" y="244" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Validate price</text>
+    <text x="92" y="276" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">Read the latest oracle price and reject stale or invalid data.</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="470" y="164" width="260" height="150" rx="30" fill="white"/>
+    <text x="498" y="210" fill="#45A5FF" font-family="Inter, Arial, sans-serif" font-size="17">02</text>
+    <text x="498" y="244" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Account for yield</text>
+    <text x="498" y="276" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">If enabled, measure collateral share-price yield and accrue protocol fees.</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="876" y="164" width="260" height="150" rx="30" fill="white"/>
+    <text x="904" y="210" fill="#45A5FF" font-family="Inter, Arial, sans-serif" font-size="17">03</text>
+    <text x="904" y="244" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Reconcile collateral</text>
+    <text x="904" y="276" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">Align recorded pool balances with actual collateral held by the market.</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="876" y="386" width="260" height="150" rx="30" fill="#0B0E15"/>
+    <text x="904" y="432" fill="#B1DFFF" font-family="Inter, Arial, sans-serif" font-size="17">04</text>
+    <text x="904" y="466" fill="white" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Compute legs</text>
+    <text x="904" y="498" fill="#C9D0D9" font-family="Inter, Arial, sans-serif" font-size="16">Calculate price settlement and Receiver-to-Payer funding.</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="470" y="386" width="260" height="150" rx="30" fill="white"/>
+    <text x="498" y="432" fill="#45A5FF" font-family="Inter, Arial, sans-serif" font-size="17">05</text>
+    <text x="498" y="466" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Net and bound</text>
+    <text x="498" y="498" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">Net the legs into one transfer, then cap it by available collateral.</text>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <rect x="64" y="386" width="260" height="150" rx="30" fill="white"/>
+    <text x="92" y="432" fill="#45A5FF" font-family="Inter, Arial, sans-serif" font-size="17">06</text>
+    <text x="92" y="466" fill="#0B0E15" font-family="Inter, Arial, sans-serif" font-size="24" letter-spacing="-0.01em">Store and act</text>
+    <text x="92" y="498" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="16">Save timestamp and price, then process the user's pool action.</text>
+  </g>
+
+  <path d="M324 239H450" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M730 239H856" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M1006 314V366" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M876 461H750" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <path d="M470 461H344" stroke="#45A5FF" stroke-width="4" stroke-linecap="round" marker-end="url(#arrow)"/>
+
+  <rect x="64" y="594" width="1072" height="42" rx="21" fill="white" fill-opacity="0.78"/>
+  <text x="92" y="621" fill="#6D727A" font-family="Inter, Arial, sans-serif" font-size="15">Key invariant: settlement can redistribute collateral already in the market, but the solvency bound prevents debt or negative pool balances.</text>
+</svg>
