@@ -1,0 +1,20 @@
+---
+title: Market update sequence
+---
+flowchart LR
+  price["1. Validate price"]
+  yield["2. Account yield"]
+  reconcile["3. Reconcile collateral"]
+  compute["4. Compute price + funding"]
+  net["5. Net and bound"]
+  store["6. Store state"]
+  action["7. Process user action"]
+
+  price --> yield --> reconcile --> compute --> net --> store --> action
+
+  classDef dark fill:#0B0E15,color:#FFFFFF,stroke:#243038,stroke-width:1px;
+  classDef soft fill:#FFFFFF,color:#0B0E15,stroke:#DDE3EA,stroke-width:1px;
+  classDef accent fill:#B1DFFF,color:#0B0E15,stroke:#96AEC4,stroke-width:1px;
+  class compute dark;
+  class price,yield,reconcile,net,store soft;
+  class action accent;
