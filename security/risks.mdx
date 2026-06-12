@@ -64,15 +64,15 @@ Null V1 has **no liquidation mechanism**. Your maximum loss in any pool is bound
   If you want to review the code directly, core accounting lives in `NullV1Factory`, `NullV1Market`, `NullV1Pool`, and the `NullV1Math` library used by the market. `NullV1Router` is periphery for user-facing flows.
 </Accordion>
 
-<Accordion title="Collateral Risk — ERC-4626 Wrapper">
-  Null V1 pools accept collateral through ERC-4626 yield-bearing vault wrappers. The share price of these wrappers is not guaranteed to remain stable. If the underlying yield strategy experiences a loss event — a drawdown, a liquidation of the underlying vault, or a depeg of the assets it holds — the share price of the wrapper can fall, reducing the effective value of your collateral even if no price transfers have occurred in the Null V1 market itself.
+<Accordion title="Collateral Risk">
+  Null V1 markets hold an ERC-20 collateral token directly. If that token rebases, charges transfer fees, has admin controls, or depends on an external yield strategy, the market's actual collateral balance can change independently of Receiver/Payer price settlement.
 
-  The yield fee charged by the protocol accrues on **new yield generated after any recovery**. If the wrapper experiences a drawdown and subsequently recovers, you begin paying yield fees again on earnings above the recovery watermark. This means a loss-and-recovery cycle results in you bearing the full downside while sharing a portion of the recovery upside with the protocol.
+  The market reconciles actual collateral against recorded pool balances before user actions. External gains and losses are allocated pro rata across Receiver and Payer pools, but reconciliation does not remove the underlying collateral risk.
 
-  **Key questions to ask about your collateral wrapper:**
-  - What is the underlying yield strategy, and what are its failure modes?
-  - Is the wrapper share price rebasing or non-rebasing?
-  - Has the underlying vault experienced drawdowns before?
+  **Key questions to ask about collateral:**
+  - Can balances change without explicit transfers?
+  - Can transfers be blocked, taxed, paused, or redirected?
+  - Does the token depend on an external strategy or custodian?
 </Accordion>
 
 <Accordion title="Liquidity Risk — Thin Markets">

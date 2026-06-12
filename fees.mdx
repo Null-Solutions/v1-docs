@@ -1,10 +1,10 @@
 ---
-title: "Null V1 Fee Structure: Entry, Exit, and Yield"
+title: "Null V1 Fee Structure: Entry, Exit, and Collateral"
 sidebarTitle: "Fees"
-description: "Understand how Null V1 entry, exit, and yield fees work, their on-chain maximums, and how to read current fee values before depositing or redeeming."
+description: "Understand how Null V1 entry, exit, and collateral fees work, their on-chain maximums, and how to read current fee values before depositing or redeeming."
 ---
 
-Null V1 charges up to three types of fees across its pools: an entry fee on deposits, an exit fee on redemptions, and a yield fee on collateral yield for markets backed by yield-bearing ERC-4626 collateral. All fee values are expressed in basis points (bps), where 1 bp = 0.01%. The protocol owner sets each fee, but every fee is bounded by an on-chain constant that cannot be exceeded — giving you a hard guarantee on the worst-case cost before you commit capital.
+Null V1 charges three types of fees across its pools: an entry fee on deposits, an exit fee on redemptions, and an annualized collateral fee charged during market updates. All fee values are expressed in basis points (bps), where 1 bp = 0.01%. The protocol owner sets each fee, but every fee is bounded by an on-chain constant that cannot be exceeded.
 
 <Note>
 All fee parameters are set by the protocol owner and are bounded by immutable on-chain constants. No fee can ever exceed its corresponding maximum, regardless of any future governance action.
@@ -48,49 +48,39 @@ To read the current exit fee for a market:
 const exitFeeBps = await market.exitFee(); // e.g. 30 for 0.3%
 ```
 
-## Yield fee
+## Collateral fee
 
-The yield fee applies **only** to markets where the collateral is a yield-bearing ERC-4626 token (for example waUSDC). It is charged as a percentage of the collateral yield that accrues inside the pool — not on your principal. Plain ERC-20 collateral markets always have a yield fee of zero.
+The collateral fee is an annualized fee charged on Receiver and Payer pool balances during market updates. It is not a percentage of measured yield. For example, if collateral earns 5% externally and `collateralFee` is 100 bps (1% annualized), the net collateral carry before funding is roughly 4%.
 
 | Property | Value |
 |---|---|
-| Maximum | `5000` bps (50%) |
-| Applied on | Yield accrued by the ERC-4626 collateral wrapper |
-| Collected by | Protocol owner, via explicit `market.collectFees()` call |
-| On-chain constant | `MAX_YIELD_FEE = 5000` |
-| Accrues in | `state.protocolFees` |
+| Maximum | `500` bps (5% annualized) |
+| Applied on | Receiver and Payer pool collateral balances over elapsed time |
+| Collected by | Protocol owner via `sweepFees()` after accrual |
+| On-chain constant | `MAX_COLLATERAL_FEE = 500` |
 
-Unlike the entry and exit fees, the yield fee does not leave the contract immediately. It accumulates in `state.protocolFees` over time and must be explicitly claimed:
+Collateral fees accrue into the market's `protocolFees` balance during state updates. They are excluded from Receiver/Payer settlement and remain in the market until the protocol owner calls `sweepFees()`.
 
-```ts
-// Anyone can call collectFees; proceeds go to the protocol owner
-await market.collectFees();
-```
-
-To read the current yield fee for a market:
+To read the current collateral fee for a market:
 
 ```ts
-const yieldFeeBps = await market.yieldFee(); // e.g. 1000 for 10%; 0 for plain ERC-20 markets
+const collateralFeeBps = await market.collateralFee(); // e.g. 100 for 1% annualized
 ```
-
-<Note>
-If the market's collateral is a plain ERC-20 token (not an ERC-4626 wrapper), the yield fee is always `0` and `market.collectFees()` has no effect on your position.
-</Note>
 
 ## Reading all fees at once
 
-You can read all three fee values in a single multicall or sequential read before you commit capital:
+You can read all fee values in a single multicall or sequential read before you commit capital:
 
 ```ts
-const [entryFee, exitFee, yieldFee] = await Promise.all([
+const [entryFee, exitFee, collateralFee] = await Promise.all([
   market.entryFee(),
   market.exitFee(),
-  market.yieldFee(),
+  market.collateralFee(),
 ]);
 
 console.log(`Entry fee:  ${Number(entryFee)  / 100}%`);
 console.log(`Exit fee:   ${Number(exitFee)   / 100}%`);
-console.log(`Yield fee:  ${Number(yieldFee)  / 100}%`);
+console.log(`Collateral fee: ${Number(collateralFee) / 100}% annualized`);
 ```
 
 ## How preview functions account for fees
@@ -125,4 +115,4 @@ All maximums are enforced by immutable on-chain constants. The protocol owner ca
 |---|---|---|---|---|
 | Entry fee | 500 | 5% | All markets | Immediately on deposit |
 | Exit fee | 500 | 5% | All markets | Immediately on redeem |
-| Yield fee | 5000 | 50% | ERC-4626 collateral markets only | Via `market.collectFees()` |
+| Collateral fee | 500 | 5% annualized | All markets | During market updates |

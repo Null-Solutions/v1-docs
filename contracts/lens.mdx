@@ -4,7 +4,7 @@ sidebarTitle: "Lens"
 description: "NullV1Lens delivers read-only market state previews and price simulations for UIs and indexers, including WAD-scaled funding APR, with no state mutation."
 ---
 
-The `NullV1Lens` contract is a read-only utility designed for off-chain consumers: frontends, indexers, analytics dashboards, and automated monitoring bots. Its functions compute the current or hypothetical market state without submitting any state-changing transaction. This means you can call Lens methods via `eth_call` at zero gas cost and receive rich data — pool balances, share price, total supply, and annualised funding rate — in a single RPC request. When you want to display live market conditions or model the impact of a hypothetical oracle price, Lens is the right tool.
+The `NullV1Lens` contract is a read-only utility designed for off-chain consumers: frontends, indexers, analytics dashboards, and automated monitoring bots. Its functions compute the current or hypothetical market state without submitting any state-changing transaction. This means you can call Lens methods via `eth_call` at zero gas cost and receive rich data — pool balances, total supply, and annualised funding rate — in a single RPC request. When you want to display live market conditions or model the impact of a hypothetical oracle price, Lens is the right tool.
 
 <Note>
 For implementation patterns, read [Integrating Null V1 into your frontend UI](/contracts/integration/ui) and [Building an indexer](/contracts/integration/indexer). This page is the Lens API reference.
@@ -28,16 +28,12 @@ A snapshot of the raw market state at a given oracle price.
   Total assets attributed to the payer pool after PnL settlement at the given price.
 </ResponseField>
 
-<ResponseField name="price" type="uint256">
-  The oracle price used to compute this state, in the oracle's native precision.
-</ResponseField>
-
 <ResponseField name="protocolFees" type="uint256">
   Cumulative uncollected protocol fees at the time of the snapshot.
 </ResponseField>
 
-<ResponseField name="sharePrice" type="uint256">
-  The internal share price (WAD-scaled, 1e18 = 1.0) computed at this state.
+<ResponseField name="price" type="uint256">
+  The oracle price used to compute this state, in the oracle's native precision.
 </ResponseField>
 
 ---
@@ -86,7 +82,8 @@ Returns `MarketState memory` — a snapshot of the current market state.
 
 ```solidity
 NullV1Lens.MarketState memory ms = lens.previewState(marketAddress);
-console.log("Current share price:", ms.sharePrice); // WAD-scaled
+console.log("Receiver pool:", ms.receiverPool);
+console.log("Payer pool:", ms.payerPool);
 ```
 
 ---

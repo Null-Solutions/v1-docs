@@ -49,7 +49,7 @@ Your first position is four steps away.
   </Step>
 
   <Step title="Deposit with protection">
-    For most users and integrations, call `NullV1Router.depositMarket`. The router supports Receiver and Payer deposits in one transaction, slippage minimums, deadlines, optional oracle `updateData`, and ERC-4626 collateral wrapping.
+    For most users and integrations, call `NullV1Router.depositMarket`. The router supports Receiver and Payer deposits in one transaction, ERC-4626 market-asset wrapping, slippage minimums, deadlines, and optional oracle `updateData`.
 
     ```ts
     await router.depositMarket(
@@ -71,7 +71,7 @@ Your position is your ERC-20 share balance in the Receiver pool, the Payer pool,
 
 <CardGroup cols={3}>
   <Card title="Deposit guide" icon="arrow-down-to-line" href="/depositing">
-    Understand every router parameter, slippage minimum, deadline, and collateral path.
+    Understand every router parameter, slippage minimum, deadline, and collateral approval.
   </Card>
 
   <Card title="Redeem guide" icon="arrow-up-from-line" href="/redeeming">
@@ -79,6 +79,6 @@ Your position is your ERC-20 share balance in the Receiver pool, the Payer pool,
   </Card>
 
   <Card title="Fees" icon="percent" href="/fees">
-    Learn how entry, exit, and yield fees are applied.
+    Learn how entry, exit, and collateral fees are applied.
   </Card>
 </CardGroup>

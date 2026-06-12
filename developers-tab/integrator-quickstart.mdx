@@ -16,7 +16,7 @@ oracle
 mu
 ```
 
-`asset` is the ERC-20 market collateral. It may also be an ERC-4626 vault share token if the market uses wrapped yield-bearing collateral.
+`asset` is the ERC-20 market collateral. If it is an ERC-4626 vault share, direct pool calls use the vault share and router calls can use the vault underlying.
 
 `oracle` provides the reference price. All Null oracles return prices normalized to `1e36`.
 
@@ -61,9 +61,8 @@ Read the accounting state for balances and the last stored oracle price:
     uint256 timestamp,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
-    uint256 price,
     uint256 protocolFees,
-    uint256 sharePrice
+    uint256 price
 ) = market.state();
 ```
 
@@ -113,7 +112,7 @@ asset.approve(address(router), totalAssets);
 );
 ```
 
-Use direct pool calls when you only need plain ERC-4626 behavior. Use the router when you need combined Receiver/Payer deposits, push-oracle update data, deadlines, slippage checks, or ERC-4626 collateral wrapping.
+Use direct pool calls when you only need one ERC-4626 pool action. Use the router when you need combined Receiver/Payer deposits, ERC-4626 market-asset wrapping, push-oracle update data, deadlines, or slippage checks.
 
 ## 6. Redeem
 
@@ -137,7 +136,7 @@ Or redeem from one or both pools through the router:
 );
 ```
 
-When the market asset is an ERC-4626 vault share, the router redeems market-asset shares and sends the underlying asset to the user.
+For ERC-4626 market assets, router redemptions unwrap the market asset and return the vault underlying.
 
 ## 7. Track positions
 
@@ -153,7 +152,7 @@ Track market changes with:
 - `StateUpdated` on the market;
 - ERC-4626 `Deposit` and `Withdraw` events on each pool;
 - `MarketCreated` on the factory;
-- `FeesUpdated` and `FeesCollected` on the market.
+- `FeesUpdated` on the market.
 
 Position value is proportional to pool value:
 

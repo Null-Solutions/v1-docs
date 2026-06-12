@@ -1,10 +1,10 @@
 ---
 title: "Redeeming Null V1 Pool Shares for Collateral"
 sidebarTitle: "Redeeming"
-description: "Convert your Null V1 receiver or payer pool shares back to collateral via the router, with slippage protection and automatic ERC-4626 unwrapping."
+description: "Convert your Null V1 receiver or payer pool shares back to collateral via the router, with slippage protection and ERC-4626 unwrapping."
 ---
 
-Redeeming turns your pool shares back into collateral. When you call `router.redeemMarket`, the protocol updates the market, settles funding and oracle price movement for the current block, then burns your shares and returns the corresponding assets. The router handles ERC-4626 unwrapping automatically, so if the market's collateral is a yield-bearing token like waUSDC, you receive plain USDC without any extra steps.
+Redeeming turns your pool shares back into collateral. When you call `router.redeemMarket`, the protocol updates the market, settles collateral fees, funding, and oracle price movement for the current block, then burns your shares and returns assets. For ERC-4626 market assets, the router unwraps the market asset and returns the vault underlying.
 
 ## Shares-in vs. assets-out
 
@@ -86,19 +86,20 @@ const updateData = [];
 const updateData = await pythConnection.getPriceFeedsUpdateData([priceFeedId]);
 ```
 
-## ERC-4626 collateral (automatic unwrapping)
+## ERC-4626 collateral through the router
 
-When the market's collateral is a yield-bearing ERC-4626 token (for example waUSDC), the router unwraps it back to the underlying asset (USDC) before transferring funds to you. The flow is:
+If the market asset is an ERC-4626 vault share, the router unwraps redeemed market assets back into the vault underlying before transferring funds to you.
 
-1. The router burns your shares and retrieves waUSDC from the pool.
-2. The router unwraps waUSDC → USDC.
-3. USDC arrives in your wallet.
+The flow is:
 
-For plain ERC-20 collateral markets there is no unwrapping — you receive the collateral token directly.
+1. The router burns your Null pool shares.
+2. The pool returns ERC-4626 market-asset shares to the router.
+3. The router redeems those market-asset shares from the vault.
+4. The vault underlying arrives in your wallet.
 
 ## State update on redemption
 
-Every call to `redeemMarket` triggers an on-chain state update for the market: funding is accrued, the oracle price-transfer leg is evaluated, yield-fee accounting runs when enabled, and the net transfer is bounded by available collateral before shares are converted. This means the assets you receive reflect the most current pool value, not a snapshot from a previous block.
+Every call to `redeemMarket` triggers an on-chain state update for the market: collateral is reconciled, the collateral fee is applied, funding is accrued, the oracle price-transfer leg is evaluated, and the net transfer is bounded by available collateral before shares are converted. This means the assets you receive reflect the most current pool value, not a snapshot from a previous block.
 
 ## Full redemption example
 

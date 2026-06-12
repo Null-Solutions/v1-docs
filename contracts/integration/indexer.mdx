@@ -54,17 +54,16 @@ event StateUpdated(
     uint256 indexed timestamp,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
-    uint256 price,
     uint256 protocolFees,
-    uint256 sharePrice
+    uint256 price
 );
 ```
 
 Index these events per market address and store each field. A few important unit notes:
 
 - `price` is **1e36-scaled**. To convert to a human-readable price divide by `1e36`.
-- `receiverPoolAssets` and `payerPoolAssets` are denominated in the collateral token units (or wrapper units if the collateral is an ERC-4626 vault).
-- For ERC-4626 collateral, multiply pool units by `wrapper.convertToAssets(1e18)` (then divide by `1e18`) to express balances in underlying token terms.
+- `receiverPoolAssets` and `payerPoolAssets` are denominated in the market collateral token units. If the market asset is an ERC-4626 vault share, those are vault-share units.
+- For ERC-4626 market assets, multiply pool units by `wrapper.convertToAssets(1e18)` (then divide by `1e18`) to express balances in underlying token terms.
 
 <Tip>
   Persist raw 1e36-scaled price values in your database and convert to display units at query time. This avoids precision loss and keeps your stored data consistent with on-chain values.
@@ -73,7 +72,7 @@ Index these events per market address and store each field. A few important unit
 Also subscribe to the fee events if you want to track configuration changes:
 
 ```solidity
-event FeesUpdated(uint16 entryFee, uint16 exitFee, uint16 yieldFee);
+event FeesUpdated(uint16 entryFee, uint16 exitFee, uint16 collateralFee);
 event FeesCollected(uint256 fee);
 ```
 
@@ -121,7 +120,7 @@ event Withdraw(
 
 ```solidity
 struct SimulateResponse {
-    MarketState state; // {timestamp, receiverPool, payerPool, price, protocolFees, sharePrice}
+    MarketState state; // {timestamp, receiverPool, payerPool, protocolFees, price}
     uint256 totalAssets;
     uint256 receiverTotalSupply;
     uint256 payerTotalSupply;
@@ -147,10 +146,6 @@ Call `previewMarket(market)` to get the current on-chain state. Call `simulateMa
 
 <ResponseField name="fundingApr" type="uint256">
   WAD-scaled (1e18 = 100%). Divide by `1e18` then multiply by 100 to get a percentage string, e.g. `3e16 / 1e18 * 100 = 3%`.
-</ResponseField>
-
-<ResponseField name="state.sharePrice" type="uint256">
-  The current share price in collateral units. Useful for historical share price charts.
 </ResponseField>
 
 To resolve a user's current asset value at query time without relying solely on indexed data:
@@ -184,10 +179,9 @@ A human-readable market label is typically `baseSymbol / quoteSymbol` (e.g. `AAP
 | Field | Scale | Human Conversion |
 |---|---|---|
 | `StateUpdated.price` | 1e36 | `price / 1e36` |
-| `StateUpdated.receiverPoolAssets` | Collateral token units | Multiply by `convertToAssets(1e18) / 1e18` for ERC-4626 collateral |
+| `StateUpdated.receiverPoolAssets` | Collateral token units | Multiply by `convertToAssets(1e18) / 1e18` for ERC-4626 market assets |
 | `StateUpdated.payerPoolAssets` | Collateral token units | Same as above |
 | `SimulateResponse.fundingApr` | WAD (1e18 = 100%) | `fundingApr / 1e18 * 100` → percent |
-| `SimulateResponse.state.sharePrice` | Collateral token units | Display as-is or convert for ERC-4626 |
 
 ---
 

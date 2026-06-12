@@ -50,9 +50,9 @@ The circuit breaker does not protect against continuous drift. If a market moves
 
 ## Collateral risk
 
-Market collateral can be a plain ERC-20 or an ERC-4626 vault share. ERC-4626 collateral can add base yield, but it also introduces wrapper risk. If the underlying vault loses value, each collateral share can become worth less even if Null's Receiver/Payer settlement behaves correctly.
+Market collateral is an ERC-20 token held directly by the market. Token-level behavior still matters: rebases, transfer fees, pauses, blacklists, or external strategy losses can change the actual collateral available to Receiver and Payer pools.
 
-Rebasing collateral is not suitable for pool accounting because token balances can change without explicit transfers. Use non-rebasing wrappers for yield-bearing collateral.
+Before each user action, the market reconciles its actual token balance against recorded Receiver and Payer balances. External gains and losses are allocated pro rata, but reconciliation does not remove the underlying token risk.
 
 ## Empty or one-sided markets
 
@@ -65,8 +65,6 @@ The market can still accept actions through the pools, but the two-sided synthet
 Entry and exit fees leave the two-pool system. They are routed to the protocol owner rather than redistributed between Receiver and Payer.
 
 Deposits and redeems use fee-on-total accounting. Mints and withdrawals use fee-on-raw accounting. Integrators should rely on ERC-4626 preview functions for estimates, then apply slippage controls for execution because the market updates before the action completes.
-
-Some markets may also use yield-bearing collateral and a yield fee. Yield-fee accounting is separate from Receiver-to-Payer funding and price settlement.
 
 ## Funding parameters
 

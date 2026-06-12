@@ -25,12 +25,12 @@ Null V1 separates core accounting from periphery convenience, so integrations ca
 The core is intentionally small:
 
 - `NullV1Factory` deploys canonical markets.
-- `NullV1Market` owns market accounting and uses `NullV1Math` for reconciliation, funding, price settlement, yield-fee accounting, and solvency-bounded transfers.
+- `NullV1Market` owns market accounting and uses `NullV1Math` for reconciliation, collateral-fee accrual, funding, price settlement, and solvency-bounded transfers.
 - `NullV1Pool` exposes Receiver and Payer ERC-4626 entry points.
 
 Periphery lives outside the core:
 
-- `NullV1Router` wraps common user flows for market creation, deposits, redemptions, oracle update data, slippage checks, and ERC-4626 collateral wrapping.
+- `NullV1Router` wraps common user flows for market creation, deposits, redemptions, oracle update data, slippage checks, and deadlines.
 
 Most integrations need three ideas:
 
@@ -54,9 +54,8 @@ The market stores the authoritative accounting state:
 timestamp
 receiverPool
 payerPool
-price
 protocolFees
-sharePrice
+price
 ```
 
 Pools expose ERC-4626 methods and query the market for `totalAssets()`. They do not own independent PnL accounting.
@@ -88,9 +87,8 @@ function state() external view returns (
     uint256 timestamp,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
-    uint256 price,
     uint256 protocolFees,
-    uint256 sharePrice
+    uint256 price
 );
 ```
 
@@ -139,7 +137,7 @@ redeemMarket(
 )
 ```
 
-Use the router when you need deadline checks, slippage minimums, optional updatable-oracle data, or wrapping and unwrapping of ERC-4626 market assets.
+Use the router when you need deadline checks, slippage minimums, optional updatable-oracle data, or combined Receiver/Payer actions.
 
 ## Recommended reading
 
