@@ -77,7 +77,7 @@ Null V1 markets collect entry, exit, and collateral fees, each capped by a proto
 
 ### `sweepFees()`
 
-Transfers accrued `protocolFees` from the market to the protocol owner and returns the amount swept. Entry and exit fees are transferred immediately when deposits and redemptions are recorded; collateral fees accrue during state updates until this function is called.
+Transfers accrued `protocolFees` from the market to the protocol owner and returns the amount swept. Entry fees, exit fees, and collateral fees all accrue into `protocolFees` (entry/exit fees on each deposit and redemption; collateral fees during state updates) and stay in the market until this function is called. Keeping fees inside the market on the hot path means a deposit or redemption cannot be blocked by a token that restricts transfers to the protocol owner (for example a USDC blacklist).
 
 ```solidity
 uint256 swept = market.sweepFees();

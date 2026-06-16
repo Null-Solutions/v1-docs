@@ -52,7 +52,9 @@ After reconciliation, the market applies `collateralFee` to both pool balances b
 pool fee = pool balance * collateralFee / 10,000 * elapsed / 365 days
 ```
 
-The fee is annualized, capped by the available pool balance, and accrued into `protocolFees`. It is charged on collateral principal over time rather than as a percentage of measured yield. The protocol owner can later transfer accrued fees out of the market with `sweepFees()`.
+The fee is annualized, capped by the available pool balance, and accrued into `protocolFees`. It is charged on collateral principal over time rather than as a percentage of measured yield.
+
+Entry and exit fees follow the same model: they are deducted from deposits and redemptions and added to `protocolFees` inside the market rather than being transferred to the protocol owner on each call. The protocol owner pulls all accrued fees — collateral, entry, and exit — out of the market in a single transfer with `sweepFees()`. Keeping fees inside the market on the hot path means a deposit or redemption cannot be blocked by a token that restricts transfers to the protocol owner (for example a USDC blacklist).
 
 ## Funding
 

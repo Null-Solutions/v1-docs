@@ -18,10 +18,10 @@ The entry fee is deducted from the assets you deposit **before** your shares are
 |---|---|
 | Maximum | `500` bps (5%) |
 | Applied on | `deposit` and `mint` calls |
-| Collected by | Protocol owner, immediately at deposit time |
+| Collected by | Accrues into `protocolFees`; protocol owner pulls via `sweepFees()` |
 | On-chain constant | `MAX_ENTRY_FEE = 500` |
 
-**Example:** If the entry fee is 50 bps (0.5%) and you deposit 1,000 USDC, the effective deposit used to calculate your shares is 995 USDC. The remaining 5 USDC goes to the protocol.
+**Example:** If the entry fee is 50 bps (0.5%) and you deposit 1,000 USDC, the effective deposit used to calculate your shares is 995 USDC. The remaining 5 USDC is added to the market's `protocolFees` balance, where it remains until the protocol owner calls `sweepFees()`.
 
 To read the current entry fee for a market:
 
@@ -37,10 +37,10 @@ The exit fee is deducted from the assets you receive **when you redeem shares or
 |---|---|
 | Maximum | `500` bps (5%) |
 | Applied on | `redeem` and `withdraw` calls |
-| Collected by | Protocol owner, immediately at redemption time |
+| Collected by | Accrues into `protocolFees`; protocol owner pulls via `sweepFees()` |
 | On-chain constant | `MAX_EXIT_FEE = 500` |
 
-**Example:** If the exit fee is 30 bps (0.3%) and your shares are worth 1,000 USDC, you receive 997 USDC. The remaining 3 USDC goes to the protocol.
+**Example:** If the exit fee is 30 bps (0.3%) and your shares are worth 1,000 USDC, you receive 997 USDC. The remaining 3 USDC is added to the market's `protocolFees` balance, where it remains until the protocol owner calls `sweepFees()`.
 
 To read the current exit fee for a market:
 
@@ -113,6 +113,6 @@ All maximums are enforced by immutable on-chain constants. The protocol owner ca
 
 | Fee type | Basis points max | Percentage max | Applies to | Collected |
 |---|---|---|---|---|
-| Entry fee | 500 | 5% | All markets | Immediately on deposit |
-| Exit fee | 500 | 5% | All markets | Immediately on redeem |
-| Collateral fee | 500 | 5% annualized | All markets | During market updates |
+| Entry fee | 500 | 5% | All markets | Accrued into `protocolFees` on deposit; swept later |
+| Exit fee | 500 | 5% | All markets | Accrued into `protocolFees` on redeem; swept later |
+| Collateral fee | 500 | 5% annualized | All markets | Accrued into `protocolFees` during market updates; swept later |
