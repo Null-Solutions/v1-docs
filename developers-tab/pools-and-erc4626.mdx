@@ -86,7 +86,7 @@ Null follows the ERC-4626 fee patterns:
 - `withdraw`: fee-on-raw. The pool removes the requested assets plus the exit fee.
 - `redeem`: fee-on-total. The redeemed assets include the exit fee, and the user receives the net amount.
 
-Entry and exit fees leave the Receiver/Payer pool system and are routed to the protocol owner.
+Entry and exit fees leave the Receiver/Payer pool accounting but stay inside the market — they accrue into the market's `protocolFees` balance alongside the collateral fee. The protocol owner pulls accrued fees out later via `sweepFees()`. Because no external transfer happens on deposit or redemption, a token that blocks transfers to the protocol owner (for example a USDC blacklist) cannot freeze fee-bearing pool operations.
 
 ## Asset transfer flow
 
