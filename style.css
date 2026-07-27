@@ -7,6 +7,11 @@ img.nav-logo {
   display: none !important;
 }
 
+#table-of-contents,
+#table-of-contents-layout {
+  display: none !important;
+}
+
 eyebrow,
 .eyebrow {
   display: inline-flex !important;
