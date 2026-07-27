@@ -1,15 +1,17 @@
 ---
-title: "Frontend Integration"
-sidebarTitle: "UI"
-description: "Read settlement-aware market data and submit slippage-protected Null V1 deposits and redemptions."
+title: "Frontend integration"
+sidebarTitle: "Frontend"
+description: "Read settlement-aware market data with Lens and submit slippage-protected deposits and redemptions with viem."
 ---
 
-Use `NullV1Lens` for display data and the router matching the market's oracle fee model for writes:
+Reads: `NullV1Lens` (and optionally Multicall for batches). Writes: the router that matches the market's oracle fee model.
 
-- `NullV1Router` for fee-less updates such as Chainlink.
-- Pre-funded `NullV1PayableRouter` for native-fee updates such as Pyth.
+| Oracle | Router |
+| --- | --- |
+| Chainlink (fee-less updates) | `NullV1Router` |
+| Pyth (native update fee) | Pre-funded `NullV1PayableRouter` |
 
-Both routers expose the same `createMarket`, `depositMarket`, and `redeemMarket` signatures. Do not send ETH with user calls.
+Both expose the same `createMarket`, `depositMarket`, and `redeemMarket` signatures. Do not send ETH with user calls. Addresses: [Live deployments](/resources/addresses).
 
 ## Read a market
 
@@ -25,47 +27,50 @@ struct SimulateResponse {
 }
 ```
 
-`previewMarket(market)` projects settlement using `oracle.priceView()`. `fundingRate` is a signed WAD-scaled annualized rate; `collateralRate` and `collateralSharePrice` are unsigned WAD-scaled metrics.
+`previewMarket(market)` projects settlement using `oracle.priceView()`. `fundingRate` is signed WAD APR; `collateralRate` and `collateralSharePrice` are unsigned WAD metrics.
 
-```typescript
+```ts
 import { formatUnits } from "viem";
 
 const response = await publicClient.readContract({
-  address: lensAddress,
+  address: lens,
   abi: lensAbi,
   functionName: "previewMarket",
-  args: [marketAddress],
+  args: [market],
 });
 
-const fundingPercent =
-  Number(formatUnits(response.fundingRate, 18)) * 100;
+const fundingPercent = Number(formatUnits(response.fundingRate, 18)) * 100;
 const collateralAprPercent =
   Number(formatUnits(response.collateralRate, 18)) * 100;
 ```
 
-Keep values as `bigint` for calculations. A zero collateral metric can mean unsupported or unavailable because Lens catches failures in those external reads.
+Keep values as `bigint` for math. A zero collateral metric can mean unsupported or unavailable — Lens catches failures on those external reads.
+
+<Note>
+Deployed Sepolia Lens may lag newer collateral-metric helpers in latest source. Check the deployed ABI before relying on newer fields.
+</Note>
 
 ## Deposit
 
-Approve the router for the token it pulls. For plain ERC-20 market collateral this is the collateral token. For ERC-4626 market collateral this is the vault's underlying token, and `receiverAssets` and `payerAssets` are underlying-token units.
+Approve the token the router pulls: market collateral for plain ERC-20, or vault **underlying** for ERC-4626 collateral. Amounts are in that same unit.
 
-```typescript
+```ts
 const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
+const total = receiverAssets + payerAssets;
 
 await walletClient.writeContract({
-  address: tokenToPullAddress,
+  address: tokenToPull,
   abi: erc20Abi,
   functionName: "approve",
-  args: [routerAddress, receiverAssets + payerAssets],
-  account,
+  args: [router, total],
 });
 
 const hash = await walletClient.writeContract({
-  address: routerAddress,
+  address: router,
   abi: routerAbi,
   functionName: "depositMarket",
   args: [
-    marketAddress,
+    market,
     receiverAssets,
     payerAssets,
     minReceiverShares,
@@ -73,31 +78,29 @@ const hash = await walletClient.writeContract({
     deadline,
     updateData,
   ],
-  account,
 });
 ```
 
-Set one side's assets and minimum shares to zero to deposit only into the other side.
+Set one side's assets and mins to `0n` for single-side deposits. Full guide: [Depositing](/developers/depositing).
 
 ## Redeem
 
-The router burns shares owned by `msg.sender`, so approve it on each pool used by the redemption.
+Approve pool share tokens to the router (`msg.sender` must own the shares being burned).
 
-```typescript
+```ts
 await walletClient.writeContract({
-  address: receiverPoolAddress,
+  address: receiverPool,
   abi: erc20Abi,
   functionName: "approve",
-  args: [routerAddress, receiverShares],
-  account,
+  args: [router, receiverShares],
 });
 
 const hash = await walletClient.writeContract({
-  address: routerAddress,
+  address: router,
   abi: routerAbi,
   functionName: "redeemMarket",
   args: [
-    marketAddress,
+    market,
     receiverShares,
     0n,
     minReceiverAssets,
@@ -105,23 +108,17 @@ const hash = await walletClient.writeContract({
     deadline,
     updateData,
   ],
-  account,
 });
 ```
 
-For ERC-4626 market collateral, returned amounts and minimums are underlying-token units because the router unwraps collateral before checking slippage.
+For ERC-4626 collateral, returned amounts and minimums are underlying units. Full guide: [Redeeming](/developers/redeeming).
 
 ## Preview caveats
 
-Pool `previewDeposit` and `previewRedeem` use the last settled market state, while execution settles first. Refresh `NullV1Lens.previewMarket` near submission and include a suitable slippage margin.
+Pool `preview*` uses last settled state; execution settles first. Refresh `previewMarket` near submit and leave slippage room.
 
-For ERC-4626 collateral, a router deposit amount is underlying units, but `pool.previewDeposit` expects collateral-vault share units. First quote the vault wrapping conversion, then quote the pool; do not pass underlying units directly to the pool preview.
+For ERC-4626 collateral: router deposit amount is underlying; `pool.previewDeposit` expects vault shares. Quote vault wrap, then pool — never pass underlying straight into the pool preview.
 
 ## Oracle update data
 
-Pass `[]` to skip an update. With nonempty data:
-
-- `NullV1Router` calls the fee-less oracle `update(bytes[])`.
-- `NullV1PayableRouter` obtains the fee and pays it from its existing ETH balance.
-
-Fetching and validating update payloads is oracle-specific. A payable-router call reverts with `InsufficientUpdateFeeBalance` if its pre-funded balance cannot cover the fee.
+Pass `[]` to skip. With nonempty data, fee-less router calls `update(bytes[])`; payable router pays from its ETH balance (`InsufficientUpdateFeeBalance` if underfunded). Payload fetch is oracle-specific — see [Oracles](/markets/oracles).

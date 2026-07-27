@@ -1,0 +1,191 @@
+---
+title: "Farm the Basis"
+sidebarTitle: "Farm the Basis"
+description: "Evaluate the funding spread, collateral yield, capital efficiency, and risks of a hedged Null Payer position."
+---
+
+Basis farming on Null means holding Payer, hedging its price exposure with an external long, and targeting the remaining carry. The strategy earns only when Null funding and collateral yield exceed external funding, execution costs, and basis losses.
+
+## The return sources
+
+A hedged Payer position has three projected carry legs:
+
+1. **Null funding** paid to or by Payer.
+2. **Collateral yield** earned by the value held in Payer when the collateral is yield-bearing.
+3. **External funding** received or paid by the long hedge.
+
+Trading fees, slippage, gas, liquidation losses, and oracle-to-venue basis changes sit outside this carry estimate.
+
+## Calculate expected carry
+
+Let:
+
+- `p` be your Payer position value;
+- `E = R / P` be Payer's exposure multiple;
+- `f` be Null's signed market funding rate, where positive means Receiver pays Payer;
+- `f_ext` be the external funding rate, where positive means the external long pays; and
+- `y` be the collateral yield rate.
+
+The hedge notional is:
+
+```text
+H = pE
+```
+
+Projected annual carry is:
+
+```text
+Null funding       =  p * E * f
+Collateral yield   =  p * y
+External funding   = -H * f_ext
+
+Net carry          =  p * [y + E * (f - f_ext)]
+Payer-capital APR  =  y + E * (f - f_ext)
+```
+
+Do not add the displayed APRs without weighting them by notional. External funding applies to hedge notional `H`, which can be several times larger than Payer capital `p`.
+
+Null's displayed Payer funding APR is `f_P = E * f`. The correct like-for-like comparison is nevertheless raw Null funding `f` against external funding `f_ext`, because both apply to each dollar of exposure.
+
+<Info>
+The sign of the opportunity comes from `f - f_ext`. Payer's exposure multiple `E` scales the result, while collateral yield `y` adds a separate carry source.
+</Info>
+
+## Worked example
+
+Assume:
+
+```text
+Payer capital p         = $100
+Exposure multiple E     = 5
+Null funding f          = 1.5%
+External long funding   = 1%
+Collateral yield y      = 5%
+```
+
+The displayed Payer funding APR is `5 * 1.5% = 7.5%`, and the external hedge is `$500`. Projected annual carry is:
+
+```text
+Null funding       = $100 * 5 * 1.5% =  $7.50
+Collateral yield   = $100 * 5%       =  $5.00
+External funding   = $500 * 1%       = -$5.00
+Net carry          =                      $7.50
+```
+
+That is a projected `7.5%` return on the `$100` Payer position before costs. If external funding rises to `3%`, the displayed Payer APR remains `7.5%`, but net carry becomes:
+
+```text
+5% + 5 * (1.5% - 3%) = -2.5%
+```
+
+The exposure multiple amplifies a negative spread just as readily as a positive one. Capital posted as external margin also dilutes the realized return on all capital deployed.
+
+## Where Null funding comes from
+
+The standard imbalance funding-rate model uses:
+
+```text
+f = mu * (cR - P) / (cR + P)
+```
+
+Where:
+
+- `c` is the target Payer coverage ratio;
+- `mu` controls the curve's sensitivity;
+- `R` is Receiver assets; and
+- `P` is Payer assets.
+
+When `P < cR`, Payer is scarce and `f` is positive: Receiver pays Payer. When `P > cR`, funding reverses and Payer pays Receiver. At `P = cR`, Null funding is zero.
+
+A high displayed Payer APR usually indicates scarce backing and therefore higher effective exposure `R/P`. It is compensation for risk, not free yield.
+
+## Screen an opportunity
+
+Before opening the trade, estimate:
+
+```text
+expected net carry
+- entry and exit fees
+- expected rebalancing fees and slippage
+- gas
+- margin opportunity cost
+- conservative basis-loss allowance
+```
+
+Review at least:
+
+- current and historical Null funding;
+- current and predicted external funding;
+- Receiver/Payer coverage and how quickly it is changing;
+- collateral yield quality and withdrawal behavior;
+- oracle and external-market trading hours;
+- available Payer liquidity;
+- venue depth, lot size, minimum notional, and leverage limits; and
+- the amount of equity required to keep the external long away from liquidation.
+
+Do not open solely because one snapshot shows a high APR. Both funding rates can change sign.
+
+## Understand basis PnL
+
+The Null leg settles against its oracle, while the external long is marked and filled at the venue price. Those prices can diverge.
+
+The reference hedger tracks:
+
+```text
+Null PnL = current Payer value - opening value - deposits and withdrawals
+
+Hedge PnL = change in unrealized PnL
+          + realized PnL
+          + external funding
+          - venue fees
+
+Net PnL = Null PnL + Hedge PnL
+```
+
+After separating carry and execution costs, the remaining residual is basis PnL. It includes oracle-versus-venue price drift and entry or rebalance slippage. A position can have attractive projected carry and still lose money through basis or execution.
+
+## Rebalance efficiently
+
+Ordinary price settlement leaves the ideal hedge approximately unchanged. Rebalancing is mainly driven by Receiver flows, Payer flows, your own share changes, funding drift, and exceptional settlement states.
+
+Use a no-trade band so expected improvement exceeds the cost of trading. Every order should also pass:
+
+- fresh-state and valid-price checks;
+- venue lot and minimum-notional checks;
+- a margin-capacity check;
+- a conservative per-order notional cap; and
+- a check that the correction is in the expected direction.
+
+If market state is stale, stop rebalancing. The external venue can continue moving while Null cannot settle, making a hedge based on frozen pool state unreliable.
+
+## Key risks
+
+### Funding reversal
+
+Null funding can fall or turn negative, and external funding can rise. The spread may disappear before entry costs are recovered.
+
+### Basis risk
+
+Null's oracle and the external venue can mark the asset differently, particularly during volatility, closures, or stale data.
+
+### External liquidation
+
+Null has no liquidation engine, but the hedge venue does. Insufficient external equity can liquidate the long even while the combined trade is economically hedged.
+
+### Flow and liquidity risk
+
+Large mints or burns change `R/P` and the hedge target. Thin Payer liquidity can also affect entry and exit.
+
+### Execution risk
+
+Fees, slippage, partial fills, minimum order sizes, downtime, and API failures can leave the two legs mismatched.
+
+### Protocol and collateral risk
+
+Smart-contract, oracle, collateral, vault, and settlement risks remain on the Null leg.
+
+<Warning>
+“Delta neutral” describes the intended price exposure at a point in time. It does not mean risk neutral, capital protected, or guaranteed profitable.
+</Warning>
+
+Start with [Market Making](/private-beta/market-make/overview) for the hedge lifecycle and sizing formula.

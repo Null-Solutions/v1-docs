@@ -1,0 +1,147 @@
+---
+title: "Market Making"
+sidebarTitle: "Market Making"
+description: "Learn how to supply Payer liquidity, hedge its price exposure, and operate a delta-neutral Null position."
+---
+
+Market makers supply the Payer collateral that backs Receiver exposure. In return, Payer can earn Null funding and collateral yield. Because Payer takes the opposite side of Receiver price moves, a market maker normally pairs it with an external long hedge.
+
+The result is a basis trade: neutralize most directional price exposure, then earn the difference between Null carry and the cost of maintaining the external hedge.
+
+<Warning>
+Market making is not risk-free or guaranteed to be profitable. It adds external-venue, margin, execution, basis, funding, oracle, smart-contract, collateral, and liquidity risks.
+</Warning>
+
+## The two legs
+
+A hedged Payer position has two coordinated legs:
+
+1. **Null Payer** — supplies backing, receives or pays Null funding, and shares in collateral yield.
+2. **External long** — offsets Payer's synthetic short exposure to the tracked asset.
+
+The external venue must list a sufficiently close market. Null's reference hedger currently uses Hyperliquid perpetuals, but the hedge formula is venue-independent.
+
+## Size the hedge
+
+Let:
+
+- `p` be the current value of your Payer position;
+- `R` be total Receiver pool assets;
+- `P` be total Payer pool assets; and
+- `S` be the tracked asset's oracle price.
+
+Payer's effective exposure multiple is:
+
+```text
+E = R / P
+```
+
+The required external long is:
+
+```text
+h = p * (R / P) / S     tracked-asset units
+H = h * S = p * (R / P) external notional
+```
+
+Equivalently, if you own the fraction `p / P` of the Payer pool, you hedge that fraction of Receiver's total asset exposure `R / S`.
+
+### Example
+
+Suppose:
+
+```text
+Payer position p = $7.50
+Receiver pool R  = $1,050
+Payer pool P     = $150
+Oracle price S   = $105
+```
+
+Then:
+
+```text
+E = 1,050 / 150 = 7
+h = 7.50 * 7 / 105 = 0.50 units
+H = 0.50 * 105 = $52.50
+```
+
+The market maker holds the Null Payer shares and opens a long of `0.50` tracked-asset units externally.
+
+## Why price moves do not normally trigger a rebalance
+
+During a full, ordinary price settlement, the oracle price and Receiver assets move together. Your Payer claim changes by the matching opposite transfer. These changes cancel inside the hedge formula, leaving `h` exactly unchanged in the model.
+
+This is an important property: the hedger should not chase every price move. It should rebalance when the position's actual exposure changes.
+
+## What changes the target
+
+For a small change, the hedge sensitivity is:
+
+```text
+dh / h = dp / p - dP / P + dR / R - dS / S
+```
+
+Protocol events simplify that expression:
+
+| Event | Relative target change | Action |
+| --- | --- | --- |
+| Full price settlement | `0` | None |
+| Receiver flow `ΔR` | `ΔR / R` | Follow the flow |
+| Other-Payer flow `ΔP` | `-ΔP / P` | Trade against the flow |
+| Funding over `Δt` | `-f * Δt / 365 days` | Slow drift; direction follows funding's sign |
+| Your Payer mint or burn | Recompute from the new `p` | Resize the hedge |
+
+For a large deposit by other Payers, use the exact target multiplier `P / (P + ΔP)` rather than the small-flow approximation.
+
+Circuit-breaker events, solvency-floor truncation, and stale market state can break the ordinary price-settlement assumptions. The operator should suspend automated resizing and reassess both legs.
+
+The reference hedger recomputes the target from fresh pool state instead of accumulating estimated deltas.
+
+## Use a no-trade band
+
+Trading every tiny change creates unnecessary fees and slippage. Define a tolerance `tol` around the target:
+
+```text
+lower bound = h * (1 - tol)
+upper bound = h * (1 + tol)
+```
+
+Only rebalance when the external position leaves that band. The reference implementation defaults to a `0.5%` tolerance and also holds corrections that are below the venue's minimum order size.
+
+## Operating lifecycle
+
+<Steps>
+  <Step title="Choose a market">
+    Confirm that the tracked asset has a suitable external hedge venue. Review Payer coverage, Null funding, collateral yield, liquidity, fees, oracle hours, and the external funding rate.
+  </Step>
+  <Step title="Mint Payer shares">
+    Deposit collateral into the Payer pool. Record the shares received and the position value used to establish your PnL baseline.
+  </Step>
+  <Step title="Open the external long">
+    Calculate `h = p(R/P)/S` and buy that many tracked-asset units on the hedge venue. Use enough venue equity to maintain a conservative liquidation buffer.
+  </Step>
+  <Step title="Monitor both legs">
+    Track fresh Null pool state, oracle and venue prices, funding on both venues, collateral yield, margin, fills, fees, and the hedge deviation.
+  </Step>
+  <Step title="Rebalance only when required">
+    Trade the difference between current and target hedge after the tolerance, lot-size, minimum-notional, margin, and order-cap checks pass.
+  </Step>
+  <Step title="Close both legs">
+    Burn the Payer shares and close the remaining external long as one coordinated exit. Confirm final fills and funding before treating the strategy as settled.
+  </Step>
+</Steps>
+
+## Reference hedger behavior
+
+Null's reference hedger is an operator tool, not part of the protocol:
+
+- it reads live, simulated market state from the indexer on every new block;
+- it verifies the wallet's Payer ownership onchain;
+- it opens an offsetting Hyperliquid long;
+- it suspends trading when Null state is stale;
+- it uses a tolerance band, venue minimum, lot precision, margin gate, and per-order notional cap;
+- it defaults to dry-run mode; and
+- it records venue funding, fills, fees, and PnL from Hyperliquid's ledger rather than estimating them.
+
+The worker never opens or closes the Null Payer position. The operator controls that leg and remains responsible for capital, keys, venue setup, monitoring, and emergency procedures.
+
+Continue with [Farm the Basis](/private-beta/market-make/farm-the-basis) to evaluate the strategy's carry.

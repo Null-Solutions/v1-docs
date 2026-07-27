@@ -1,120 +1,51 @@
 ---
-title: "Collateral for Null V1 Markets"
+title: "Collateral"
 sidebarTitle: "Collateral"
-description: "Understand how Null V1 markets use ERC-20 collateral and reconcile actual token balances."
+description: "How Null V1 markets use ERC-20 collateral, reconcile balances, and wrap ERC-4626 vault shares via the router."
 ---
 
-Null V1 markets use one ERC-20 token as collateral. The market, its receiver
-pool, and its payer pool all account in units of that token.
+Each market uses one ERC-20 as collateral. The market and both pools account in units of that token.
 
----
+## Assumptions
 
-## ERC-20 Collateral
+The factory only checks that the collateral address is nonzero. Documented assumptions are stronger: transfers should be non-reentrant, and sender/receiver balances should change by exactly the requested amount. Passing the factory check does **not** mean the token is safe.
 
-The factory only checks that the collateral address is nonzero. Its interface
-documents stronger assumptions: transfers should be non-reentrant, and sender
-and receiver balances should change by exactly the requested amount. A token
-passing the factory check is not therefore guaranteed to be safe collateral.
+| Typical | Characteristics |
+| --- | --- |
+| USDC, WETH, DAI, WBTC, ERC-4626 vault shares | Pool balances in token units |
+| | Direct pool calls use market collateral |
+| | Router wraps/unwraps ERC-4626 collateral |
+| | External balance changes reconcile before actions |
+| | Core does not track an underlying share price separately |
 
-<CardGroup cols={2}>
-  <Card title="Examples" icon="coins">
-    - USDC
-    - WETH
-    - DAI
-    - WBTC
-    - ERC-4626 vault shares
-  </Card>
-  <Card title="Characteristics" icon="list-check">
-    - Pool balances denominated in token units
-    - Direct pool calls use the market collateral
-    - Router calls wrap/unwrap ERC-4626 collateral
-    - Actual balance changes are reconciled before pool actions
-    - No core collateral share-price accounting
-  </Card>
-</CardGroup>
+## Reconciliation
 
----
+On settlement (pool writes and fee sweeps), the market reconciles `collateral.balanceOf(market)` against internal accounting before collateral fees, funding, and price PnL.
 
-## Balance Reconciliation
+1. Reserve recorded `protocolFees` (capped to actual balance if needed)
+2. Compare remainder to `receiverPool + payerPool`
+3. Allocate surplus/deficit pro rata (rounding from the larger pool first)
+4. If both pools are empty, leftover → `protocolFees`
 
-During state settlement, the market reconciles
-`collateral.balanceOf(address(market))` against its internal accounting before
-applying collateral fees, funding, and price PnL. This runs on pool
-deposit/mint/withdraw/redeem and on fee sweeps; there is no standalone public
-poke.
+This captures donations and rebases in accounting. It does not make fee-on-transfer tokens safe.
 
-Protocol fees are reserved first. If the recorded protocol fees exceed the
-actual balance, they are capped to that balance and no collateral remains for
-the pools.
+## Deposit and withdraw units
 
-The remaining balance is compared with `receiverPool + payerPool`:
+Core pools always take/return **market collateral**. If that is an ERC-4626 vault share, direct callers use vault shares.
 
-- a surplus is allocated between pools in proportion to their recorded assets
-- a deficit is deducted proportionally, with integer-rounding remainder charged
-  to the larger pool first
-- if both pool balances are zero, any remaining collateral is recorded as
-  protocol fees
+Routers detect ERC-4626 via `asset()`:
 
-This captures donations and rebases in pool accounting. It does not make
-fee-on-transfer or otherwise non-standard tokens compliant with the factory's
-documented transfer assumptions.
+1. **Deposit:** pull underlying → deposit into vault → deposit vault shares into Null pool
+2. **Redeem:** redeem Null shares → redeem vault → send underlying
 
-<Tip>
-  Reconciliation uses collateral-token units. It does not separately track the
-  value of the collateral in an underlying asset.
-</Tip>
-
----
-
-## Token Selection Risks
-
-Rebasing tokens, fee-on-transfer tokens, blacklists, hooks, and external
-strategy risk can change outcomes or break expected transfers. Review token
-behavior rather than relying on the factory's nonzero-address check.
-
----
-
-## Depositing and Withdrawing
-
-The core pools accept the market collateral directly. If the collateral is an
-ERC-4626 vault, direct pool callers deposit and withdraw vault shares.
-
-Both `NullV1Router` and `NullV1PayableRouter` optimistically detect ERC-4626
-collateral by calling `asset()`. On deposit, the router:
-
-1. pulls the requested amount of underlying from the user
-2. deposits it into the collateral vault
-3. deposits the resulting vault shares into the selected Null pool
-
-On redemption, it receives collateral vault shares from the Null pool, redeems
-them through the vault, and sends the underlying to the user. Router asset
-amounts and slippage checks are therefore in underlying units for ERC-4626
-collateral, but in collateral-token units for plain ERC-20 collateral.
-
-If `asset()` reverts, the router treats the token as a plain ERC-20. A token
-that exposes `asset()` but is not a conforming ERC-4626 vault may fail later in
-the flow.
+Router amounts and slippage mins are in **underlying** for ERC-4626 collateral, and in collateral units for plain ERC-20. If `asset()` reverts, the router treats the token as plain ERC-20.
 
 <Note>
-  Receiver and payer positions are themselves ERC-4626-compatible Null pool
-  shares. They are distinct from an ERC-4626 vault used as market collateral.
+Null Receiver/Payer shares are themselves ERC-4626. That is separate from using an ERC-4626 vault as **market collateral**.
 </Note>
 
----
+## Selection risks
 
-## Choosing Collateral: Summary
+Avoid or carefully review tokens that rebase, charge transfer fees, blacklist, hook transfers, or depend on external strategies with admin controls.
 
-<CardGroup cols={2}>
-  <Card title="Use an asset when..." icon="circle-check">
-    - Users understand the collateral risk
-    - You want the simplest possible integration
-    - The token has predictable transfer behavior
-    - The oracle and collateral denomination make sense together
-  </Card>
-  <Card title="Be careful when..." icon="triangle-alert">
-    - Balances can rebase or change externally
-    - Transfers charge fees or have hooks
-    - The collateral relies on an external yield strategy
-    - The token has admin controls that can affect transfers
-  </Card>
-</CardGroup>
+Guides: [Depositing](/developers/depositing) · [Redeeming](/developers/redeeming) · [Settlement](/developers/settlement)

@@ -1,33 +1,35 @@
-> **First-time setup**: Customize this file for your project. Prompt the user to customize this file for their project.
-> For Mintlify product knowledge (components, configuration, writing standards),
-> install the Mintlify skill: `npx skills add https://mintlify.com/docs`
-
 # Documentation project instructions
 
 ## About this project
 
-- This is a documentation site built on [Mintlify](https://mintlify.com)
-- Pages are MDX files with YAML frontmatter
+- Mintlify docs site for Null V1
+- Pages are MDX with YAML frontmatter
 - Configuration lives in `docs.json`
-- Use the Mintlify MCP server, `https://mcp.mintlify.com`, to edit content and settings via MCP
-- Use the Mintlify docs MCP server, `https://www.mintlify.com/docs/mcp`, to query information about using Mintlify via MCP
+- Two nav dropdowns: **Private Beta** (product/app) and **Developers** (protocol/contracts)
 
 ## Terminology
 
-{/* Add product-specific terms and preferred usage */}
-{/* Example: Use "workspace" not "project", "member" not "user" */}
+- **Receiver** / **Payer** — the two ERC-4626 pools in a market
+- **Market identity** — `(collateral, oracle, frm)`
+- **FRM** — funding-rate model
+- **deposit / redeem** — onchain and developer docs language
+- **Mint / Burn** — private-beta app copy for the same flows
+- **Settlement** — market update before pool actions (not a separate public poke)
+- Prefer **Sepolia** when stating live deployments; do not claim mainnet/Base unless addresses page says live
+- Prefer **contracts-first**; do not document a published Null SDK or partner trading API unless one ships
 
 ## Style preferences
 
-{/* Add any project-specific style rules below */}
-
-- Use active voice and second person ("you")
-- Keep sentences concise — one idea per sentence
-- Use sentence case for headings
+- Active voice, second person ("you")
+- Concise sentences — one idea per sentence
+- Sentence case for headings
 - Bold for UI elements: Click **Settings**
 - Code formatting for file names, commands, paths, and code references
+- Prefer `viem` snippets in developer guides; Solidity for contract surfaces
 
 ## Content boundaries
 
-{/* Define what should and shouldn't be documented */}
-{/* Example: Don't document internal admin features */}
+- Developers dropdown: protocol mechanics, integration, market setup, deployments, contract reference
+- Private Beta dropdown: app UX, access, portfolios, points (note when features are unavailable)
+- Do not invent SDK packages, API keys, webhooks, order books, or mainnet addresses
+- Empty legacy stubs under `resources/` (faq, whitepapers, etc.) are not part of the Developers nav — prefer deleting or filling over linking

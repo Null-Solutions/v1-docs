@@ -1,47 +1,57 @@
 ---
 title: "AI / LLMs"
-description: "Use Null V1 docs as structured context for AI assistants and integration agents."
 sidebarTitle: "AI / LLMs"
+description: "Structured context and terminology for AI assistants building against Null V1."
 ---
 
-Use these docs as source context when asking an AI assistant to reason about Null V1.
+Use these pages as source context when asking an assistant to reason about or generate code for Null V1.
 
 ## Recommended context
 
-For protocol behavior, include the Learn pages:
+**Protocol behavior**
 
-- [Learn overview](/learn/overview)
-- [Market update](/developers-tab/market-update)
+- [Protocol overview](/learn/overview)
+- [Settlement](/developers/settlement)
 - [Funding and carry](/learn/funding-and-carry)
+- [Fees](/developers/fees)
 - [Risks and parameters](/learn/risks-and-parameters)
+- [Circuit breaker](/security/circuit-breaker)
 
-For integration work, include the Developers pages:
+**Integration**
 
-- [Developer overview](/developers-tab/overview)
-- [Integrator quickstart](/developers-tab/integrator-quickstart)
-- [Market update](/developers-tab/market-update)
-- [Pools and ERC-4626](/developers-tab/pools-and-erc4626)
-- [Router](/developers-tab/router)
+- [Developer overview](/developers/overview)
+- [Quickstart](/developers/quickstart)
+- [Depositing](/developers/depositing)
+- [Redeeming](/developers/redeeming)
+- [Pools](/developers/pools)
+- [Router](/developers/router)
+- [Live deployments](/resources/addresses)
 
 ## Terms to preserve
 
-When generating code or explanations, keep these terms precise:
+| Term | Meaning |
+| --- | --- |
+| **Receiver** | Pool that receives positive reference-asset returns; other side of signed funding |
+| **Payer** | Pool that backs Receiver; opposite price risk; other side of funding |
+| **Coverage `P/R`** | Payer assets ÷ Receiver assets |
+| **FRM** | Immutable funding-rate model dependency |
+| **Funding** | Signed transfer between pools; positive `f` ⇒ Receiver pays Payer |
+| **Price settlement** | Value transfer from oracle price movement |
+| **Solvency bound** | Cap on net funding+price debit at `max(pool − MIN_POOL_ASSETS, 0)` |
+| **Mint / Burn (app)** | Product copy for deposit / redeem |
 
-- **Receiver:** the pool that receives positive reference-asset returns and takes the opposite side of signed funding.
-- **Payer:** the pool that backs Receiver exposure, takes the opposite price risk, and takes the other side of signed funding.
-- **Coverage ratio `P/R`:** Payer pool value divided by Receiver pool value.
-- **Funding-rate model (FRM):** the immutable market dependency that computes signed funding from prepared market state.
-- **Funding:** a signed transfer between Receiver and Payer. Positive rates mean Receiver pays Payer; negative rates reverse the flow.
-- **Price settlement:** directional value transfer based on oracle price movement.
-- **Solvency bound:** the cap that limits the net funding-plus-price transfer to the paying pool's assets above `MIN_POOL_ASSETS`.
+## Guardrails for generated code
 
-## Integration guardrails
+- Discover markets by `(collateral, oracle, frm)` — do not invent pool addresses
+- Read pool addresses from the market or `CreateMarket`
+- Treat shares as ERC-4626; share decimals = collateral decimals + 10
+- Assume every pool write settles the market first
+- Always pass slippage mins and deadlines on router calls
+- Match router to oracle: Chainlink → fee-less; Pyth → payable (no `msg.value` from user)
+- Convert units when collateral is ERC-4626 (router = underlying; pool preview = vault shares)
+- Do not invent a Null SDK, REST trading API, or mainnet addresses unless the deployments page lists them
+- Sepolia is the live network today
 
-AI-generated integrations should preserve these rules:
+## What not to invent
 
-- Discover markets by `(collateral, oracle, frm)`.
-- Read Receiver and Payer pool addresses from the market.
-- Treat pool shares as ERC-4626 shares.
-- Remember that state-changing pool actions update the market before execution.
-- Use slippage limits for deposits and redemptions.
-- Treat previews as estimates, not execution guarantees.
+Null is contracts-first. There is no published partner API with API keys, no order book, and no liquidation engine. Gains move only from collateral already in the market.

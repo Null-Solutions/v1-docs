@@ -1,14 +1,16 @@
 ---
-title: "Indexer Integration"
+title: "Indexer integration"
 sidebarTitle: "Indexer"
-description: "Discover Null V1 markets, index exact protocol events, and batch current-state projections."
+description: "Discover Null V1 markets from the factory, index settlement and share events, and batch current-state projections with Lens or Multicall."
 ---
 
-A Null V1 indexer discovers markets from the factory, indexes market settlement events, and tracks pool ERC-20 balances. Use Lens or Multicall for current projections; events remain the historical record.
+A Null indexer discovers markets from the factory, indexes settlement events, and tracks pool ERC-20 balances. Use Lens or Multicall for current projections; events remain the historical record.
+
+There is no published partner API. If you run your own indexer (or reuse Null's product indexer deployment), treat it as infrastructure you control — not a keyed public trading API.
 
 ## Discover markets
 
-Start at the factory deployment block and index:
+Start at the factory deployment block ([Live deployments](/resources/addresses)) and index:
 
 ```solidity
 event CreateMarket(
@@ -23,13 +25,9 @@ event CreateMarket(
 event EnableFrm(address indexed frm);
 ```
 
-Persist all six `CreateMarket` fields. Market identity is the exact `(collateral, oracle, frm)` tuple, which can also be resolved with:
+Persist all six `CreateMarket` fields. Identity is the exact `(collateral, oracle, frm)` tuple, also resolvable with `factory.getMarket(...)`.
 
-```solidity
-factory.getMarket(collateral, oracle, frm);
-```
-
-Subscribe to both pool addresses immediately so early share transfers are not missed.
+Subscribe to both pool addresses immediately so early share transfers are not missed. Do not hardcode per-market pools.
 
 ## Index market state
 
@@ -43,41 +41,20 @@ event UpdateState(
     bool circuitBreakerFired
 );
 
-event SetFees(
-    uint16 entryFee,
-    uint16 exitFee,
-    uint16 collateralFee
-);
-
+event SetFees(uint16 entryFee, uint16 exitFee, uint16 collateralFee);
 event CollectFees(uint256 fee);
 ```
 
-`UpdateState` is emitted when pool execution or an owner fee operation settles the market. There is no periodic permissionless update function. Store `circuitBreakerFired`: when true, the new price was recorded but price PnL for that update was skipped; funding still settled.
+`UpdateState` fires when pool execution or an owner fee op settles the market. There is no periodic permissionless update. When `circuitBreakerFired` is true, the new price was recorded but price PnL was skipped; funding still settled.
 
-Prices are scaled by `1e36`. Pool assets and protocol fees are raw market-collateral units. If collateral is an ERC-4626 vault, use Lens `collateralSharePrice` or the vault conversion to express those units in underlying terms.
+Prices are `1e36`-scaled. Pool assets and protocol fees are raw market-collateral units. If collateral is ERC-4626, use Lens `collateralSharePrice` or vault conversion for underlying terms.
 
 ## Track positions
 
-Pool positions are ERC-20 balances. Index standard `Transfer` events on both receiver and payer pools:
+Index ERC-20 `Transfer` on both pools, plus ERC-4626:
 
 ```solidity
-event Transfer(
-    address indexed from,
-    address indexed to,
-    uint256 value
-);
-```
-
-Use standard ERC-4626 events for transaction context:
-
-```solidity
-event Deposit(
-    address indexed sender,
-    address indexed owner,
-    uint256 assets,
-    uint256 shares
-);
-
+event Deposit(address indexed sender, address indexed owner, uint256 assets, uint256 shares);
 event Withdraw(
     address indexed sender,
     address indexed receiver,
@@ -87,9 +64,9 @@ event Withdraw(
 );
 ```
 
-Pool shares use `collateral.decimals() + 10` decimals because the ERC-4626 decimals offset is 10.
+Pool shares use `collateral.decimals() + 10` decimals.
 
-## Read projected state
+## Projected state
 
 ```solidity
 struct SimulateResponse {
@@ -103,20 +80,19 @@ struct SimulateResponse {
 }
 ```
 
-Use `previewMarket(market)` for a settlement projection at `oracle.priceView()`, or `simulateMarket(market, price)` for a caller-provided `1e36`-scaled price. `fundingRate` is signed and WAD-scaled. `collateralRate` and `collateralSharePrice` are unsigned and WAD-scaled.
+- `previewMarket(market)` — settlement projection at `oracle.priceView()`
+- `simulateMarket(market, price)` — caller-provided `1e36` price
 
-For batches:
+Batch:
 
 ```solidity
 multicall.previewAll(lens, markets);
 multicall.simulateAll(lens, markets, externalPrices);
 ```
 
-The response order matches the market order. A reverted per-market call produces an all-zero `SimulateResponse` rather than reverting the batch. Record that entry as unavailable, not as an empty market. `simulateAll` itself reverts with `LengthMismatch` if the market and price arrays differ in length.
+Response order matches input order. A reverted per-market call yields an all-zero `SimulateResponse` — treat as unavailable, not empty. `simulateAll` reverts with `LengthMismatch` if array lengths differ.
 
 ## Metadata
-
-The market oracle exposes:
 
 ```solidity
 oracle.baseName();
@@ -125,4 +101,8 @@ oracle.quoteName();
 oracle.quoteSymbol();
 ```
 
-Cache these values for display labels. They are interface methods, but an indexer should still handle individual RPC failures defensively.
+Cache for labels; handle individual RPC failures defensively.
+
+## Related
+
+[Settlement](/developers/settlement) · [Frontend](/contracts/integration/ui) · [Lens](/contracts/lens) · [Multicall](/contracts/multicall)

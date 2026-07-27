@@ -1,12 +1,10 @@
 ---
-title: "Learn Null V1"
-description: "Understand Null V1 markets, Receiver and Payer positions, funding, settlement, collateral, and risk controls."
+title: "Protocol overview"
 sidebarTitle: "Overview"
+description: "How Null V1 markets work: Receiver and Payer pools, settlement, funding, and full collateralization."
 ---
 
-## The core idea
-
-Null turns the total return swap into a pooled onchain market. The Receiver pool takes the return of an oracle-tracked asset; the Payer pool supplies the collateral that backs that exposure. Each side is represented by fungible ERC-4626 shares.
+Null turns a total return swap into a pooled onchain market. The **Receiver** pool takes the return of an oracle-tracked asset. The **Payer** pool supplies the collateral that backs that exposure. Each side is fungible ERC-4626 shares.
 
 A market is uniquely identified by three immutable dependencies:
 
@@ -14,67 +12,75 @@ A market is uniquely identified by three immutable dependencies:
 (collateral, oracle, frm)
 ```
 
-- `collateral` is the ERC-20 deposited into both pools.
-- `oracle` supplies the tracked asset price.
-- `frm` is the funding-rate model.
+- `collateral` — ERC-20 deposited into both pools
+- `oracle` — tracked asset price (`1e36` scale)
+- `frm` — funding-rate model
 
-The market redistributes collateral it holds and attributes to the two pools. It does not lend, create debt, use liquidations, or create an undercollateralized receivable.
+The market redistributes collateral it holds between the two pools. It does not lend, create debt, liquidate users, or mint an undercollateralized claim.
 
 ## Receiver
 
-Receiver is the synthetic-long side. A user deposits collateral, receives Receiver pool shares, and owns a proportional claim on that pool. For an ordinary settled price move:
+Receiver is the synthetic-long side. Deposit collateral, receive Receiver shares, own a proportional claim on that pool.
 
-- a price increase moves value from Payer to Receiver;
-- a price decrease moves value from Receiver to Payer.
+For an ordinary settled price move:
 
-Funding can move in either direction. A positive signed funding rate means Receiver pays Payer; a negative rate means Payer pays Receiver.
+- price **up** → value moves Payer → Receiver
+- price **down** → value moves Receiver → Payer
+
+Funding is signed. Positive rate: Receiver pays Payer. Negative rate: Payer pays Receiver.
+
+Receiver is synthetic exposure, not ownership of the tracked asset (no voting, dividends, or redemption rights unless the market rules explicitly account for them).
 
 ## Payer
 
-Payer supplies the reserve collateral backing Receiver gains and takes the opposite price exposure. A Payer can keep that directional exposure or hedge it externally. Null defines the onchain payoff but does not execute or maintain an external hedge.
+Payer supplies the reserve that keeps Receiver fully collateralized and takes the opposite price transfer. Payer percentage returns can exceed the asset move when the Payer pool is smaller than Receiver — the same transfer is measured against a smaller base.
 
-## Example
+A Payer can keep that directional exposure or hedge externally. Null defines the onchain payoff; it does not run the hedge.
 
-Ignore funding for the moment. Suppose the Receiver pool is 1,000 collateral units, the Payer pool is 200, and the oracle price falls by 2%:
+## Example (price only)
+
+Ignore funding. Receiver 1,000, Payer 200, price falls 2%:
 
 ```text
-Price PnL = 2% * 1,000 = 20
+Price PnL = 2% × 1,000 = 20
 
-Receiver: 1,000 -> 980
-Payer:      200 -> 220
+Receiver: 1,000 → 980   (−2%)
+Payer:      200 → 220   (+10%)
 ```
 
-Receiver loses 2%, while Payer gains 10% because the same 20-unit transfer is measured against a smaller pool. In a real update, funding and price PnL are calculated from the prepared pool state, netted, and then applied as one solvency-bounded transfer.
+In a real update, funding and price PnL are calculated from prepared state, netted, then applied as one solvency-bounded transfer. See [Settlement](/developers/settlement).
 
 ## Shares are pooled claims
 
-Each share is a proportional claim on one pool's current assets, not a bilateral position with a private entry price. If you own 10% of a pool and no shares are minted or burned, you continue to own 10% after settlement; the value of that claim changes with the pool.
+Each share is a percentage of one pool's current assets — not a bilateral position with a private entry price. If you own 10% of a pool and no shares mint or burn, you still own 10% after settlement; the value of that claim changes with the pool.
+
+The private-beta app labels enter/exit as Mint / Burn. Onchain these are ERC-4626 deposit / redeem.
 
 ## How value moves
 
-Each settlement follows this order:
+Each settlement:
 
-1. Read and validate the oracle price.
-2. Reconcile the market's external collateral balance.
-3. Charge the annualized collateral fee.
-4. Query the FRM against that prepared state.
-5. Net funding with price PnL and cap the debit at `max(pool assets - MIN_POOL_ASSETS, 0)`.
-6. Store the new timestamp and price.
+1. Read and validate the oracle price
+2. Reconcile external collateral balance
+3. Charge the annualized collateral fee
+4. Query the FRM against prepared state
+5. Net funding with price PnL; cap debit at `max(pool − MIN_POOL_ASSETS, 0)`
+6. Store new timestamp and price
 
-If the price circuit breaker fires, the update skips price PnL but still accrues funding and stores the new price as the next anchor.
+If the [circuit breaker](/security/circuit-breaker) fires, price PnL is skipped; funding still accrues and the new price becomes the next anchor.
 
 ## Why full collateralization matters
 
-The net funding-and-PnL transfer cannot debit a pool below `MIN_POOL_ASSETS` if it starts above that floor. Reconciliation, collateral fees, and user withdrawals are separate and can leave a pool below the floor. The accounting invariant is:
+The net funding-and-PnL transfer cannot debit a pool below `MIN_POOL_ASSETS` if it starts above that floor. Reconciliation, collateral fees, and withdrawals are separate and can leave a pool below the floor. The accounting invariant is:
 
 ```text
 receiverPool + payerPool + protocolFees == collateral.balanceOf(market)
 ```
 
-## What to read next
+## Next
 
-- [Receive overview](/receive/overview): understand the synthetic-long side.
-- [Pay overview](/pay/overview): understand the reserve-liquidity side.
-- [Funding and carry](/learn/funding-and-carry): learn the signed funding curve and Payer hedge.
-- [Market update](/developers-tab/market-update): follow the exact settlement pipeline.
-- [Risks and parameters](/learn/risks-and-parameters): review solvency, oracle, and parameter risks.
+- [Funding and carry](/learn/funding-and-carry) — signed funding curve and Payer hedge
+- [Settlement](/developers/settlement) — exact pipeline
+- [Fees](/developers/fees) — entry, exit, collateral fee
+- [Risks and parameters](/learn/risks-and-parameters) — solvency, oracle, parameters
+- [Developer overview](/developers/overview) — build against the contracts

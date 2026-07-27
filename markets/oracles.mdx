@@ -1,50 +1,36 @@
 ---
-title: "Null V1 Oracle Types and Integration Guide"
+title: "Oracles"
 sidebarTitle: "Oracles"
-description: "Choose between Null V1's supported Pyth, Chainlink V3 crypto, and Chainlink V11 RWA oracles."
+description: "Pyth, Chainlink V3, and Chainlink V11 pull oracles — price scale, update routing, freshness, and the 10-day escape."
 ---
 
-Oracles supply the normalized price used when a Null V1 market settles. The
-supported implementations are all pull-based:
+Oracles supply the normalized price used when a market settles. Supported implementations are all **pull-based**:
 
 - Pyth
-- Chainlink Data Streams V3 for crypto
-- Chainlink Data Streams V11 for RWA/session feeds
+- Chainlink Data Streams V3 (crypto)
+- Chainlink Data Streams V11 (RWA / session feeds)
 
-## The Price Scale
+## Price scale
 
-All supported oracles return the price of one base asset in quote-asset units
-scaled by `1e36`.
+One base asset in quote units, scaled by `1e36`:
 
 ```solidity
-uint256 price = oracle.price(); // 200 * 10^36 means 200 quote units
+uint256 price = oracle.price(); // 200 * 10^36 → 200 quote units
 ```
 
-## Choosing an implementation
+## Choose an implementation
 
-<CardGroup cols={2}>
-  <Card title="Pyth Network" icon="satellite-dish">
-    Use for an asset covered by a suitable Pyth feed. Updates require a
-    native-currency fee and must go through `NullV1PayableRouter`.
-  </Card>
-  <Card title="Chainlink V3" icon="link">
-    Use for crypto Data Streams schema V3. One feed ID supplies a continuously
-    traded price. Updates are nonpayable and fee-zero.
-  </Card>
-  <Card title="Chainlink V11" icon="clock">
-    Use for RWA Advanced schema V11 feeds. Three configured IDs cover regular,
-    extended, and overnight sessions. Updates are nonpayable and fee-zero.
-  </Card>
-</CardGroup>
+| Oracle | Router | Fee |
+| --- | --- | --- |
+| Pyth | `NullV1PayableRouter` | Native fee paid from router ETH |
+| Chainlink V3 | `NullV1Router` | Fee-less |
+| Chainlink V11 | `NullV1Router` | Fee-less |
 
 ## Update flow
 
-Fetch a signed payload from the relevant provider and pass it as `updateData`
-to router market creation, deposit, or redemption. If the array is nonempty,
-the router updates the oracle before the market operation.
+Fetch a signed payload and pass it as `updateData` on router create / deposit / redeem. Nonempty arrays update the oracle before the market op.
 
 ```solidity
-router.createMarket(factory, collateral, oracle, frm, updateData);
 router.depositMarket(
     market,
     receiverAssets,
@@ -56,47 +42,26 @@ router.depositMarket(
 );
 ```
 
-### Pyth
-
-`NullV1PythOracle.update` is payable. `NullV1PayableRouter` calculates the Pyth
-fee and forwards it from the router's pre-funded ETH balance. The caller does
-not attach the update fee to the market-operation call.
-
-### Chainlink V3 and V11
-
-Both Chainlink contracts implement nonpayable `update`, and
-`getUpdateFee(updateData)` always returns zero. Use `NullV1Router`, which calls
-the oracle without forwarding native currency.
+Callers never attach `msg.value` for Pyth — the payable router pays from its balance.
 
 <Warning>
-  The router type is part of the integration. The fee-less router cannot pay a
-  Pyth update fee.
+Router type is part of the integration. The fee-less router cannot pay a Pyth update fee.
 </Warning>
 
-## Freshness and the 10-day escape
+## Freshness and 10-day escape
 
-All three implementations use a 60-second normal freshness threshold. Their
-read path behaves as follows:
+Normal freshness threshold: **60 seconds**.
 
-- up to 60 seconds in the future: accepted
-- more than 60 seconds in the future: `StalePrice()` revert
-- up to 60 seconds old: accepted
-- more than 60 seconds but less than 10 days old: `StalePrice()` revert
-- exactly 10 days old or older: last stored positive price is returned
+| Age of stored price | `price()` behavior |
+| --- | --- |
+| ≤ 60s old (or ≤ 60s in the future) | Accepted |
+| > 60s and < 10 days | `StalePrice()` revert |
+| ≥ 10 days | Last stored positive price returned |
 
-The escape is implemented by each oracle's `price()` function. It is not a
-separate redemption mode, and it does not update the stored price.
-
-Update acceptance is narrower: Pyth and Chainlink V3 reject future timestamps;
-Chainlink V11 accepts a report up to 60 seconds ahead. All three reject updates
-that are more than 60 seconds old.
+The escape lives in each oracle's `price()` — it is not a separate redemption mode and does not refresh the stored price. Update acceptance is narrower (see Pyth/Chainlink refs).
 
 <Warning>
-  The 10-day path deliberately permits an old price so settlement can resume
-  after a prolonged upstream outage. Treat the market as degraded and account
-  for the stale-price risk.
+The 10-day path restores liveness after prolonged outage. Treat the market as degraded and account for stale-price risk.
 </Warning>
 
-For exact report checks and creation parameters, see
-[Pyth](/contracts/oracles/pyth) and
-[Chainlink Data Streams](/contracts/oracles/chainlink).
+References: [Pyth](/contracts/oracles/pyth) · [Chainlink](/contracts/oracles/chainlink) · [Oracle overview](/contracts/oracles/overview)

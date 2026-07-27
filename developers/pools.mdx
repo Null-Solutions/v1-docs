@@ -1,0 +1,86 @@
+---
+title: "Pools and ERC-4626"
+sidebarTitle: "Pools"
+description: "Integrate Null V1 Receiver and Payer pools as ERC-4626 share tokens with market-backed totalAssets."
+---
+
+Each market owns two `NullV1Pool` contracts — Receiver and Payer. Both implement ERC-4626. A share is a proportional claim on that pool's **market-recorded** assets, not a bilateral ticket with a private entry price.
+
+## Identify a pool
+
+```solidity
+enum NullV1PoolKind { Receiver, Payer }
+
+function poolKind() external view returns (NullV1PoolKind);
+function market() external view returns (INullV1Market);
+```
+
+## Source of truth
+
+```solidity
+function totalAssets() public view returns (uint256) {
+    (, uint256 receiverPoolAssets, uint256 payerPoolAssets,,) = _market.state();
+    return _poolAssetsForKind(receiverPoolAssets, payerPoolAssets);
+}
+```
+
+The pool does not compute funding or price PnL. The market owns accounting; the pool exposes share math against the current recorded pool value.
+
+Share decimals are `collateral.decimals() + 10` (ERC-4626 decimals offset of 10).
+
+## Update before action
+
+The pool calls `market.updateState()` before every state-changing ERC-4626 call:
+
+```text
+deposit · mint · withdraw · redeem
+```
+
+Execution share math uses the **post-update** pool value. An earlier `preview*` call may disagree.
+
+## Preview functions
+
+Previews include entry and exit fees:
+
+| Function | Fee pattern |
+| --- | --- |
+| `previewDeposit(assets)` | Fee-on-total |
+| `previewMint(shares)` | Fee-on-raw |
+| `previewWithdraw(assets)` | Fee-on-raw |
+| `previewRedeem(shares)` | Fee-on-total |
+
+Between preview and execution, oracle price, elapsed funding, reconciliation, fees, or competing users can move the rate. Enforce slippage on writes.
+
+## Fee paths
+
+- **deposit** — user `assets` include the entry fee; shares mint on the net.
+- **mint** — user pays enough assets for the requested shares plus entry fee.
+- **withdraw** — pool removes requested assets plus exit fee.
+- **redeem** — exit fee is taken from gross assets; user receives the net.
+
+Fees leave the Receiver/Payer system into market `protocolFees`. See [Fees](/developers/fees).
+
+## Transfer flow
+
+**Deposit:** update market → transfer assets from caller to market → record net deposit → mint shares.
+
+**Withdraw / redeem:** update market → market transfers assets to receiver → record gross deduction and fee → burn shares.
+
+## Position value
+
+```text
+userValue = balanceOf(user) * totalAssets() / totalSupply()
+```
+
+Handle `totalSupply() == 0`. Offchain values are snapshots — the next update can change them.
+
+## Direct pool vs router
+
+| Prefer direct pool when | Prefer router when |
+| --- | --- |
+| User already holds market collateral | Combined Receiver + Payer in one tx |
+| Single-side action only | Deadlines and slippage minimums |
+| You manage oracle freshness yourself | Push-oracle `updateData` |
+| | ERC-4626 collateral wrap / unwrap |
+
+Guides: [Depositing](/developers/depositing) · [Redeeming](/developers/redeeming) · [Router](/developers/router) · [Pool reference](/contracts/pool)

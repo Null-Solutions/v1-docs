@@ -1,0 +1,189 @@
+---
+title: "Redeeming"
+sidebarTitle: "Redeeming"
+description: "Redeem Receiver or Payer shares for collateral via the router or direct ERC-4626, with previews, slippage, and vault unwrap."
+---
+
+Redeeming burns pool shares and returns collateral. `router.redeemMarket` settles the market first, then burns shares. For ERC-4626 collateral, the router unwraps vault shares and returns the underlying.
+
+## Shares-in vs assets-out
+
+| Method | You specify | You receive |
+| --- | --- | --- |
+| `redeemMarket` (router) | Exact share amounts | Assets subject to your floor |
+| `pool.redeem` (direct) | Exact shares | Assets after exit fee |
+| `pool.withdraw` (direct) | Exact assets | Shares burned as required |
+
+Most integrations should use `redeemMarket`: burn a known share balance with a minimum asset floor. Use `withdraw` when you need an exact asset amount (in **market collateral** units — vault shares if collateral is ERC-4626).
+
+## Preview assets
+
+```ts
+const estimatedReceiverAssets = await publicClient.readContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "previewRedeem",
+  args: [receiverShares],
+});
+```
+
+Includes the exit fee; uses last settled state. Execution settles first.
+
+<Note>
+For ERC-4626 collateral, pool preview returns vault shares while router minimums are in **underlying**. Convert with the vault's `previewRedeem` before applying slippage.
+</Note>
+
+## Slippage
+
+```ts
+const slippageBps = 50n;
+const minReceiverAssets =
+  (estimatedReceiverAssets * (10_000n - slippageBps)) / 10_000n;
+```
+
+Reverts: `SlippageReceiverAssets`, `SlippagePayerAssets`.
+
+## Deadline and oracle data
+
+Same rules as deposits: Unix `deadline`, `TransactionTooOld` on expiry, and `updateData` for push oracles (`[]` when stored price is fine). Match Chainlink → fee-less router, Pyth → payable router.
+
+## Single-side exit
+
+```ts
+const args = [
+  market,
+  receiverShares,
+  0n, // skip Payer
+  minReceiverAssets,
+  0n,
+  deadline,
+  updateData,
+] as const;
+```
+
+## State update on redeem
+
+Every `redeemMarket` triggers settlement: reconciliation, collateral fee, funding, price PnL (unless circuit-breaker), solvency-bounded net transfer — then share conversion. Returned assets reflect post-update pool value. See [Settlement](/developers/settlement).
+
+## Full example
+
+<Tabs>
+  <Tab title="viem">
+```ts
+const receiverShares = await publicClient.readContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "balanceOf",
+  args: [account.address],
+});
+
+const estimated = await publicClient.readContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "previewRedeem",
+  args: [receiverShares],
+});
+// Convert estimated → underlying if collateral is ERC-4626 before mins
+const minReceiverAssets = (estimated * 9950n) / 10_000n;
+
+await walletClient.writeContract({
+  address: receiverPool,
+  abi: erc20Abi,
+  functionName: "approve",
+  args: [router, receiverShares],
+});
+
+const hash = await walletClient.writeContract({
+  address: router,
+  abi: routerAbi,
+  functionName: "redeemMarket",
+  args: [
+    market,
+    receiverShares,
+    0n,
+    minReceiverAssets,
+    0n,
+    BigInt(Math.floor(Date.now() / 1000) + 300),
+    [],
+  ],
+});
+```
+  </Tab>
+  <Tab title="Solidity">
+```solidity
+interface INullV1Router {
+    function redeemMarket(
+        INullV1Market market,
+        uint256 receiverShares,
+        uint256 payerShares,
+        uint256 minReceiverAssets,
+        uint256 minPayerAssets,
+        uint256 deadline,
+        bytes[] calldata updateData
+    ) external returns (uint256 receiverAssets, uint256 payerAssets);
+}
+
+function redeemAll(
+    INullV1Market market,
+    IERC20 outputToken,
+    uint256 minReceiverAssets,
+    uint256 minPayerAssets,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 receiverAssets, uint256 payerAssets) {
+    INullV1Pool receiverPool = market.receiverPool();
+    INullV1Pool payerPool = market.payerPool();
+
+    uint256 receiverShares = receiverPool.balanceOf(msg.sender);
+    uint256 payerShares = payerPool.balanceOf(msg.sender);
+
+    if (receiverShares > 0) {
+        receiverPool.transferFrom(msg.sender, address(this), receiverShares);
+        receiverPool.approve(address(router), receiverShares);
+    }
+    if (payerShares > 0) {
+        payerPool.transferFrom(msg.sender, address(this), payerShares);
+        payerPool.approve(address(router), payerShares);
+    }
+
+    (receiverAssets, payerAssets) = router.redeemMarket(
+        market,
+        receiverShares,
+        payerShares,
+        minReceiverAssets,
+        minPayerAssets,
+        deadline,
+        updateData
+    );
+
+    outputToken.transfer(msg.sender, receiverAssets + payerAssets);
+}
+```
+  </Tab>
+</Tabs>
+
+## Direct ERC-4626 exit
+
+```ts
+// By shares
+await walletClient.writeContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "redeem",
+  args: [shares, receiver, owner],
+});
+
+// By assets (market collateral units)
+await walletClient.writeContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "withdraw",
+  args: [assets, receiver, owner],
+});
+```
+
+No router slippage or deadline — add your own guards.
+
+## Related
+
+[Depositing](/developers/depositing) · [Fees](/developers/fees) · [Pools](/developers/pools) · [Router](/developers/router)
