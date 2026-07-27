@@ -4,13 +4,13 @@ sidebarTitle: "Market parameters"
 description: "Immutable (collateral, oracle, frm) identity, pools, fees, and standard imbalance FRM parameters."
 ---
 
-A market is uniquely identified by three immutable dependency addresses:
+A market is uniquely identified by three dependency addresses fixed during initialization:
 
 ```text
 (collateral, oracle, frm)
 ```
 
-One market per tuple. Changing any dependency means a different market.
+The factory creates at most one market per tuple. A live market has no setter for any dependency. To use different collateral, oracle, or FRM, create a new tuple and therefore a new market.
 
 ## Immutable identity
 
@@ -23,20 +23,22 @@ One market per tuple. Changing any dependency means a different market.
 </ParamField>
 
 <ParamField path="frm" type="INullV1FundingRateModel" required>
-  Funding-rate model queried every settlement. Must be factory-enabled; cannot be disabled.
+  Funding-rate model queried every settlement. The factory must enable it before market creation.
 </ParamField>
 
 <Warning>
-A market has no `asset` or `mu` identity field. Funding params like `mu` live on the FRM, not the market.
+A market has no `asset()` or `mu()` identity accessor. Read `market.collateral()` for its collateral token. Each Receiver and Payer pool implements ERC-4626, so `pool.asset()` returns that same market collateral. Funding parameters such as `mu` live on the FRM.
 </Warning>
+
+The factory has no FRM disable function. Even if factory governance enables another FRM later, the `frm()` of an existing market does not change.
 
 ## Other fixed addresses
 
 | Field | Role |
 | --- | --- |
 | `factory` | Cloned/registered the market; owner sets fees and enables FRMs |
-| `receiverPool` | ERC-4626 pool receiving tracked price return |
-| `payerPool` | ERC-4626 reserve; opposite price exposure |
+| `receiverPool` | ERC-4626 pool that receives the tracked price return |
+| `payerPool` | ERC-4626 reserve with the opposite price exposure |
 
 Both pools are cloned at init and emitted in `CreateMarket`.
 
@@ -44,11 +46,11 @@ Both pools are cloned at init and emitted in `CreateMarket`.
 
 Factory owner can set three fees, each capped at 500 bps:
 
-| Accessor | Charged on | Max |
+| Accessor | Charged on | Maximum |
 | --- | --- | ---: |
-| `entryFee()` | `deposit` / `mint` | 5% |
-| `exitFee()` | `withdraw` / `redeem` | 5% |
-| `collateralFee()` | Pool assets, annualized during settlement | 5% APR |
+| `entryFee()` | `deposit` / `mint` | 500 bps (5%) |
+| `exitFee()` | `withdraw` / `redeem` | 500 bps (5%) |
+| `collateralFee()` | Pool assets, annualized during settlement | 500 bps (5% APR) |
 
 Fees accrue in `protocolFees`. `sweepFees()` settles first, then pays the factory owner. Details: [Fees](/developers/fees).
 
@@ -72,9 +74,9 @@ f = mu * (cR - P) / (cR + P)
 - Negative `f` → Payer pays Receiver
 - Zero at `P = cR` or if either pool is empty
 - `|f| <= mu` by construction
-- Payer capital APR = `f * R / P`
+- Annual funding transfer across the pools = `f * R`
 
-The FRM is stateless. Another enabled `INullV1FundingRateModel` can replace it — always identify the FRM before interpreting rates. Worked tables: [Funding and carry](/learn/funding-and-carry).
+The standard imbalance FRM is stateless. A different enabled `INullV1FundingRateModel` can be used only when creating another market; it cannot replace the FRM on a live market. Always identify `market.frm()` before interpreting rates. Worked tables: [Funding and carry](/learn/funding-and-carry).
 
 ## Read onchain
 

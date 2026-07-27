@@ -4,12 +4,18 @@ sidebarTitle: "Audits"
 description: "Check the current audit status of Null V1."
 ---
 
-Null V1 should currently be treated as unaudited.
+## Current status
 
-No completed security audit or formal verification report is published in these docs. Do not treat private-beta access, testing, or protective contract controls as an audit.
+Treat Null V1 as unaudited.
+
+No completed security audit or formal-verification report is published in these docs. This page will link reports if they become available. Until then, do not assume that a contract, router, oracle integration, or deployed market has received an independent review.
 
 <Warning>
-An audit cannot guarantee that a protocol has no bugs. An unaudited protocol carries additional risk.
+Private-beta access, testing, a small codebase, and protective contract controls are not substitutes for an audit. An unaudited protocol carries additional risk.
 </Warning>
 
-Review the [security risks](/security/risks) before depositing or minting a position.
+## What an audit would not guarantee
+
+Even a completed audit would not prove that the protocol has no bugs or that a position is safe. Audit scope and deployment details matter. Oracle behavior, collateral risk, market parameters, integrations, and operational failures can also sit outside a report's scope.
+
+Before you mint or deposit, review [Risks and parameters](/learn/risks-and-parameters), the [circuit breaker](/security/circuit-breaker), and the selected market's parameters.

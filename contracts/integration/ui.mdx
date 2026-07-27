@@ -4,14 +4,30 @@ sidebarTitle: "Frontend"
 description: "Read settlement-aware market data with Lens and submit slippage-protected deposits and redemptions with viem."
 ---
 
-Reads: `NullV1Lens` (and optionally Multicall for batches). Writes: the router that matches the market's oracle fee model.
+Use public contract interfaces for reads and writes:
 
-| Oracle | Router |
-| --- | --- |
-| Chainlink (fee-less updates) | `NullV1Router` |
-| Pyth (native update fee) | Pre-funded `NullV1PayableRouter` |
+- `NullV1Factory` and `CreateMarket` for discovery
+- `NullV1Lens` for settlement projections
+- ERC-20 and ERC-4626 pool functions for balances and quotes
+- the router matching the market's oracle fee model for writes
 
-Both expose the same `createMarket`, `depositMarket`, and `redeemMarket` signatures. Do not send ETH with user calls. Addresses: [Live deployments](/resources/addresses).
+| Oracle                       | Router                           |
+| ---------------------------- | -------------------------------- |
+| Chainlink (fee-less updates) | `NullV1Router`                   |
+| Pyth (native update fee)     | Pre-funded `NullV1PayableRouter` |
+
+Both routers expose the same market-operation signatures. Do not send ETH with user calls. Resolve canonical addresses from [Live deployments](/resources/addresses).
+
+## Product copy
+
+The app calls a pool deposit **Mint** and a pool redemption **Burn**:
+
+| UI term             | Contract action | Meaning                                |
+| ------------------- | --------------- | -------------------------------------- |
+| Mint Receiver/Payer | `depositMarket` | Deposit assets and receive pool shares |
+| Burn Receiver/Payer | `redeemMarket`  | Redeem pool shares and receive assets  |
+
+Do not imply that Mint creates the tracked asset or that Burn destroys market collateral. Receiver and Payer are ERC-4626 share positions.
 
 ## Read a market
 
@@ -27,11 +43,16 @@ struct SimulateResponse {
 }
 ```
 
-`previewMarket(market)` projects settlement using `oracle.priceView()`. `fundingRate` is signed WAD APR; `collateralRate` and `collateralSharePrice` are unsigned WAD metrics.
+`previewMarket(market)` projects settlement using `oracle.priceView()`. It does not write oracle or market state.
 
 ```ts
-import { formatUnits } from "viem";
+import { formatUnits, parseAbi } from "viem";
 
+const market = "0x..." as const; // discover from the canonical factory
+const lens = "0x261841f1a2964232995e79ce7466c734cb2b25b7" as const;
+const lensAbi = parseAbi([
+  "function previewMarket(address market) view returns ((uint256 lastUpdate, uint256 receiverPool, uint256 payerPool, uint256 protocolFees, uint256 price) state, uint256 totalAssets, uint256 receiverTotalSupply, uint256 payerTotalSupply, int256 fundingRate, uint256 collateralRate, uint256 collateralSharePrice)",
+]);
 const response = await publicClient.readContract({
   address: lens,
   abi: lensAbi,
@@ -44,81 +65,139 @@ const collateralAprPercent =
   Number(formatUnits(response.collateralRate, 18)) * 100;
 ```
 
-Keep values as `bigint` for math. A zero collateral metric can mean unsupported or unavailable — Lens catches failures on those external reads.
+Keep values as `bigint` for calculations and round only for display. Lens fields use these formulas:
+
+```text
+funding APR %       = fundingRate / 1e18 × 100
+collateral APR %    = collateralRate / 1e18 × 100
+vault share value   = collateralSharePrice / 1e18 underlying units
+Payer exposure      = projectedReceiverAssets / projectedPayerAssets
+annual funding flow = fundingRate × projectedReceiverAssets / 1e18
+```
+
+Handle a zero Payer denominator when displaying exposure allocation. Positive `fundingRate` means Receiver pays Payer; negative means Payer pays Receiver. Apply it to Receiver exposure notional; do not multiply it into another displayed rate. A zero collateral metric can mean unsupported or unavailable because Lens catches failures from those external reads.
 
 <Note>
-Deployed Sepolia Lens may lag newer collateral-metric helpers in latest source. Check the deployed ABI before relying on newer fields.
+  Deployed Sepolia Lens may lag newer collateral-metric helpers in latest
+  source. Check the deployed ABI before relying on newer fields.
 </Note>
 
-## Deposit
+## Detect collateral units
 
-Approve the token the router pulls: market collateral for plain ERC-20, or vault **underlying** for ERC-4626 collateral. Amounts are in that same unit.
-
-```ts
-const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
-const total = receiverAssets + payerAssets;
-
-await walletClient.writeContract({
-  address: tokenToPull,
-  abi: erc20Abi,
-  functionName: "approve",
-  args: [router, total],
-});
-
-const hash = await walletClient.writeContract({
-  address: router,
-  abi: routerAbi,
-  functionName: "depositMarket",
-  args: [
-    market,
-    receiverAssets,
-    payerAssets,
-    minReceiverShares,
-    minPayerShares,
-    deadline,
-    updateData,
-  ],
-});
-```
-
-Set one side's assets and mins to `0n` for single-side deposits. Full guide: [Depositing](/developers/depositing).
-
-## Redeem
-
-Approve pool share tokens to the router (`msg.sender` must own the shares being burned).
+Read `market.collateral()`. If calling `asset()` on that token succeeds, the router uses the returned underlying. If it reverts, the router uses market collateral directly.
 
 ```ts
-await walletClient.writeContract({
-  address: receiverPool,
-  abi: erc20Abi,
-  functionName: "approve",
-  args: [router, receiverShares],
-});
+import { parseAbi } from "viem";
 
-const hash = await walletClient.writeContract({
-  address: router,
-  abi: routerAbi,
-  functionName: "redeemMarket",
-  args: [
-    market,
-    receiverShares,
-    0n,
-    minReceiverAssets,
-    0n,
-    deadline,
-    updateData,
-  ],
+const market = "0x..." as const; // selected market
+const marketAbi = parseAbi(["function collateral() view returns (address)"]);
+const collateralAbi = parseAbi(["function asset() view returns (address)"]);
+const marketCollateral = await publicClient.readContract({
+  address: market,
+  abi: marketAbi,
+  functionName: "collateral",
 });
+let tokenToPull = marketCollateral;
+let isVaultCollateral = false;
+
+try {
+  tokenToPull = await publicClient.readContract({
+    address: marketCollateral,
+    abi: collateralAbi,
+    functionName: "asset",
+  });
+  isVaultCollateral = true;
+} catch {
+  // The router treats collateral without asset() as a plain ERC-20.
+}
 ```
 
-For ERC-4626 collateral, returned amounts and minimums are underlying units. Full guide: [Redeeming](/developers/redeeming).
+Mirror this exact rule in approval and quote code. Do not identify vaults from token symbols or a frontend allowlist. If `asset()` succeeds but a later vault method fails, surface the error; the router will not silently switch to plain ERC-20 behavior.
+
+For Sepolia markets whose collateral is `nUSDC`, `tokenToPull` is `MockUSDC`. Verify both addresses before showing those names.
+
+## Quote and submit Mint
+
+Quote the same pipeline the router executes:
+
+```text
+plain collateral: input collateral → pool.previewDeposit → pool shares
+vault collateral: input underlying → vault.previewDeposit → pool.previewDeposit → pool shares
+```
+
+Approve `tokenToPull` for `receiverAssets + payerAssets`. Apply one 50 bps floor to each final pool-share quote:
+
+```ts
+const BPS = 10_000n;
+const slippageBps = 50n;
+
+function applySlippageFloor(quotedOutput: bigint): bigint {
+  return (quotedOutput * (BPS - slippageBps)) / BPS;
+}
+```
+
+Set `minReceiverShares = applySlippageFloor(quotedReceiverShares)` and do the same for an active Payer quote. Then call `depositMarket`. Set an unused side's amount and minimum to `0n`. See [Depositing](/developers/depositing) for a complete viem example.
+
+## Quote and submit Burn
+
+Quote:
+
+```text
+plain collateral: pool shares → pool.previewRedeem → output collateral
+vault collateral: pool shares → pool.previewRedeem → vault.previewRedeem → output underlying
+```
+
+Apply the same 50 bps floor to the final output. Approve the router to spend each active pool share token, even when `msg.sender` owns the shares. Then call `redeemMarket`.
+
+Set `minReceiverAssets = applySlippageFloor(quotedReceiverAssets)` and do the same for an active Payer quote. Set an unused side's shares and minimum to `0n`. See [Redeeming](/developers/redeeming) for a complete viem example.
 
 ## Preview caveats
 
-Pool `preview*` uses last settled state; execution settles first. Refresh `previewMarket` near submit and leave slippage room.
+Pool `preview*` functions read the last settled state. Writes settle first. Refresh `previewMarket` and the full unit-pipeline quote near submission, then enforce router minimums.
 
-For ERC-4626 collateral: router deposit amount is underlying; `pool.previewDeposit` expects vault shares. Quote vault wrap, then pool — never pass underlying straight into the pool preview.
+Do not pass underlying units directly to a pool preview. Pool ERC-4626 assets are always market collateral units.
 
 ## Oracle update data
 
-Pass `[]` to skip. With nonempty data, fee-less router calls `update(bytes[])`; payable router pays from its ETH balance (`InsufficientUpdateFeeBalance` if underfunded). Payload fetch is oracle-specific — see [Oracles](/markets/oracles).
+Use nonempty `updateData` when the oracle requires a fresh push update. Fetch it according to the oracle implementation:
+
+- [Pyth update data](/contracts/oracles/pyth#update-data)
+- [Chainlink update requirements](/contracts/oracles/chainlink#nonpayable-fee-zero-routing)
+
+Pass `[]` only when the stored price is usable. The payable router pays Pyth fees from its existing ETH balance and reverts with `InsufficientUpdateFeeBalance` when underfunded.
+
+## Error messages
+
+Decode viem's `ContractFunctionRevertedError` and map exact public error names. Keep a generic fallback for wallet, RPC, and unknown errors.
+
+```ts
+import { BaseError, ContractFunctionRevertedError } from "viem";
+
+const errorMessages: Record<string, string> = {
+  TransactionTooOld: "The quote expired. Refresh and try again.",
+  SlippageReceiverShares: "Receiver Mint output moved beyond your limit.",
+  SlippagePayerShares: "Payer Mint output moved beyond your limit.",
+  SlippageReceiverAssets: "Receiver Burn output moved beyond your limit.",
+  SlippagePayerAssets: "Payer Burn output moved beyond your limit.",
+  InsufficientUpdateFeeBalance:
+    "The Pyth router needs more ETH for the price update.",
+  StalePrice: "Price data is stale. Refresh and try again.",
+  ERC20InsufficientAllowance: "Approval is too low for this transaction.",
+  ERC20InsufficientBalance: "Your token balance is too low.",
+};
+
+export function getTransactionErrorMessage(error: unknown): string {
+  if (!(error instanceof BaseError)) return "Transaction failed. Try again.";
+
+  const reverted = error.walk(
+    (cause) => cause instanceof ContractFunctionRevertedError,
+  ) as ContractFunctionRevertedError | null;
+  const errorName = reverted?.data?.errorName;
+
+  return errorName
+    ? (errorMessages[errorName] ?? `Contract error: ${errorName}`)
+    : error.shortMessage;
+}
+```
+
+Treat wallet rejection separately so the UI does not present it as a protocol failure. Simulate the write before requesting a signature when your wallet flow supports it.

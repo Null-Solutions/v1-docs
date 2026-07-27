@@ -1,145 +1,97 @@
 ---
-title: "Smart Contracts"
+title: "Smart contracts"
 sidebarTitle: "Smart Contracts"
-description: "A high-level guide to the contracts that create Null markets, hold collateral, settle returns, and issue positions."
+description: "Understand where your collateral sits, which market rules are fixed, and which risks remain."
 ---
 
-Null is a small set of Ethereum smart contracts that turn collateral, an oracle, and a funding model into a synthetic market. The contracts hold the market's collateral, calculate how value moves between Receiver and Payer, and issue tokenized shares representing each position.
+Null's private beta runs through smart contracts on Sepolia. Before you mint a position, you can verify the market's collateral, oracle, funding-rate model, pools, fees, balances, and transactions onchain.
 
-There is no offchain risk engine deciding whether a position remains open. The market follows rules fixed in its contracts and settles using public onchain state.
+The contracts define the accounting rules. They do not make the system risk-free. Contract bugs, oracle behavior, collateral failures, thin pools, and adverse price or funding moves can still reduce your position value.
 
-## The contracts at a glance
+## What holds your assets
+
+The `NullV1Market` contract holds collateral for both Receiver and Payer. The two `NullV1Pool` contracts track ERC-4626 shares, but they do not hold separate collateral reserves.
+
+When you mint:
+
+<Steps>
+  <Step title="The market settles">
+    The pool asks the market to update price PnL, funding, fees, and collateral accounting.
+  </Step>
+  <Step title="Collateral enters the market">
+    The market receives the collateral. Any entry fee is excluded from the assets credited to your pool.
+  </Step>
+  <Step title="You receive pool shares">
+    The selected pool mints Receiver or Payer shares to your wallet. A router does not retain ownership of those shares.
+  </Step>
+</Steps>
+
+When you burn, the market settles first, the pool burns your shares, and the market sends your remaining collateral claim after any exit fee. Settlement can make the final amount differ from an earlier preview.
+
+## What each contract does
 
 ### Factory
 
-`NullV1Factory` creates and registers markets. Each market is uniquely defined by:
+`NullV1Factory` creates and registers one market for each unique:
 
 ```text
 (collateral, oracle, funding-rate model)
 ```
 
-Anyone can create a market from a funding-rate model that the Factory has enabled. The Factory prevents duplicate markets with the same combination and acts as the canonical directory for finding deployed markets.
+Market creation is permissionless, but the factory must have enabled the selected funding-rate model. Use the canonical Sepolia factory listed in [Live deployments](/resources/addresses) when verifying a market.
 
 ### Market
 
-`NullV1Market` is the accounting core. It:
+`NullV1Market` holds collateral, records how much belongs to each pool, and settles price PnL, funding, and fees. Settlement changes the collateral represented by each share. It does not mint or burn existing holders' shares.
 
-- holds collateral for both sides;
-- records how much belongs to Receiver and Payer;
-- reads the oracle and funding-rate model during settlement;
-- calculates price returns, funding, and protocol fees; and
-- moves collateral between the two pool balances.
-
-The Market holds the collateral directly. The pool contracts do not maintain separate collateral reserves.
+Settlement is interaction-driven. Pool deposits, mints, withdrawals, and redemptions update the market first. There is no separate permissionless public “poke” that updates it every block.
 
 ### Receiver and Payer pools
 
-Every Market has two `NullV1Pool` contracts:
-
-- **Receiver Pool** — issues shares representing synthetic exposure to the tracked price.
-- **Payer Pool** — issues shares representing the collateral backing Receiver and the opposite side of its return.
-
-Both pools follow the ERC-4626 tokenized-vault standard. Depositing collateral mints transferable pool shares; redeeming those shares returns the holder's proportional claim on that pool's current collateral.
+Each market has one Receiver pool and one Payer pool. Both issue standard ERC-4626 shares. Shares are transferable, but transferability does not guarantee secondary-market liquidity or a fixed redemption value.
 
 ### Oracle
 
-The oracle reports the tracked asset's price. Null markets can use different oracle adapters, provided they return data in the format expected by the protocol.
+The oracle reports the tracked price used at settlement. The market compares the accepted price with its previous accepted price. The tracked asset does not enter Null.
 
-The Market compares the new accepted price with its previous price to calculate the Receiver return. The tracked asset itself never needs to enter the protocol.
+If a price move exceeds the time-adjusted circuit-breaker threshold, the market skips that update's price PnL and adopts the new price as its baseline. Funding can still settle. This protects against a specific class of abrupt moves; it does not prove that an oracle price is correct.
 
 ### Funding-rate model
 
-The funding-rate model, or FRM, determines the signed rate paid between Receiver and Payer. The standard model responds to the amount of collateral on each side:
-
-- when Payer backing is scarce, Receiver can pay Payer;
-- when Payer backing is abundant, Payer can pay Receiver; and
-- at the model's target coverage, funding is zero.
-
-The Market's FRM is selected when the Market is created and cannot be replaced for that existing Market.
+The funding-rate model, or FRM, returns the signed rate transferred between Receiver and Payer. The standard model responds to pool coverage. The FRM address is fixed when a market is created.
 
 ### Routers and read helpers
 
-The supporting contracts make the core easier and safer to use:
+The routers combine market actions with deadlines, minimum-output checks, and optional oracle updates. `NullV1Lens` supports settlement-aware previews, and `NullV1Multicall` batches reads and simulations.
 
-- `NullV1Router` and `NullV1PayableRouter` combine market actions with deadlines, minimum-output checks, and optional oracle update data.
-- `NullV1Lens` previews a Market after applying current settlement inputs.
-- `NullV1Multicall` batches read-only calls and simulations.
+## What cannot change for an existing market
 
-Routers do not own user positions. Pool shares are minted directly to the chosen wallet.
+The following addresses are fixed:
 
-## How a deposit works
+- collateral;
+- oracle;
+- funding-rate model;
+- Receiver pool; and
+- Payer pool.
 
-<Steps>
-  <Step title="The user chooses a side">
-    The user selects Receiver or Payer and specifies how much market collateral to deposit.
-  </Step>
-  <Step title="The Market settles">
-    Before calculating new shares, the Pool asks the Market to bring its accounting up to date using the latest accepted price, funding, fees, and collateral balance.
-  </Step>
-  <Step title="Collateral enters the Market">
-    The collateral token moves from the user to the Market contract. Any entry fee is separated from the assets credited to the selected Pool.
-  </Step>
-  <Step title="The Pool mints shares">
-    The Pool converts the credited collateral into ERC-4626 shares and sends them to the recipient.
-  </Step>
-</Steps>
+An administrator cannot replace those dependencies on an existing market. A different dependency tuple creates a different market.
 
-## How settlement works
+## What the protocol owner controls
 
-Settlement is interaction-driven. The contracts do not require a keeper to update every block. A deposit, mint, withdrawal, redemption, or certain owner operations trigger settlement before continuing.
-
-At a high level, the Market:
-
-1. reconciles its recorded accounting with the collateral it actually holds;
-2. accrues the configured collateral fee;
-3. reads the oracle price and signed funding rate;
-4. calculates the price transfer and funding transfer;
-5. nets those values into one transfer between Receiver and Payer;
-6. limits the transfer so the paying Pool cannot spend unavailable collateral; and
-7. stores the updated Pool balances, fees, price, and timestamp.
-
-If an oracle move exceeds the time-adjusted circuit-breaker limit, the Market skips that price transfer and adopts the new price as its next baseline. Funding can still settle.
-
-<Info>
-Settlement changes the amount of collateral represented by each Pool. It does not mint or burn existing users' shares, so gains and losses appear through the value of each share.
-</Info>
-
-## How a redemption works
-
-The exit process mirrors entry:
-
-1. the Market settles first;
-2. the Pool calculates the collateral represented by the submitted shares;
-3. the shares are burned;
-4. any exit fee is reserved for the protocol; and
-5. the Market transfers the remaining collateral to the recipient.
-
-Because settlement happens before execution, the final result can differ from a preview based only on the last stored state. Routers let users set minimum outputs so the transaction reverts when that difference is unacceptable.
-
-## What is fixed and what is controlled
-
-For an existing Market, its collateral token, oracle, funding-rate model, Receiver Pool, and Payer Pool are fixed. An administrator cannot silently swap those components.
-
-The protocol owner can:
+The factory owner can:
 
 - enable additional funding-rate models for future markets;
-- set entry, exit, and collateral fees within the contract's hard caps; and
-- collect fees already reserved by a Market.
+- set entry, exit, and annualized collateral fees, each subject to a 5% contract cap; and
+- collect fees already reserved by a market.
 
-These controls do not let the owner seize Pool collateral, close user positions, liquidate an account, or replace an existing Market's oracle or funding model.
+These permissions do not include replacing an existing market's dependencies, liquidating an individual account, or withdrawing collateral allocated to a pool as though it were an admin balance.
 
-## What the contracts do not contain
+## What the contracts do not provide
 
-Null's core contracts do not include:
+Null's core contracts do not provide a user margin account, borrowing, an order book, automated hedging, or an individual-account liquidation engine. The Payer pool backs Receiver exposure one-for-one at the notional level, and each Payer share owns a pro-rata allocation of that exposure. Loss is reflected in Payer share value rather than a liquidation.
 
-- user margin accounts;
-- leverage or borrowing;
-- a liquidation engine;
-- an order book;
-- custody of the tracked asset;
-- an offchain or discretionary risk engine; or
-- automated market-maker hedging.
+<Warning>
+Onchain visibility lets you inspect the rules and state. It does not guarantee correct code, a correct oracle, safe collateral, sufficient liquidity, or a profitable trade.
+</Warning>
 
-External interfaces, indexers, and hedgers can build around the contracts, but they do not change the accounting rules enforced by a Market.
-
-For exact interfaces and integration details, continue to the [Developer overview](/developers/overview) or explore the [Factory](/contracts/factory), [Market](/contracts/market), and [Pool](/contracts/pool) references.
+Review the canonical [Sepolia addresses](/resources/addresses), [risk factors](/learn/risks-and-parameters), and exact [Factory](/contracts/factory), [Market](/contracts/market), and [Pool](/contracts/pool) interfaces.

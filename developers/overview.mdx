@@ -1,20 +1,16 @@
 ---
 title: "Developer overview"
 sidebarTitle: "Overview"
-description: "Private-beta guidance for integrating Null's contracts, pools, routers, and hosted endpoints."
+description: "Integrate Null V1 markets, pools, routers, oracles, and read surfaces."
 ---
-
-<Warning>
-  **Private beta:** The developer infrastructure documented here is currently
-  available only to approved participants. If your account and wallet have not
-  been whitelisted, you will not be able to interact with Null's hosted public
-  endpoints. Complete the [private-beta application](/private-beta/getting-started/null-private-beta)
-  and wait for approval before building against them.
-</Warning>
 
 Null V1 is a **contracts-first** protocol. Integrators discover markets, read state, and deposit or redeem through Solidity interfaces — typically via `viem`, `ethers`, or a wallet SDK. There is no published Null npm SDK and no partner trading API with API keys.
 
 Today the live deployment is **Sepolia**. Ethereum mainnet and Base are not live. Use [Live deployments](/resources/addresses) for canonical addresses.
+
+<Note>
+The hosted app may require private-beta approval. That product access is separate from this contracts-first integration guide. This repository documents deployed Sepolia contracts, but does not establish a contract-level whitelist policy.
+</Note>
 
 <Note>
 The private-beta app uses Mint / Burn language for the same deposit and redeem flows. Onchain and in these docs, use ERC-4626 `deposit` / `redeem` (and router `depositMarket` / `redeemMarket`).
@@ -40,6 +36,13 @@ A market is uniquely identified by an immutable tuple:
 - `collateral` — ERC-20 held by the market (may itself be an ERC-4626 vault share)
 - `oracle` — price source, always scaled to `1e36`
 - `frm` — funding-rate model (must be factory-enabled)
+
+For market-level metrics, let `R` be Receiver pool assets and `P` be Payer pool assets:
+
+- **Coverage** is `P/R`: backing relative to Receiver assets.
+- **Payer exposure** is `E = R/P`: Receiver assets backed per unit of Payer assets.
+
+Handle a zero denominator explicitly. Neither ratio is defined when its denominator is zero.
 
 ## Architecture
 
@@ -136,13 +139,16 @@ Use `NullV1Router` for fee-less Chainlink updates. Use pre-funded `NullV1Payable
 ## Recommended path
 
 <Steps>
-  <Step title="Read the model">
-    [Protocol overview](/learn/overview) → [Funding and carry](/learn/funding-and-carry) → [Settlement](/developers/settlement)
+  <Step title="Understand the payoff">
+    Read [Protocol overview](/learn/overview), then [Funding and carry](/learn/funding-and-carry). Use [Risks and parameters](/learn/risks-and-parameters) to understand the limits.
   </Step>
-  <Step title="Ship a first flow">
-    [Quickstart](/developers/quickstart) → [Depositing](/developers/depositing) / [Redeeming](/developers/redeeming)
+  <Step title="Build the first transaction">
+    Follow the [Quickstart](/developers/quickstart). It resolves a market, reads both pools, previews a deposit, and submits router calls.
   </Step>
-  <Step title="Harden the integration">
-    [Router](/developers/router) → [Frontend](/contracts/integration/ui) or [Indexer](/contracts/integration/indexer) → [Risks](/learn/risks-and-parameters)
+  <Step title="Learn execution details">
+    Read [Settlement](/developers/settlement), [Depositing](/developers/depositing), [Redeeming](/developers/redeeming), and [Oracles](/markets/oracles).
+  </Step>
+  <Step title="Prepare for production">
+    Add the [Router](/developers/router), then build a [Frontend](/contracts/integration/ui) or [Indexer](/contracts/integration/indexer). Revisit [Risks and parameters](/learn/risks-and-parameters) before shipping.
   </Step>
 </Steps>

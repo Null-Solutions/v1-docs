@@ -4,9 +4,9 @@ sidebarTitle: "Market Making"
 description: "Learn how to supply Payer liquidity, hedge its price exposure, and operate a delta-neutral Null position."
 ---
 
-Market makers supply the Payer collateral that backs Receiver exposure. In return, Payer can earn Null funding and collateral yield. Because Payer takes the opposite side of Receiver price moves, a market maker normally pairs it with an external long hedge.
+Market makers supply Payer collateral to back Receiver exposure. Economically, Payer is short the tracked asset on Null: it generally loses when the tracked price rises and gains when it falls. To reduce that directional exposure, a market maker can hold Payer on Null and buy the tracked asset, or a close equivalent, elsewhere.
 
-The result is a basis trade: neutralize most directional price exposure, then earn the difference between Null carry and the cost of maintaining the external hedge.
+The two legs create a basis trade: **short on Null, long elsewhere**. The goal is to offset most price exposure and earn the remaining carry after hedge costs.
 
 <Warning>
 Market making is not risk-free or guaranteed to be profitable. It adds external-venue, margin, execution, basis, funding, oracle, smart-contract, collateral, and liquidity risks.
@@ -30,11 +30,13 @@ Let:
 - `P` be total Payer pool assets; and
 - `S` be the tracked asset's oracle price.
 
-Payer's effective exposure multiple is:
+`R`, `P`, and `p` come from the current onchain pool state and your Payer share ownership. `S` comes from the market's configured oracle. Use the exposure-allocation ratio:
 
 ```text
 E = R / P
 ```
+
+`E` allocates Receiver exposure across Payer shares. It does not change the funding rate or create a separate leverage setting.
 
 The required external long is:
 
@@ -68,11 +70,11 @@ The market maker holds the Null Payer shares and opens a long of `0.50` tracked-
 
 ## Why price moves do not normally trigger a rebalance
 
-During a full, ordinary price settlement, the oracle price and Receiver assets move together. Your Payer claim changes by the matching opposite transfer. These changes cancel inside the hedge formula, leaving `h` exactly unchanged in the model.
+During a full, ordinary price settlement, the oracle price and Receiver assets move together. Your Payer claim changes by the matching opposite transfer. These changes cancel inside the hedge formula, leaving `h` unchanged in the model.
 
-This is an important property: the hedger should not chase every price move. It should rebalance when the position's actual exposure changes.
+The hedger should not chase every price move. Recompute from fresh state when flows, funding, or your Payer holdings change the position's actual exposure.
 
-## What changes the target
+## When to recompute
 
 For a small change, the hedge sensitivity is:
 

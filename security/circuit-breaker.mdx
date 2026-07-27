@@ -4,7 +4,7 @@ sidebarTitle: "Circuit breaker"
 description: "How Null V1 skips price PnL when an oracle move exceeds the time-scaled 7% per hour threshold."
 ---
 
-The price circuit breaker skips the price-PnL leg when an oracle move exceeds a time-scaled threshold. Without it, a single-block spike could drain a pool before anyone can react.
+The price circuit breaker skips the price-PnL leg when an oracle move strictly exceeds a time-scaled threshold. A move equal to the threshold settles normally. Without this control, a single-block spike could drain a pool before anyone can react.
 
 It does **not** clamp the move to the threshold or defer the skipped PnL. Funding still accrues; the new price becomes the next anchor.
 
@@ -21,7 +21,7 @@ It does **not** clamp the move to the threshold or defer the skipped PnL. Fundin
 allowedDelta = previousPrice × 700 × elapsed / (10_000 × 3_600)
 ```
 
-Allowed move scales linearly with elapsed time. After 30 minutes, at most 3.5%; after one hour, 7%. When `block.timestamp <= lastUpdate`, elapsed is treated as one second.
+`previousPrice`, the new price, and `allowedDelta` are `1e36`-scaled integers. The scale cancels in the percentage comparison. Allowed move scales linearly with elapsed time: after 30 minutes the limit is 3.5%, and after one hour it is 7%. When `block.timestamp <= lastUpdate`, elapsed is treated as one second.
 
 ## When it triggers
 
@@ -32,16 +32,18 @@ Allowed move scales linearly with elapsed time. After 30 minutes, at most 3.5%; 
 
 Storing the new price prevents an attacker from repeatedly triggering the breaker from the same stale baseline.
 
-## Example
+If either prepared pool is empty, settlement skips both price PnL and funding before evaluating the breaker. It still stores the new timestamp and price, and `circuitBreakerFired` remains `false`.
 
-Price `$1,000` → `$1,100` after 30 minutes (10% jump):
+## Simplified example
+
+For readability, this example displays prices without their common `1e36` scale. Price `1,000` → `1,100` after 30 minutes is a 10% jump:
 
 ```text
 allowedDelta = 1000 × 700 × 1800 / (10000 × 3600) = 35
 priceDelta   = 100
 ```
 
-`100 > 35` → breaker fires; price PnL = 0; funding may still settle. Next updates measure from `$1,100`.
+`100 > 35` → breaker fires; price PnL = 0; funding may still settle. Next updates measure from `1,100`.
 
 <Warning>
 The breaker guards sudden jumps, not continuous drift. A genuine 7% move every hour settles in full each time. Size for trend risk, not only spike risk.
@@ -54,11 +56,22 @@ The breaker guards sudden jumps, not continuous drift. A genuine 7% move every h
 </Accordion>
 
 <Accordion title="Oracle staleness">
-  If the feed stops, the breaker never evaluates. A separate ~10-day stale escape can return the last stored price so exits are not permanently blocked. See [Risks](/security/risks) and [Risks and parameters](/learn/risks-and-parameters).
+  If the oracle price read reverts, settlement reverts before the breaker evaluates. Current Pyth and Chainlink wrappers can return their last stored price after the 10-day stale escape period so users are not permanently locked. That restores liveness, not current fair value. See [Risks and parameters](/learn/risks-and-parameters).
 </Accordion>
 
 <Accordion title="Funding">
   The breaker does not change the FRM rate or funding accrual — only the price-return transfer.
 </Accordion>
+
+## UI and indexer behavior
+
+Treat `UpdateState.circuitBreakerFired` as the authoritative signal for a settled update. Do not infer a breaker event from an unchanged pool balance because funding can offset price PnL or the net transfer can hit a pool cap.
+
+When the flag is `true`:
+
+- show that **price PnL was skipped**, not that the oracle return was zero;
+- display the event's new `price` as the active anchor;
+- retain the skipped event in history because it is not replayed later;
+- format `price` from its `1e36` integer scale without converting it to an unsafe JavaScript `number`.
 
 Logic lives in `SettlementLib`. Broader settlement order: [Settlement](/developers/settlement).

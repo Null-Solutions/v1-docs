@@ -31,7 +31,7 @@ int256 fundingRate = frm.fundingRate(_marketParams(), prepared);
 
 ## Price validation
 
-Oracles normalize prices to `1e36`. If `oracle.price()` reverts or returns zero, the triggering action reverts and no market state is persisted.
+Oracles return quote units per base unit normalized to `1e36`. A displayed price of `100` is therefore stored as `100 × 1e36`. Keep this value as an integer; do not pass it through a JavaScript `number`. If `oracle.price()` reverts or returns zero, the triggering action reverts and no market state is persisted.
 
 ## Reconciliation
 
@@ -66,16 +66,22 @@ frm.fundingRate(
 );
 ```
 
-The FRM sees post-reconciliation, post-collateral-fee state. It returns a signed WAD-scaled APR: positive means Receiver pays Payer; negative means Payer pays Receiver.
+The FRM sees post-reconciliation, post-collateral-fee state. It returns a signed WAD-scaled APR:
 
-For the standard imbalance FRM (`c = 0.5`, `mu = 1` defaults):
+- positive: Receiver pays Payer;
+- negative: Payer pays Receiver;
+- zero: no funding transfer.
+
+For the standard imbalance FRM using the deployment script's `c = 0.5` and `mu = 1` parameters:
 
 ```text
 f = mu * (cR - P) / (cR + P)
 funding amount = R * abs(f) / 1e18 * elapsed / 365 days
 ```
 
-No funding accrues when time has not advanced, the rate is zero, or either pool is empty. Details and examples: [Funding and carry](/learn/funding-and-carry).
+No funding accrues when time has not advanced, the rate is zero, or either pool is empty. The amount uses the absolute rate; the sign determines which direction it contributes to the final net transfer. Details and examples: [Funding and carry](/learn/funding-and-carry).
+
+Settlement calls the potentially stateful `fundingRate`. Read-only simulations should call `fundingRateView` with prepared state. `NullV1Lens.previewMarket` performs reconciliation and fee preparation before making that call, so UIs and indexers should prefer its projected rate over applying an FRM to stale stored balances.
 
 ## Price PnL
 
@@ -109,7 +115,7 @@ Funding and price PnL are netted before collateral moves:
 net into Receiver = price transfer from Payer to Receiver − funding from Receiver to Payer
 ```
 
-The debit is capped by:
+After the sign of the net amount identifies the paying pool, that pool's debit is capped by:
 
 ```text
 settleable assets = max(pool assets − MIN_POOL_ASSETS, 0)
@@ -118,6 +124,49 @@ settleable assets = max(pool assets − MIN_POOL_ASSETS, 0)
 `MIN_POOL_ASSETS` is `1e6` raw collateral units. Unpaid remainder is not recorded as debt. Reconciliation and collateral fees run earlier without this floor, so a prepared pool can already be at or below it.
 
 If either prepared pool is empty, both funding and price PnL are skipped for that update.
+
+## Simplified end-to-end example
+
+Assume 6-decimal collateral, no balance reconciliation change, no collateral fee, and ignore integer rounding. The prepared state is:
+
+```text
+Receiver R = 1,200 collateral units
+Payer    P =   300 collateral units
+old price  = 100 × 1e36
+new price  = 102 × 1e36
+elapsed    = 36.5 days = 10% of 365 days
+c = 0.5, mu = 1
+```
+
+The standard imbalance FRM returns positive one-third funding:
+
+```text
+f = (0.5 × 1,200 - 300) / (0.5 × 1,200 + 300)
+  = 300 / 900
+  = +1/3
+
+funding = 1,200 × 1/3 × 10% = 40
+flow    = Receiver → Payer
+```
+
+The 2% price increase contributes `24` in the other direction:
+
+```text
+price PnL = 1,200 × (102 - 100) / 100 = 24
+flow      = Payer → Receiver
+```
+
+Net the signed legs before moving collateral:
+
+```text
+net into Receiver = +24 - 40 = -16
+final flow         = 16 Receiver → Payer
+
+Receiver: 1,200 → 1,184
+Payer:      300 →   316
+```
+
+For 6-decimal collateral, `MIN_POOL_ASSETS = 1e6` raw units equals one collateral unit. The Receiver debit cap is therefore `1,200 - 1 = 1,199`, so the `16` transfer settles in full. Solidity performs each fixed-point operation in raw integer units and applies the contract's rounding; this example is labeled simplified to show order, sign, netting, and the cap.
 
 ## Persistence
 
@@ -132,7 +181,7 @@ event UpdateState(
 );
 ```
 
-Pool actions continue only after this state is stored. Indexers should treat `UpdateState` as the settlement checkpoint.
+Pool actions continue only after this state is stored. Indexers should treat `UpdateState` as the settlement checkpoint. The event price remains a `1e36`-scaled integer, while pool assets and fees use raw collateral units.
 
 ## Integration implications
 

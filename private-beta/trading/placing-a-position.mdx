@@ -6,26 +6,72 @@ description: "Mint or burn a Receiver or Payer position in a Null market."
 
 Null's trading page uses **Mint** and **Burn** for Receiver and Payer pool positions.
 
+## Mint a position
+
 <Steps>
   <Step title="Choose a market">
-    Open `/markets`, review the available markets, and select one.
+    Open `/markets` and select a market. Check its status, oracle price, collateral, Receiver and Payer liquidity, funding, and fees.
   </Step>
   <Step title="Choose Receiver or Payer">
     Select the side that matches the exposure you want. Read [Position Types](/private-beta/trading/position-types) before continuing.
   </Step>
-  <Step title="Choose Mint or Burn">
-    **Mint** deposits market collateral and creates pool shares. **Burn** redeems shares from an existing position.
+  <Step title="Select Mint and enter collateral">
+    Choose **Mint** and enter the collateral amount to deposit. If your wallet does not hold enough collateral, fund it before continuing.
   </Step>
-  <Step title="Enter an amount">
-    Check your balance and the estimated output. The app may ask you to fund your wallet first.
+  <Step title="Review the preview">
+    Check the selected side, current and next balance, estimated pool shares, estimated position size, Payer bias when applicable, entry fee, and market status. Expand **Advanced details** to verify the market, pool, network, price, liquidity, and fee rate.
   </Step>
-  <Step title="Review the summary">
-    Check the selected side, current and next position, share balance, fee, and market status.
+  <Step title="Approve collateral">
+    If prompted, approve the router to spend the required collateral. Approval permits spending; it does not mint the position. Rejecting or failing the approval stops the flow.
   </Step>
-  <Step title="Confirm">
-    Approve any required wallet request, submit the transaction, and wait for on-chain confirmation.
+  <Step title="Submit the mint">
+    Confirm the transaction in your wallet. The market settles first, then deposits collateral and mints pool shares. Wait for onchain confirmation before treating the displayed position as final.
   </Step>
 </Steps>
+
+## Burn a position
+
+<Steps>
+  <Step title="Open your position">
+    Open the market from **Minted** in your portfolio or select the same market from `/markets`. Connect the wallet that holds the pool shares.
+  </Step>
+  <Step title="Select the side and Burn">
+    Choose the Receiver or Payer pool that holds your shares, then select **Burn**.
+  </Step>
+  <Step title="Enter the amount">
+    Enter the shares or position value to redeem. Do not exceed the available balance.
+  </Step>
+  <Step title="Review the preview">
+    Check the shares to burn, estimated collateral output, next position and balance, exit fee, market status, and advanced details.
+  </Step>
+  <Step title="Approve shares">
+    If prompted, approve the router to spend the selected pool shares. This approval is separate from a collateral approval used to mint.
+  </Step>
+  <Step title="Submit the burn">
+    Confirm the transaction. The market settles before your shares are converted, the shares are burned, and the resulting collateral is returned to your wallet.
+  </Step>
+</Steps>
+
+## Why the confirmed result can differ
+
+The preview includes the relevant entry or exit fee, but it uses the latest available state. Execution settles the market before the mint or burn. Price movement, funding, collateral fees, collateral gains or losses, and other transactions can change the share conversion before confirmation.
+
+Treat estimated output and position value as estimates. Review the final wallet and pool-share balances after confirmation.
+
+## Common failure modes
+
+| Message or symptom | What to check |
+| --- | --- |
+| Market is closed or unavailable | Confirm the current market status. A visible market is not necessarily open for transactions. |
+| No Payer funds | The market needs Payer collateral for two-sided exposure. Check whether the app permits adding Payer collateral; otherwise choose another available market or wait for liquidity. |
+| Price unavailable or oracle update fails | Wait for valid price data and retry. A stale, zero, or invalid oracle price can block settlement. |
+| Insufficient collateral | Lower the mint amount or add the market's collateral token to the connected wallet. |
+| Insufficient pool shares | Lower the burn amount and confirm that the connected wallet owns shares on the selected side. |
+| Allowance too low | Complete the requested collateral or pool-share approval, then resubmit the action. |
+| Slippage exceeded | Refresh the preview. Market settlement changed the result beyond the transaction's protection. |
+| Transaction deadline expired | Refresh and submit a new transaction. |
+| Insufficient network funds | Add enough native network token to pay gas or any required oracle update fee. |
+| Wallet request rejected | Start the action again and approve each required request. |
 
 <Warning>
 Null does not currently present an order book, limit orders, stop orders, or a configurable leverage control. Do not assume those behaviors apply.

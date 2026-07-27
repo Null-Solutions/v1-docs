@@ -4,20 +4,51 @@ sidebarTitle: "Portfolio Overview"
 description: "Review wallet balances, Null positions, history, and saved markets."
 ---
 
-After signing in, use your portfolio to review the activity associated with your connected wallet.
+After signing in, use the portfolio to review the wallet and smart-account activity associated with your connected account.
 
-## What you can view
+## Portfolio summary
 
-- **Balances** — wallet assets available to fund positions.
-- **Positions or Minted** — Receiver and Payer pool shares held by your wallet.
-- **History** — recorded position activity.
-- **Watchlist** — markets you saved. This tab appears when the watchlist is not empty.
-- **Portfolio summary** — the displayed portfolio value and performance information.
+The summary can show:
+
+- **Portfolio** — the latest indexed value associated with your positions.
+- **Total change** — the latest portfolio value compared with its recorded cost basis.
+- **Today** — the change over the displayed daily comparison period.
+- **Cash value** — USDC available in your smart account to trade.
+- **Currently Minted** — the number of Receiver and Payer pool positions with shares.
+- **Previously Burnt** — the number of distinct market sides previously redeemed.
+- **Referrals** — your successful-referral count.
+
+Values can update at different times because wallet balances, onchain state, oracle prices, and indexed history do not always refresh in the same block.
+
+## Position and activity tabs
+
+| Tab | What it shows |
+| --- | --- |
+| **Minted** | Receiver and Payer pool-share positions held by the connected account. Select a row to open its market and mint more shares or burn existing shares. |
+| **History** | Recorded mint and burn activity. A submitted transaction may take time to appear after onchain confirmation. |
+| **Watchlist** | Markets saved by your account. This tab appears only when the watchlist is not empty. |
+
+Position rows can include size, estimated position value, average entry price, current oracle price, PnL, margin, and carry information when the required data is available. A dash or missing metric means the app does not have enough data to calculate it. It does not mean zero.
+
+## What the estimates mean
+
+Portfolio and position values are display estimates. They can combine the latest indexed balances with current or recently available oracle and collateral prices.
+
+- **Position value** describes the displayed value of the exposure. It is not the collateral you are guaranteed to receive.
+- **PnL** depends on recorded cost basis and available price, funding, and collateral-yield attribution. Missing history can make it unavailable.
+- **Entry price** is the recorded average oracle price for the position. Pool shares remain fungible and do not create a private trade with a fixed entry price.
+- **Redeem value** is an estimate of the collateral represented by your shares. A burn settles the market first and applies the exit fee.
+
+Funding, price movement, collateral performance, fees, reconciliation, and other transactions can change pool value before your burn confirms. Use the trading preview for the action you are preparing, then verify the confirmed wallet balance.
 
 Select a position or market to open its trading page. Use **Mint** to add to a position and **Burn** to redeem shares.
 
-Deposit and withdrawal controls manage wallet funds. They do not mint or burn a market position.
+## Manage funds and access
+
+Deposit and withdrawal controls manage funds in your wallet or smart account. They do not mint or burn a market position.
+
+If you have applied but cannot open protected beta features, your wallet may still be waiting for onchain approval. Confirm that you signed in with the same account and wallet used for the application.
 
 <Note>
-Displayed portfolio values are estimates, not guaranteed redemption amounts.
+The portfolio follows the connected account. Switching accounts or wallets can show different balances, positions, history, and saved markets.
 </Note>

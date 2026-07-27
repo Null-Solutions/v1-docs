@@ -4,7 +4,7 @@ sidebarTitle: "Overview"
 description: "How Null V1 markets work: Receiver and Payer pools, settlement, funding, and full collateralization."
 ---
 
-Null turns a total return swap into a pooled onchain market. The **Receiver** pool takes the return of an oracle-tracked asset. The **Payer** pool supplies the collateral that backs that exposure. Each side is fungible ERC-4626 shares.
+Null turns a total return swap into a pooled onchain market. The **Receiver** pool receives the return of an oracle-tracked asset. The **Payer** pool supplies the reserve that backs that exposure and takes the opposite price transfer. Each pool issues fungible ERC-4626 shares.
 
 A market is uniquely identified by three immutable dependencies:
 
@@ -16,11 +16,11 @@ A market is uniquely identified by three immutable dependencies:
 - `oracle` — tracked asset price (`1e36` scale)
 - `frm` — funding-rate model
 
-The market redistributes collateral it holds between the two pools. It does not lend, create debt, liquidate users, or mint an undercollateralized claim.
+The market redistributes collateral it already holds between the two pools. It does not lend, create debt, liquidate users, or mint an undercollateralized claim.
 
 ## Receiver
 
-Receiver is the synthetic-long side. Deposit collateral, receive Receiver shares, own a proportional claim on that pool.
+Receiver is the synthetic-long side. You deposit collateral, receive Receiver shares, and own a proportional claim on that pool.
 
 For an ordinary settled price move:
 
@@ -33,13 +33,13 @@ Receiver is synthetic exposure, not ownership of the tracked asset (no voting, d
 
 ## Payer
 
-Payer supplies the reserve that keeps Receiver fully collateralized and takes the opposite price transfer. Payer percentage returns can exceed the asset move when the Payer pool is smaller than Receiver — the same transfer is measured against a smaller base.
+Payer supplies the reserve that keeps Receiver fully collateralized. The Payer pool backs Receiver exposure one-for-one at the notional level. When the Payer pool is smaller than Receiver, the same collateral transfer is allocated across fewer Payer assets and can produce a larger percentage change in Payer share value.
 
 A Payer can keep that directional exposure or hedge externally. Null defines the onchain payoff; it does not run the hedge.
 
-## Example (price only)
+## Simplified price-only example
 
-Ignore funding. Receiver 1,000, Payer 200, price falls 2%:
+This example ignores funding, fees, integer rounding, and the pool floor. Receiver has 1,000 collateral units, Payer has 200, and the tracked price falls 2%:
 
 ```text
 Price PnL = 2% × 1,000 = 20
@@ -48,11 +48,11 @@ Receiver: 1,000 → 980   (−2%)
 Payer:      200 → 220   (+10%)
 ```
 
-In a real update, funding and price PnL are calculated from prepared state, netted, then applied as one solvency-bounded transfer. See [Settlement](/developers/settlement).
+In a real update, the market first reconciles collateral and charges the collateral fee. It then calculates funding and price PnL from that prepared state, nets them, and applies one solvency-bounded transfer. See [Settlement](/developers/settlement).
 
 ## Shares are pooled claims
 
-Each share is a percentage of one pool's current assets — not a bilateral position with a private entry price. If you own 10% of a pool and no shares mint or burn, you still own 10% after settlement; the value of that claim changes with the pool.
+Each share is a percentage of one pool's current assets, not a bilateral position with a private entry price. If you own 10% of a pool and no shares mint or burn, you still own 10% after settlement. The value of that claim changes with the pool.
 
 The private-beta app labels enter/exit as Mint / Burn. Onchain these are ERC-4626 deposit / redeem.
 
@@ -64,8 +64,9 @@ Each settlement:
 2. Reconcile external collateral balance
 3. Charge the annualized collateral fee
 4. Query the FRM against prepared state
-5. Net funding with price PnL; cap debit at `max(pool − MIN_POOL_ASSETS, 0)`
-6. Store new timestamp and price
+5. Net signed funding with price PnL
+6. Cap the paying pool's debit at `max(pool assets − MIN_POOL_ASSETS, 0)` and transfer it
+7. Store the new timestamp and `1e36`-scaled price
 
 If the [circuit breaker](/security/circuit-breaker) fires, price PnL is skipped; funding still accrues and the new price becomes the next anchor.
 

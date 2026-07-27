@@ -13,6 +13,7 @@ Use these pages as source context when asking an assistant to reason about or ge
 - [Protocol overview](/learn/overview)
 - [Settlement](/developers/settlement)
 - [Funding and carry](/learn/funding-and-carry)
+- [Market parameters](/markets/market-parameters)
 - [Fees](/developers/fees)
 - [Risks and parameters](/learn/risks-and-parameters)
 - [Circuit breaker](/security/circuit-breaker)
@@ -25,6 +26,9 @@ Use these pages as source context when asking an assistant to reason about or ge
 - [Redeeming](/developers/redeeming)
 - [Pools](/developers/pools)
 - [Router](/developers/router)
+- [Oracles](/markets/oracles)
+- [Pyth update payloads](/contracts/oracles/pyth#update-data)
+- [Chainlink Data Streams](/contracts/oracles/chainlink)
 - [Live deployments](/resources/addresses)
 
 ## Terms to preserve
@@ -34,6 +38,7 @@ Use these pages as source context when asking an assistant to reason about or ge
 | **Receiver** | Pool that receives positive reference-asset returns; other side of signed funding |
 | **Payer** | Pool that backs Receiver; opposite price risk; other side of funding |
 | **Coverage `P/R`** | Payer assets ÷ Receiver assets |
+| **Payer exposure `E = R/P`** | Receiver assets ÷ Payer assets; inverse of coverage |
 | **FRM** | Immutable funding-rate model dependency |
 | **Funding** | Signed transfer between pools; positive `f` ⇒ Receiver pays Payer |
 | **Price settlement** | Value transfer from oracle price movement |
@@ -44,14 +49,19 @@ Use these pages as source context when asking an assistant to reason about or ge
 
 - Discover markets by `(collateral, oracle, frm)` — do not invent pool addresses
 - Read pool addresses from the market or `CreateMarket`
+- Keep coverage and exposure distinct: coverage is `P/R`; Payer exposure is `E = R/P`
+- Handle zero denominators explicitly; do not report either ratio as finite when its denominator is zero
 - Treat shares as ERC-4626; share decimals = collateral decimals + 10
 - Assume every pool write settles the market first
 - Always pass slippage mins and deadlines on router calls
 - Match router to oracle: Chainlink → fee-less; Pyth → payable (no `msg.value` from user)
 - Convert units when collateral is ERC-4626 (router = underlying; pool preview = vault shares)
+- Fetch signed oracle payloads from the documented provider flow; never fabricate `updateData`
 - Do not invent a Null SDK, REST trading API, or mainnet addresses unless the deployments page lists them
 - Sepolia is the live network today
 
 ## What not to invent
 
 Null is contracts-first. There is no published partner API with API keys, no order book, and no liquidation engine. Gains move only from collateral already in the market.
+
+Do not infer contract-level whitelist behavior from hosted-app private-beta access. The current docs establish deployed Sepolia contracts and possible approval requirements for the hosted product, but do not document a contract whitelist policy.

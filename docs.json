@@ -64,7 +64,7 @@
     },
     {
       "source": "/private-beta/status-and-points",
-      "destination": "/private-beta/status-and-points/home-dashboard"
+      "destination": "/private-beta/status-and-points/referrals"
     },
     {
       "source": "/private-beta/referrals",
@@ -133,6 +133,22 @@
     {
       "source": "/mechanics/yield-bearing-collateral",
       "destination": "/markets/collateral"
+    },
+    {
+      "source": "/private-beta/getting-started/account-setup",
+      "destination": "/private-beta/getting-started/null-private-beta"
+    },
+    {
+      "source": "/private-beta/status-and-points/home-dashboard",
+      "destination": "/private-beta/portfolios/portfolio-overview"
+    },
+    {
+      "source": "/private-beta/status-and-points/how-to-earn-points",
+      "destination": "/private-beta/status-and-points/referrals"
+    },
+    {
+      "source": "/security/risks",
+      "destination": "/learn/risks-and-parameters"
     }
   ],
   "navigation": {
@@ -152,16 +168,15 @@
             "group": "Getting Started",
             "pages": [
               "private-beta/getting-started/null-private-beta",
-              "private-beta/getting-started/account-setup",
               "private-beta/getting-started/fund-your-account"
             ]
           },
           {
             "group": "Trading",
             "pages": [
-              "private-beta/trading/placing-a-position",
               "private-beta/trading/markets",
               "private-beta/trading/position-types",
+              "private-beta/trading/placing-a-position",
               "private-beta/trading/fees"
             ]
           },
@@ -172,17 +187,15 @@
             ]
           },
           {
-            "group": "Market Make",
+            "group": "Market making",
             "pages": [
               "private-beta/market-make/overview",
               "private-beta/market-make/farm-the-basis"
             ]
           },
           {
-            "group": "Status & Points",
+            "group": "Referrals",
             "pages": [
-              "private-beta/status-and-points/home-dashboard",
-              "private-beta/status-and-points/how-to-earn-points",
               "private-beta/status-and-points/referrals"
             ]
           },
@@ -208,6 +221,12 @@
             ]
           },
           {
+            "group": "Deployments",
+            "pages": [
+              "resources/addresses"
+            ]
+          },
+          {
             "group": "Protocol",
             "pages": [
               "learn/overview",
@@ -215,8 +234,7 @@
               "developers/settlement",
               "developers/fees",
               "learn/risks-and-parameters",
-              "security/circuit-breaker",
-              "security/risks"
+              "security/circuit-breaker"
             ]
           },
           {
@@ -237,12 +255,6 @@
               "markets/market-parameters",
               "markets/collateral",
               "markets/oracles"
-            ]
-          },
-          {
-            "group": "Deployments",
-            "pages": [
-              "resources/addresses"
             ]
           },
           {

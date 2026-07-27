@@ -1,150 +1,146 @@
 ---
-title: "The Primitive"
+title: "The primitive"
 sidebarTitle: "The Primitive"
-description: "Learn how Null creates simple, fully collateralized onchain markets for any oracle-tracked asset."
+description: "Learn how Null turns collateral and an oracle price into pooled Receiver and Payer positions."
 ---
 
-Null is a market primitive for creating onchain exposure to almost anything with a reliable price feed. It turns a total return swap into two transparent pools: one side receives the tracked asset's return, while the other side provides the collateral that backs it.
+Null turns an oracle-tracked price return into two onchain pools. Receiver takes the tracked return. Payer provides the reserve and takes the other side.
 
-There is no loan, margin account, liquidation engine, or hidden counterparty. Every gain is paid from collateral already inside the market.
+Both sides deposit the market's collateral token. The protocol does not lend the tracked asset, create a margin account, or liquidate individual users. Settlement can only transfer collateral held by the market, subject to its minimum-pool floor.
 
 ## The idea in one minute
 
-Imagine a market tracking an asset such as ETH, gold, or an equity:
-
-1. **Receiver** deposits collateral to receive the asset's price return.
-2. **Payer** deposits collateral to back Receiver and takes the other side of that return.
-3. An oracle reports how the asset's price has moved.
-4. Null moves value between the two pools to reflect that movement.
-5. Funding also moves between the pools to encourage enough Payer backing.
+1. You deposit collateral into Receiver or Payer.
+2. You receive transferable ERC-4626 shares in that pool.
+3. On the next pool action, the market reads its oracle and funding-rate model.
+4. The market nets price PnL and funding into a transfer between the pools.
+5. Your shares represent a proportional claim on the collateral left in your pool.
 
 If the tracked price rises, value normally moves from Payer to Receiver. If it falls, value normally moves from Receiver to Payer. Nobody is borrowing the tracked asset, and the market never needs to liquidate an account.
 
 <Info>
-Users do not need to own the tracked asset. They deposit the market's collateral token and receive pool shares representing their position.
+You do not own or receive the tracked asset. A Receiver position does not include voting rights, dividends, redemption rights, or other ownership benefits unless the market's oracle return explicitly reflects them.
 </Info>
 
 ## Receiver and Payer
 
 ### Receiver
 
-Receiver is the straightforward side for taking the tracked asset's return. If the asset rises by 5%, the Receiver pool is credited based on that move. If it falls by 5%, the Receiver pool is debited.
-
-Receiver is synthetic exposure, not ownership of the underlying asset. It does not provide voting rights, dividends, redemption rights, or any other benefit attached to owning that asset unless the market rules explicitly account for it.
+Receiver takes the tracked price return against its pool assets. A 5% accepted price increase credits Receiver by about 5% of Receiver assets. A 5% decrease debits it by about 5%, before funding, fees, collateral changes, and settlement bounds.
 
 ### Payer
 
-Payer supplies the reserve that makes Receiver fully collateralized. It takes the opposite price transfer and earns or pays funding according to how much Payer coverage the market has.
+Payer supplies the reserve that backs Receiver's gains. It takes the opposite price transfer and earns or pays funding according to Payer coverage.
 
-Payer's percentage return can be larger than the tracked asset's move because the same transfer is spread across the Payer pool. A smaller Payer pool means each Payer share absorbs more of the market's price movement.
+Let `R` be Receiver assets and `P` be Payer assets. The exposure-allocation ratio is:
+
+```text
+E = R / P
+```
+
+A smaller Payer pool produces a larger `E`, so each unit of Payer pool value represents a larger pro-rata share of Receiver exposure. The exposure itself remains matched one-for-one at the notional level.
 
 ## A simple example
 
-Suppose a market has:
-
-- 1,000 units in Receiver;
-- 200 units in Payer; and
-- a tracked price that rises by 2%.
-
-The price transfer is 2% of the Receiver pool, or 20 units:
+Suppose `R = 1,000`, `P = 200`, and the accepted oracle price rises by 2%. The price transfer is about 2% of Receiver assets, or 20 collateral units:
 
 ```text
 Receiver: 1,000 → 1,020
 Payer:      200 →   180
 ```
 
-Receiver gains 2%. Payer loses 10% because the 20-unit transfer is measured against its smaller pool. A price decrease would move value in the other direction.
+Receiver gains 2%. The Payer pool backs the full 1,000-unit Receiver notional, so it pays the same 20-unit transfer. That transfer reduces the 200-unit Payer pool by 10%.
 
-This example ignores funding, fees, collateral yield, and safety bounds, but it shows the core exchange.
+This simplified example excludes funding, fees, collateral changes, rounding, and settlement bounds.
 
-## Why funding exists
+## Funding and exposure notional
 
-Receiver exposure is only as strong as the collateral backing it. Null uses a funding-rate model to encourage the market toward a target amount of Payer coverage.
+The funding-rate model encourages the market toward a target amount of Payer coverage:
 
-- When Payer backing is below the target, funding can flow from Receiver to Payer.
-- When Payer backing is above the target, funding can reverse and flow from Payer to Receiver.
+- below target coverage, funding can flow from Receiver to Payer;
+- above target coverage, funding can flow from Payer to Receiver; and
+- at target coverage, the standard model's funding rate is zero.
 
-Funding is signed and automatic. It is not a fixed yield, and either side may pay it.
+Define Payer coverage as `q = P / R`. The standard model calculates:
 
-## Positions are pooled shares
+```text
+f = mu * (c - q) / (c + q)
+```
 
-Depositing into either side mints ERC-4626 pool shares. Those shares represent a percentage of the entire pool, not a private trade with its own entry price.
+`c` is the target coverage and `mu` controls the curve's maximum magnitude. The standard deployment uses `c = 0.5` and `mu = 1`:
 
-This makes positions:
+```mermaid
+xychart-beta
+    title "Funding rate vs Payer coverage"
+    x-axis "Payer coverage P/R (%)" [1, 5, 10, 20, 50, 75, 100, 200]
+    y-axis "Funding rate f (%)" -100 --> 100
+    line [96.1, 81.8, 66.7, 42.9, 0, -20, -33.3, -60]
+```
 
-- **fungible** — shares from the same pool are interchangeable;
-- **composable** — wallets and other applications can hold standard tokenized shares;
-- **liquid by design** — users enter and exit against pooled collateral rather than finding a bilateral counterparty; and
-- **transparent** — share value comes from the pool's visible collateral and accounting state.
+Funding is positive below 50% coverage, zero at 50%, and negative above 50%. The curve is annualized and bounded by `-mu` and `+mu`. If either pool is empty, the implementation returns zero because a one-sided market settles neither funding nor price PnL.
 
-If the collateral itself is yield-bearing, both pools can also benefit from that collateral yield while the market tracks its separate price exposure.
+If `f` is the signed market funding APR, it applies to Receiver exposure notional:
 
-## What makes Null different
+```text
+annual funding transfer = R * f
+```
 
-### Fully collateralized
+Each Payer holder receives or pays its pro-rata share of that transfer. If a holder owns fraction `p / P` of the Payer pool, its exposure notional is `pR / P`, and its annualized funding transfer is `(pR / P) * f`.
 
-Null can only transfer value already held by the market. It cannot create debt or an undercollateralized receivable.
+Positive `f` means Receiver pays Payer. Negative `f` means Payer pays Receiver. `R / P` allocates Receiver exposure across Payer shares; it does not change `f`. Funding is variable, can reverse, and is not guaranteed yield.
 
-### No liquidations
+For the normalized curve, model calibration, and worked transfer table, see [Funding and carry](/learn/funding-and-carry).
 
-There are no leveraged accounts to monitor and no liquidation auction. Losses appear directly in pool share value and are bounded by available pool collateral.
+## Pooled positions
 
-### No risk engine
+Depositing mints ERC-4626 shares. Your shares represent a percentage of the whole pool, not a bilateral trade or an account with a fixed entry price.
 
-Null does not depend on an offchain or discretionary risk engine to decide who can trade, how much leverage an account receives, or when a position should be closed. Risk is expressed through transparent market parameters, available collateral, oracle rules, and deterministic settlement.
+Pool shares are transferable, but that does not guarantee an active secondary market or a particular redemption value. Burning shares returns your proportional claim on the collateral currently allocated to the pool, after settlement and applicable fees.
 
-### Onchain settlement
+If the market uses yield-bearing collateral, changes in that collateral can also affect both pools. Collateral yield is separate from funding and price PnL.
 
-Null settles on Ethereum (currently Sepolia for the live private beta). Markets use Ethereum's security model and can compose with standard ERC-20 / ERC-4626 tooling.
+## What the market fixes
 
-### Markets for any reliable oracle
+Each market is uniquely identified by three dependency addresses:
 
-A market can track crypto, equities, commodities, rates, or other measurable values without requiring custody of the tracked asset.
+```text
+(collateral, oracle, funding-rate model)
+```
 
-### Immutable market rules
+These dependencies and the two pool addresses are fixed for that market. Creating a market with a different collateral, oracle, or funding-rate model creates a different market.
 
-Each market permanently fixes its collateral token, oracle, and funding-rate model when it is created. Participants can inspect the rules before depositing, and an administrator cannot silently replace them for an existing market.
+The factory owner can enable funding-rate models for future markets, set capped entry, exit, and collateral fees, and collect accrued protocol fees. Review the current market and fee settings before entering.
 
-### Permissionless, pooled infrastructure
+## Settlement
 
-Anyone can create a canonical market from Factory-enabled components. Standardized pools and routers make those markets easier for users and applications to discover and integrate.
+Settlement is interaction-driven. Deposits, mints, withdrawals, and redemptions settle the market before continuing. The protocol does not expose a separate public keeper action that updates every block.
 
-### A deliberately small core
+During settlement, the market reconciles collateral, accrues fees, reads the oracle and funding-rate model, nets price PnL with funding, and updates each pool's collateral balance. Existing share counts do not change. The collateral value represented by each share does.
 
-The protocol's significant core logic is roughly 600 lines of custom Solidity. Keeping the accounting surface compact makes the primitive easier to understand, test, integrate, and review. A small codebase reduces complexity; it does not remove smart-contract risk.
+If an accepted oracle move exceeds the time-adjusted circuit-breaker threshold, the market skips that update's price transfer and records the new price as its next baseline. Funding can still settle. The skipped price PnL is not deferred.
 
-### Modular by design
-
-Null's goal is to make safe synthetic markets into reusable DeFi building blocks. Markets can be created by anyone from approved modules, positions use standard ERC-4626 shares, and integrations can compose those shares across wallets, vaults, interfaces, and other DeFi protocols.
-
-The result is not a closed trading venue. It is open infrastructure for creating, distributing, and using synthetic exposure throughout DeFi.
-
-## How a position moves through Null
+## Position lifecycle
 
 <Steps>
-  <Step title="Choose a market">
-    Review the tracked asset, collateral, oracle, funding, fees, liquidity, and current pool coverage.
+  <Step title="Review the market">
+    Check the tracked price, collateral, oracle, funding-rate model, pool sizes, current funding, fees, and circuit-breaker behavior.
   </Step>
   <Step title="Choose Receiver or Payer">
-    Receiver takes the tracked return. Payer supplies backing and takes the other side.
+    Receiver takes the tracked return. Payer takes the opposite return with exposure scaled by `R / P`.
   </Step>
   <Step title="Mint shares">
     Deposit collateral into the selected pool and receive ERC-4626 shares.
   </Step>
-  <Step title="Let the market settle">
-    When the market updates, Null validates the oracle and nets price movement with funding before moving collateral between the pools.
+  <Step title="Monitor the position">
+    Pool sizes, funding, fees, collateral value, and oracle settlement can all change your position value.
   </Step>
   <Step title="Burn shares">
-    Redeem pool shares for your proportional claim on the collateral currently available to that pool.
+    Redeem pool shares for your proportional claim after the market settles.
   </Step>
 </Steps>
 
-## Safety boundaries
-
-The protocol includes a minimum-pool floor and a price circuit breaker that can skip unusually large price moves during a single update. These controls limit specific settlement behavior; they do not guarantee a position's value or eliminate risk.
-
 <Warning>
-Receiver and Payer positions can lose value. Full collateralization does not remove oracle, smart-contract, liquidity, collateral, funding, or market risk.
+Receiver and Payer can lose most of their pool value. The minimum-pool floor and circuit breaker constrain specific transfers; they do not guarantee fair pricing, liquidity, or capital protection.
 </Warning>
 
-Continue with [Position Types](/private-beta/trading/position-types) for the product-level comparison, or read the [protocol overview](/learn/overview) for settlement mechanics.
+Continue with [Position types](/private-beta/trading/position-types), [Smart contracts](/private-beta/about-null/smart-contracts), or the detailed [Funding and carry](/learn/funding-and-carry) guide.

@@ -4,72 +4,112 @@ sidebarTitle: "Redeeming"
 description: "Redeem Receiver or Payer shares for collateral via the router or direct ERC-4626, with previews, slippage, and vault unwrap."
 ---
 
-Redeeming burns pool shares and returns collateral. `router.redeemMarket` settles the market first, then burns shares. For ERC-4626 collateral, the router unwraps vault shares and returns the underlying.
+Redeeming burns Receiver or Payer pool shares and returns assets. Use `redeemMarket` for production UIs. It settles before conversion, enforces a deadline and minimum output, accepts oracle update data, and unwraps ERC-4626 collateral.
 
-## Shares-in vs assets-out
+In the Null app, this action is called **Burn**. Contract integrations should use the ERC-4626 term `redeem`.
 
-| Method | You specify | You receive |
-| --- | --- | --- |
-| `redeemMarket` (router) | Exact share amounts | Assets subject to your floor |
-| `pool.redeem` (direct) | Exact shares | Assets after exit fee |
-| `pool.withdraw` (direct) | Exact assets | Shares burned as required |
+## Output units
 
-Most integrations should use `redeemMarket`: burn a known share balance with a minimum asset floor. Use `withdraw` when you need an exact asset amount (in **market collateral** units — vault shares if collateral is ERC-4626).
+Read `market.collateral()`, then probe the collateral token's `asset()` function:
 
-## Preview assets
+| Market collateral                   | Router output and minimum units        |
+| ----------------------------------- | -------------------------------------- |
+| `asset()` reverts or is unavailable | Market collateral                      |
+| `asset()` succeeds                  | Vault underlying returned by `asset()` |
 
-```ts
-const estimatedReceiverAssets = await publicClient.readContract({
-  address: receiverPool,
-  abi: poolAbi,
-  functionName: "previewRedeem",
-  args: [receiverShares],
-});
+The router uses the same detection rule. On Sepolia, redeeming a pool from an `nUSDC` market follows:
+
+```text
+Receiver or Payer pool shares → nUSDC vault shares → MockUSDC underlying
 ```
 
-Includes the exit fee; uses last settled state. Execution settles first.
+Use `nUSDC` and `MockUSDC` names only after verifying those addresses for the selected deployment.
 
-<Note>
-For ERC-4626 collateral, pool preview returns vault shares while router minimums are in **underlying**. Convert with the vault's `previewRedeem` before applying slippage.
-</Note>
+## Quote the complete unit pipeline
 
-## Slippage
+For plain ERC-20 collateral:
 
-```ts
-const slippageBps = 50n;
-const minReceiverAssets =
-  (estimatedReceiverAssets * (10_000n - slippageBps)) / 10_000n;
+```text
+pool shares → pool.previewRedeem(shares) → collateral
 ```
 
-Reverts: `SlippageReceiverAssets`, `SlippagePayerAssets`.
+For ERC-4626 collateral:
 
-## Deadline and oracle data
-
-Same rules as deposits: Unix `deadline`, `TransactionTooOld` on expiry, and `updateData` for push oracles (`[]` when stored price is fine). Match Chainlink → fee-less router, Pyth → payable router.
-
-## Single-side exit
-
-```ts
-const args = [
-  market,
-  receiverShares,
-  0n, // skip Payer
-  minReceiverAssets,
-  0n,
-  deadline,
-  updateData,
-] as const;
+```text
+pool shares
+  → pool.previewRedeem(shares)
+  → collateralVault.previewRedeem(vault shares)
+  → underlying
 ```
 
-## State update on redeem
+Apply slippage once, to the final asset quote:
 
-Every `redeemMarket` triggers settlement: reconciliation, collateral fee, funding, price PnL (unless circuit-breaker), solvency-bounded net transfer — then share conversion. Returned assets reflect post-update pool value. See [Settlement](/developers/settlement).
-
-## Full example
-
-<Tabs>
-  <Tab title="viem">
 ```ts
+const BPS = 10_000n;
+const slippageBps = 50n; // 0.50%
+
+function applySlippageFloor(quotedOutput: bigint): bigint {
+  return (quotedOutput * (BPS - slippageBps)) / BPS;
+}
+```
+
+`pool.previewRedeem` includes the exit fee but reads the last settled state. `redeemMarket` settles before burning shares, so the result can change before execution. Use `NullV1Lens.previewMarket` for a settlement projection and keep the router minimum.
+
+## Sepolia nUSDC example
+
+This example redeems a caller's full Receiver balance from an existing `nUSDC` market. It assumes configured `publicClient`, `walletClient`, and `account` objects.
+
+```ts
+import { parseAbi } from "viem";
+
+const market = "0x..." as const; // discover from the canonical factory
+const router = "0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03" as const;
+const nUsdc = "0x77508321f1EF8C707Cd5869557365468BCeD0613" as const;
+const mockUsdc = "0x5A316865F2C9c261aD1B254C46788b6356d2F135" as const;
+
+const marketAbi = parseAbi([
+  "function collateral() view returns (address)",
+  "function receiverPool() view returns (address)",
+]);
+const poolAbi = parseAbi([
+  "function balanceOf(address account) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function previewRedeem(uint256 shares) view returns (uint256 assets)",
+  "function redeem(uint256 shares, address receiver, address owner) returns (uint256 assets)",
+]);
+const vaultAbi = parseAbi([
+  "function asset() view returns (address)",
+  "function previewRedeem(uint256 shares) view returns (uint256 assets)",
+]);
+const routerAbi = parseAbi([
+  "function redeemMarket(address market, uint256 receiverShares, uint256 payerShares, uint256 minReceiverAssets, uint256 minPayerAssets, uint256 deadline, bytes[] updateData) returns (uint256 receiverAssets, uint256 payerAssets)",
+]);
+
+const [collateral, receiverPool, underlying] = await Promise.all([
+  publicClient.readContract({
+    address: market,
+    abi: marketAbi,
+    functionName: "collateral",
+  }),
+  publicClient.readContract({
+    address: market,
+    abi: marketAbi,
+    functionName: "receiverPool",
+  }),
+  publicClient.readContract({
+    address: nUsdc,
+    abi: vaultAbi,
+    functionName: "asset",
+  }),
+]);
+
+if (collateral.toLowerCase() !== nUsdc.toLowerCase()) {
+  throw new Error("This example requires nUSDC market collateral");
+}
+if (underlying.toLowerCase() !== mockUsdc.toLowerCase()) {
+  throw new Error("This nUSDC deployment does not use MockUSDC");
+}
+
 const receiverShares = await publicClient.readContract({
   address: receiverPool,
   abi: poolAbi,
@@ -77,23 +117,32 @@ const receiverShares = await publicClient.readContract({
   args: [account.address],
 });
 
-const estimated = await publicClient.readContract({
+const quotedVaultShares = await publicClient.readContract({
   address: receiverPool,
   abi: poolAbi,
   functionName: "previewRedeem",
   args: [receiverShares],
 });
-// Convert estimated → underlying if collateral is ERC-4626 before mins
-const minReceiverAssets = (estimated * 9950n) / 10_000n;
+const quotedUnderlying = await publicClient.readContract({
+  address: nUsdc,
+  abi: vaultAbi,
+  functionName: "previewRedeem",
+  args: [quotedVaultShares],
+});
+const minReceiverAssets = (quotedUnderlying * (10_000n - 50n)) / 10_000n;
 
-await walletClient.writeContract({
+const approvalHash = await walletClient.writeContract({
+  account,
   address: receiverPool,
-  abi: erc20Abi,
+  abi: poolAbi,
   functionName: "approve",
   args: [router, receiverShares],
 });
+await publicClient.waitForTransactionReceipt({ hash: approvalHash });
 
-const hash = await walletClient.writeContract({
+const updateData: readonly `0x${string}`[] = []; // only when the stored price is usable
+await walletClient.writeContract({
+  account,
   address: router,
   abi: routerAbi,
   functionName: "redeemMarket",
@@ -103,86 +152,42 @@ const hash = await walletClient.writeContract({
     0n,
     minReceiverAssets,
     0n,
-    BigInt(Math.floor(Date.now() / 1000) + 300),
-    [],
+    BigInt(Math.floor(Date.now() / 1000) + 5 * 60),
+    updateData,
   ],
 });
 ```
-  </Tab>
-  <Tab title="Solidity">
-```solidity
-interface INullV1Router {
-    function redeemMarket(
-        INullV1Market market,
-        uint256 receiverShares,
-        uint256 payerShares,
-        uint256 minReceiverAssets,
-        uint256 minPayerAssets,
-        uint256 deadline,
-        bytes[] calldata updateData
-    ) external returns (uint256 receiverAssets, uint256 payerAssets);
-}
 
-function redeemAll(
-    INullV1Market market,
-    IERC20 outputToken,
-    uint256 minReceiverAssets,
-    uint256 minPayerAssets,
-    uint256 deadline,
-    bytes[] calldata updateData
-) external returns (uint256 receiverAssets, uint256 payerAssets) {
-    INullV1Pool receiverPool = market.receiverPool();
-    INullV1Pool payerPool = market.payerPool();
+The approval is required even when the caller owns the shares. The router calls the pool as the spender and burns shares from `msg.sender`. Approve each active pool token separately.
 
-    uint256 receiverShares = receiverPool.balanceOf(msg.sender);
-    uint256 payerShares = payerPool.balanceOf(msg.sender);
+Set a side's shares and minimum assets to `0n` to skip it. A zero minimum on an active side disables slippage protection.
 
-    if (receiverShares > 0) {
-        receiverPool.transferFrom(msg.sender, address(this), receiverShares);
-        receiverPool.approve(address(router), receiverShares);
-    }
-    if (payerShares > 0) {
-        payerPool.transferFrom(msg.sender, address(this), payerShares);
-        payerPool.approve(address(router), payerShares);
-    }
+## Deadline and update data
 
-    (receiverAssets, payerAssets) = router.redeemMarket(
-        market,
-        receiverShares,
-        payerShares,
-        minReceiverAssets,
-        minPayerAssets,
-        deadline,
-        updateData
-    );
+The deadline is Unix time in seconds. Expired calls revert with `TransactionTooOld(deadline)`.
 
-    outputToken.transfer(msg.sender, receiverAssets + payerAssets);
-}
-```
-  </Tab>
-</Tabs>
+Use nonempty `updateData` when the oracle requires a fresh push update:
+
+- [Pyth update data](/contracts/oracles/pyth#update-data)
+- [Chainlink update requirements](/contracts/oracles/chainlink#nonpayable-fee-zero-routing)
+
+Pass `[]` only when the stored price is usable. Use `NullV1Router` for Chainlink and the pre-funded `NullV1PayableRouter` for Pyth. Do not attach ETH to `redeemMarket`.
 
 ## Direct ERC-4626 exit
 
+Direct pool exits return **market collateral**. For an `nUSDC` market, they return `nUSDC`, not `MockUSDC`. Redeem the `nUSDC` separately if you need its underlying.
+
 ```ts
-// By shares
 await walletClient.writeContract({
+  account,
   address: receiverPool,
   abi: poolAbi,
   functionName: "redeem",
-  args: [shares, receiver, owner],
-});
-
-// By assets (market collateral units)
-await walletClient.writeContract({
-  address: receiverPool,
-  abi: poolAbi,
-  functionName: "withdraw",
-  args: [assets, receiver, owner],
+  args: [receiverShares, account.address, account.address],
 });
 ```
 
-No router slippage or deadline — add your own guards.
+If the transaction sender differs from the share owner, the owner must approve the sender. Direct calls have no router deadline, output floor, oracle payload, or automatic vault unwrap.
 
 ## Related
 

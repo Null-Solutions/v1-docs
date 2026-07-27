@@ -1,36 +1,59 @@
 ---
-title: "Fund Your Account"
+title: "Fund your account"
 sidebarTitle: "Fund Your Account"
-description: "Add funds to your Null wallet with crypto, cash, or the testnet faucet."
+description: "Prepare MockUSDC collateral and Sepolia ETH for Null's private beta."
 ---
 
-Funding your account adds assets to your connected wallet. It does not open a market position.
+Null's private beta runs on Sepolia. You fund positions with **MockUSDC** in the approved wallet connected to your Null account.
+
+Sepolia transactions also require gas. An external wallet pays gas with Sepolia ETH. A smart account can use gas sponsorship when it is available. MockUSDC, nUSDC, and Sepolia ETH on the testnet have no cash value. Adding assets to your wallet does not open a position.
+
+## Understand MockUSDC and nUSDC
+
+The current Sepolia markets use `nUSDC` as collateral. `nUSDC` is an ERC-4626 vault share whose underlying token is `MockUSDC`.
+
+You fund the wallet with `MockUSDC`. When the router deposits into a market that uses ERC-4626 collateral, it pulls the underlying `MockUSDC`, wraps it into `nUSDC`, and deposits the `nUSDC` into the market. On redemption through the router, it unwraps `nUSDC` and returns `MockUSDC`.
+
+<Info>
+`MockUSDC` is the test token you hold and spend through the app flow. `nUSDC` is the yield-bearing collateral token held by the market. They are different ERC-20 tokens with different Sepolia addresses.
+</Info>
+
+You can verify both token addresses in [Live deployments](/resources/addresses).
+
+## Get test collateral
 
 <Steps>
-  <Step title="Open Deposit">
-    Sign in, open your portfolio, and select **Deposit**.
+  <Step title="Connect the approved wallet">
+    Sign in with the account used for your beta application. Confirm that the connected wallet is the approved wallet.
   </Step>
-  <Step title="Choose a method">
-    Select **Use Crypto** to use Privy's crypto deposit flow, or **Use Cash** to open the fiat onramp.
+  <Step title="Open the deposit menu">
+    Open your portfolio and select **Deposit**.
   </Step>
-  <Step title="Follow the provider steps">
-    Confirm the destination wallet, asset, network, and amount before continuing.
+  <Step title="Fund with testnet assets">
+    Select **Testnet Fund** and confirm the transaction to mint MockUSDC to your connected wallet.
   </Step>
-  <Step title="Wait for the balance">
-    Cash and cross-chain deposits can take time to arrive. Check your wallet balance before placing a position.
+  <Step title="Check your balance">
+    Wait for the Sepolia transaction to confirm before trying to mint a position.
   </Step>
 </Steps>
 
-## Testnet faucet
+## Prepare for gas
 
-When Null is running on a testnet, **Testnet Fund** appears in the deposit menu. Confirm the transaction to mint testnet USDC to your wallet. Testnet assets have no cash value.
+If you use an external wallet, keep Sepolia ETH in that wallet to pay gas for faucet, approval, mint, and burn transactions. Minting MockUSDC does not provide Sepolia ETH.
 
-## Withdraw funds
+If you use a smart account, the app can submit sponsored transactions when Sepolia gas sponsorship is configured. If sponsorship is unavailable, the transaction cannot rely on MockUSDC or nUSDC to pay gas.
 
-The portfolio withdrawal menu supports **Receive Crypto** to an external address and **Receive Cash** through the available off-ramp. Verify every destination and network before confirming.
+## Before minting
+
+Confirm all four:
+
+- your wallet is the wallet approved for beta access;
+- your wallet is connected to Sepolia;
+- it holds enough MockUSDC for the position; and
+- your external wallet has Sepolia ETH for gas, or gas sponsorship is available for your smart account.
 
 <Warning>
-Funds sent with the wrong token, network, or destination address may be permanently lost.
+Do not send mainnet USDC, mainnet ETH, or other assets to a Sepolia token contract. Always verify the network, token, and connected wallet before confirming a transaction.
 </Warning>
 
-Ready to trade? See [Placing a Position](/private-beta/trading/placing-a-position).
+Ready to trade? See [Placing a position](/private-beta/trading/placing-a-position).

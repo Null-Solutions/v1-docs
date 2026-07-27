@@ -4,21 +4,23 @@ sidebarTitle: "Creating a market"
 description: "Create a Null V1 market from collateral, oracle, and an enabled funding-rate model."
 ---
 
-A market is identified by `(collateral, oracle, frm)`. The factory stores one market per exact tuple. Dependencies are fixed at initialization.
+A market is identified by `(collateral, oracle, frm)`. The factory stores one market per exact tuple. Anyone can create a market, but the factory owner must enable its funding-rate model (FRM) first.
 
 ## Prerequisites
 
-- Nonzero ERC-20 `collateral`
-- Nonzero `INullV1Oracle` whose `price()` returns a nonzero `1e36`-scaled price during init
-- Nonzero `INullV1FundingRateModel` already enabled via `enableFrm(frm)`
+- A nonzero ERC-20 `collateral`
+- A nonzero `INullV1Oracle` whose `price()` returns a nonzero `1e36`-scaled price during initialization
+- A nonzero `INullV1FundingRateModel` already enabled through `enableFrm(frm)`
 
 ```solidity
-require(factory.isFrmEnabled(address(frm)), "FRM not enabled");
+if (!factory.isFrmEnabled(address(frm))) {
+    revert FrmNotEnabled(address(frm));
+}
 address existing =
     factory.getMarket(address(collateral), address(oracle), address(frm));
 ```
 
-Only the factory owner can enable an FRM. There is no disable.
+Only the factory owner can enable an FRM. Enabling is irreversible because the factory has no disable function.
 
 ## Choose the correct router
 
@@ -37,11 +39,155 @@ INullV1Market market = router.createMarket(
 );
 ```
 
-Call `factory.createMarket` directly only when the oracle already has a readable price — the factory does not update it.
+Pass `updateData: []` only when the oracle's stored price is already readable. Both routers skip the update for an empty array. They do not make an empty payload valid for a stale or uninitialized oracle.
+
+Call `factory.createMarket` directly only when the oracle already has a readable price. The factory does not update it.
+
+## Create with viem
+
+The example uses the live Sepolia factory, nUSDC collateral, and enabled FRM. Supply an existing oracle address and the matching live router from [Live deployments](/resources/addresses). Fetch `updateData` as described in [Oracles](/markets/oracles). The example intentionally does not hardcode a market or oracle address.
+
+```ts
+import {
+  createPublicClient,
+  createWalletClient,
+  custom,
+  getAddress,
+  http,
+  parseAbi,
+  zeroAddress,
+  type Address,
+  type Hex,
+} from "viem";
+import { sepolia } from "viem/chains";
+
+const factory = "0xc4d61E729225E8fA6612969fA705a36a8446B6CF";
+const collateral = "0x77508321f1EF8C707Cd5869557365468BCeD0613"; // nUSDC
+const frm = "0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014";
+
+const routerAbi = parseAbi([
+  "function createMarket(address factory, address collateral, address oracle, address frm, bytes[] updateData) returns (address market)",
+]);
+const factoryAbi = parseAbi([
+  "function isFrmEnabled(address frm) view returns (bool)",
+  "function getMarket(address collateral, address oracle, address frm) view returns (address market)",
+]);
+const marketAbi = parseAbi([
+  "function collateral() view returns (address)",
+  "function oracle() view returns (address)",
+  "function frm() view returns (address)",
+  "function receiverPool() view returns (address)",
+  "function payerPool() view returns (address)",
+]);
+
+const publicClient = createPublicClient({ chain: sepolia, transport: http() });
+const walletClient = createWalletClient({
+  chain: sepolia,
+  transport: custom(window.ethereum),
+});
+
+export async function createNullMarket({
+  router,
+  oracle,
+  updateData,
+}: {
+  router: Address;
+  oracle: Address;
+  updateData: Hex[];
+}) {
+  const [account] = await walletClient.getAddresses();
+  if (!account) throw new Error("Connect a wallet");
+
+  const [isFrmEnabled, existingMarket] = await Promise.all([
+    publicClient.readContract({
+      address: factory,
+      abi: factoryAbi,
+      functionName: "isFrmEnabled",
+      args: [frm],
+    }),
+    publicClient.readContract({
+      address: factory,
+      abi: factoryAbi,
+      functionName: "getMarket",
+      args: [collateral, oracle, frm],
+    }),
+  ]);
+
+  if (!isFrmEnabled) throw new Error("FRM is not enabled");
+  if (existingMarket !== zeroAddress) {
+    throw new Error(`Market already exists: ${existingMarket}`);
+  }
+
+  const { request, result: simulatedMarket } =
+    await publicClient.simulateContract({
+      account,
+      address: router,
+      abi: routerAbi,
+      functionName: "createMarket",
+      args: [factory, collateral, oracle, frm, updateData],
+    });
+
+  const hash = await walletClient.writeContract(request);
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") throw new Error("Market creation reverted");
+
+  const registeredMarket = await publicClient.readContract({
+    address: factory,
+    abi: factoryAbi,
+    functionName: "getMarket",
+    args: [collateral, oracle, frm],
+  });
+  if (getAddress(registeredMarket) !== getAddress(simulatedMarket)) {
+    throw new Error("Factory registry does not match the simulated market");
+  }
+
+  const [storedCollateral, storedOracle, storedFrm, receiverPool, payerPool] =
+    await Promise.all([
+      publicClient.readContract({ address: registeredMarket, abi: marketAbi, functionName: "collateral" }),
+      publicClient.readContract({ address: registeredMarket, abi: marketAbi, functionName: "oracle" }),
+      publicClient.readContract({ address: registeredMarket, abi: marketAbi, functionName: "frm" }),
+      publicClient.readContract({ address: registeredMarket, abi: marketAbi, functionName: "receiverPool" }),
+      publicClient.readContract({ address: registeredMarket, abi: marketAbi, functionName: "payerPool" }),
+    ]);
+
+  if (
+    getAddress(storedCollateral) !== getAddress(collateral) ||
+    getAddress(storedOracle) !== getAddress(oracle) ||
+    getAddress(storedFrm) !== getAddress(frm)
+  ) {
+    throw new Error("Market dependencies do not match the requested tuple");
+  }
+  if (receiverPool === zeroAddress || payerPool === zeroAddress) {
+    throw new Error("Market pool address is zero");
+  }
+
+  return {
+    hash,
+    market: registeredMarket,
+    dependencies: { collateral: storedCollateral, oracle: storedOracle, frm: storedFrm },
+    receiverPool,
+    payerPool,
+  };
+}
+```
+
+Use `NullV1Router` for Chainlink and `NullV1PayableRouter` for Pyth. The payable router must already hold enough ETH for the Pyth fee; the market-creation call itself is nonpayable.
 
 ## Factory behavior
 
-Creation reverts for zero deps, disabled FRM, or an existing tuple. Otherwise the factory:
+Creation reverts for invalid dependencies, a disabled FRM, an existing tuple, or an unusable initial oracle price. The factory uses these custom errors:
+
+| Error | Condition |
+| --- | --- |
+| `ZeroCollateral()` | `collateral` is the zero address |
+| `ZeroOracle()` | `oracle` is the zero address |
+| `ZeroFrm()` | `frm` is the zero address |
+| `FrmNotEnabled(address frm)` | The factory owner has not enabled the FRM |
+| `MarketExists(address collateral, address oracle, address frm)` | The exact tuple is already registered |
+| `ZeroOraclePrice()` | Initialization reads a zero oracle price |
+| `NoDelegateCall()` | `createMarket` runs through `delegatecall` |
+
+Otherwise the factory:
 
 1. Clones and initializes `NullV1Market`
 2. Clones and initializes Receiver and Payer pools
@@ -59,4 +205,8 @@ event CreateMarket(
 );
 ```
 
-Retrieve later with `getMarket(collateral, oracle, frm)`. See [Factory](/contracts/factory) · [Oracles](/markets/oracles) · [Live deployments](/resources/addresses).
+After the receipt succeeds, read `getMarket(collateral, oracle, frm)` from the same factory and verify the market's `collateral()`, `oracle()`, `frm()`, `receiverPool()`, and `payerPool()`. Do not trust only a simulated return value or a user-supplied market address.
+
+The dependency addresses on a live market cannot change. Enabling another FRM only permits new tuples that use it; it does not replace the FRM on an existing market.
+
+See [Factory](/contracts/factory) · [Oracles](/markets/oracles) · [Live deployments](/resources/addresses).

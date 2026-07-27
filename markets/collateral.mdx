@@ -10,13 +10,12 @@ Each market uses one ERC-20 as collateral. The market and both pools account in 
 
 The factory only checks that the collateral address is nonzero. Documented assumptions are stronger: transfers should be non-reentrant, and sender/receiver balances should change by exactly the requested amount. Passing the factory check does **not** mean the token is safe.
 
-| Typical | Characteristics |
-| --- | --- |
-| USDC, WETH, DAI, WBTC, ERC-4626 vault shares | Pool balances in token units |
-| | Direct pool calls use market collateral |
-| | Router wraps/unwraps ERC-4626 collateral |
-| | External balance changes reconcile before actions |
-| | Core does not track an underlying share price separately |
+| Collateral form | Core pool units | Router units |
+| --- | --- | --- |
+| Plain ERC-20 | The collateral token | The collateral token |
+| ERC-4626 vault share | The vault share token | The vault's underlying token |
+
+The core does not track a separate underlying price for ERC-4626 collateral. It accounts only for the vault shares held by the market.
 
 ## Reconciliation
 
@@ -31,14 +30,32 @@ This captures donations and rebases in accounting. It does not make fee-on-trans
 
 ## Deposit and withdraw units
 
-Core pools always take/return **market collateral**. If that is an ERC-4626 vault share, direct callers use vault shares.
+Core pools always take and return **market collateral**. If the collateral is an ERC-4626 vault share, direct pool callers use vault-share units.
 
-Routers detect ERC-4626 via `asset()`:
+For each deposit or redemption, a router probes `asset()` on `market.collateral()`. If that call succeeds, the router treats the collateral as ERC-4626:
 
 1. **Deposit:** pull underlying → deposit into vault → deposit vault shares into Null pool
 2. **Redeem:** redeem Null shares → redeem vault → send underlying
 
-Router amounts and slippage mins are in **underlying** for ERC-4626 collateral, and in collateral units for plain ERC-20. If `asset()` reverts, the router treats the token as plain ERC-20.
+Router asset amounts and minimum-asset checks are in **underlying** units for ERC-4626 collateral, and in collateral units for a plain ERC-20. If `asset()` reverts, the router treats the token as a plain ERC-20. A successful `asset()` probe is only detection; malformed vault behavior can still make wrapping or unwrapping revert.
+
+## Sepolia nUSDC example
+
+The live Sepolia nUSDC collateral is an ERC-4626 vault over MockUSDC:
+
+| Token | Role | Decimals | `100` tokens in raw units |
+| --- | --- | ---: | ---: |
+| [nUSDC](https://sepolia.etherscan.io/address/0x77508321f1EF8C707Cd5869557365468BCeD0613) | Market collateral / vault share | 18 | `100_000_000_000_000_000_000` |
+| [MockUSDC](https://sepolia.etherscan.io/address/0x5A316865F2C9c261aD1B254C46788b6356d2F135) | nUSDC underlying | 6 | `100_000_000` |
+
+```ts
+import { parseUnits } from "viem";
+
+const directPoolAssets = parseUnits("100", 18); // nUSDC shares
+const routerAssets = parseUnits("100", 6); // MockUSDC underlying
+```
+
+For a direct Receiver or Payer pool deposit, approve the pool to spend nUSDC and pass `directPoolAssets`. For `router.depositMarket`, approve the router to spend MockUSDC and pass `routerAssets`. The vault exchange rate determines how many nUSDC shares the router receives; do not assume one nUSDC always equals one MockUSDC.
 
 <Note>
 Null Receiver/Payer shares are themselves ERC-4626. That is separate from using an ERC-4626 vault as **market collateral**.
