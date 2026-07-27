@@ -21,113 +21,110 @@
   "icons": {
     "library": "lucide"
   },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/private-beta/about-null/overview"
+    },
+    {
+      "source": "/private-beta/overview",
+      "destination": "/private-beta/about-null/overview"
+    },
+    {
+      "source": "/private-beta/getting-started",
+      "destination": "/private-beta/getting-started/null-private-beta"
+    },
+    {
+      "source": "/private-beta/fund-account",
+      "destination": "/private-beta/getting-started/fund-your-account"
+    },
+    {
+      "source": "/private-beta/trading",
+      "destination": "/private-beta/trading/placing-a-position"
+    },
+    {
+      "source": "/private-beta/portfolio",
+      "destination": "/private-beta/portfolios/portfolio-overview"
+    },
+    {
+      "source": "/private-beta/strategies",
+      "destination": "/private-beta/strategies/about-strategies"
+    },
+    {
+      "source": "/private-beta/status-and-points",
+      "destination": "/private-beta/status-and-points/home-dashboard"
+    },
+    {
+      "source": "/private-beta/referrals",
+      "destination": "/private-beta/status-and-points/referrals"
+    },
+    {
+      "source": "/private-beta/support",
+      "destination": "/private-beta/support/trading"
+    }
+  ],
   "navigation": {
-    "tabs": [
+    "dropdowns": [
       {
-        "tab": "Private Beta",
+        "dropdown": "Private Beta",
         "groups": [
           {
-            "group": "Overview",
+            "group": "About Null",
             "pages": [
-              "private-beta/overview"
+              "private-beta/about-null/overview"
             ]
           },
           {
             "group": "Getting Started",
             "pages": [
-              "private-beta/getting-started",
-              "private-beta/fund-account"
+              "private-beta/getting-started/null-private-beta",
+              "private-beta/getting-started/account-setup",
+              "private-beta/getting-started/fund-your-account"
             ]
           },
           {
             "group": "Trading",
             "pages": [
-              "private-beta/trading"
+              "private-beta/trading/placing-a-position",
+              "private-beta/trading/markets",
+              "private-beta/trading/position-types",
+              "private-beta/trading/fees"
             ]
           },
           {
-            "group": "Portfolio",
+            "group": "Portfolios",
             "pages": [
-              "private-beta/portfolio"
+              "private-beta/portfolios/portfolio-overview"
             ]
           },
           {
             "group": "Strategies",
             "pages": [
-              "private-beta/strategies"
+              "private-beta/strategies/about-strategies",
+              "private-beta/strategies/null-strategies"
             ]
           },
           {
-            "group": "Status and Points",
+            "group": "Status & Points",
             "pages": [
-              "private-beta/status-and-points"
-            ]
-          },
-          {
-            "group": "Referrals",
-            "pages": [
-              "private-beta/referrals"
+              "private-beta/status-and-points/home-dashboard",
+              "private-beta/status-and-points/how-to-earn-points",
+              "private-beta/status-and-points/referrals"
             ]
           },
           {
             "group": "Support",
             "pages": [
-              "private-beta/support"
+              "private-beta/support/market-making",
+              "private-beta/support/trading",
+              "private-beta/support/audits",
+              "private-beta/support/brand-kit"
             ]
           }
         ]
       },
       {
-        "tab": "Get Started",
-        "groups": [
-          {
-            "group": "Introduction",
-            "pages": [
-              "index"
-            ]
-          },
-          {
-            "group": "Context",
-            "pages": [
-              "developers/ai-llms"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Learn",
-        "groups": [
-          {
-            "group": "Protocol Concepts",
-            "pages": [
-              "learn/overview"
-            ]
-          },
-          {
-            "group": "Economics and Risk",
-            "pages": [
-              "learn/funding-and-carry",
-              "learn/risks-and-parameters"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Use Null",
-        "groups": [
-          {
-            "group": "User Flows",
-            "pages": [
-              "quick-start",
-              "depositing",
-              "redeeming",
-              "fees"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Developers",
+        "dropdown": "Developers",
         "groups": [
           {
             "group": "Start Building",
@@ -137,15 +134,18 @@
             ]
           },
           {
-            "group": "Core Flows",
+            "group": "Protocol Mechanics",
             "pages": [
+              "learn/overview",
+              "learn/funding-and-carry",
+              "learn/risks-and-parameters",
               "developers-tab/market-update",
               "developers-tab/pools-and-erc4626",
               "developers-tab/router"
             ]
           },
           {
-            "group": "Build Guides",
+            "group": "Integration",
             "pages": [
               "contracts/integration/ui",
               "contracts/integration/indexer"
@@ -159,12 +159,7 @@
               "markets/collateral",
               "markets/oracles"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Reference",
-        "groups": [
+          },
           {
             "group": "Deployments",
             "pages": [

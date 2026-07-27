@@ -20,12 +20,6 @@ A market is uniquely identified by three immutable dependencies:
 
 The market redistributes collateral it holds and attributes to the two pools. It does not lend, create debt, use liquidations, or create an undercollateralized receivable.
 
-<img
-  src="/images/diagrams/protocol-overview.svg"
-  alt="Null V1 users deposit collateral into Receiver and Payer pools; oracle returns and funding move value between the pools."
-  style={{ width: "100%", maxWidth: "100%", height: "auto" }}
-/>
-
 ## Receiver
 
 Receiver is the synthetic-long side. A user deposits collateral, receives Receiver pool shares, and owns a proportional claim on that pool. For an ordinary settled price move:
