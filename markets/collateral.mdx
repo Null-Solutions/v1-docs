@@ -4,13 +4,17 @@ sidebarTitle: "Collateral"
 description: "Understand how Null V1 markets use ERC-20 collateral and reconcile actual token balances."
 ---
 
-Null V1 markets use one ERC-20 token as collateral. The factory accepts the market asset address at creation, and all core deposits, redemptions, pool balances, fees, and settlement transfers are denominated in that token.
+Null V1 markets use one ERC-20 token as collateral. The market, its receiver
+pool, and its payer pool all account in units of that token.
 
 ---
 
 ## ERC-20 Collateral
 
-Any standard ERC-20 token can serve as collateral for a Null V1 market. There is no whitelist in the factory beyond the non-zero address check. Integrators should still choose assets carefully: decimals, transfer behavior, rebasing behavior, and external risk all affect user experience.
+The factory only checks that the collateral address is nonzero. Its interface
+documents stronger assumptions: transfers should be non-reentrant, and sender
+and receiver balances should change by exactly the requested amount. A token
+passing the factory check is not therefore guaranteed to be safe collateral.
 
 <CardGroup cols={2}>
   <Card title="Examples" icon="coins">
@@ -18,12 +22,12 @@ Any standard ERC-20 token can serve as collateral for a Null V1 market. There is
     - WETH
     - DAI
     - WBTC
-    - Yield-bearing ERC-20s that expose balance changes through `balanceOf`
+    - ERC-4626 vault shares
   </Card>
   <Card title="Characteristics" icon="list-check">
     - Pool balances denominated in token units
-    - Direct pool calls use the market asset
-    - Router calls can wrap/unwrap ERC-4626 market assets
+    - Direct pool calls use the market collateral
+    - Router calls wrap/unwrap ERC-4626 collateral
     - Actual balance changes are reconciled before pool actions
     - No core collateral share-price accounting
   </Card>
@@ -33,34 +37,67 @@ Any standard ERC-20 token can serve as collateral for a Null V1 market. There is
 
 ## Balance Reconciliation
 
-Before every state-changing pool action, the market compares its actual token balance with the recorded Receiver and Payer pool balances. If the actual balance is higher, the external gain is allocated pro rata across both pools. If the actual balance is lower, the external loss is deducted pro rata.
+During state settlement, the market reconciles
+`collateral.balanceOf(address(market))` against its internal accounting before
+applying collateral fees, funding, and price PnL. This runs on pool
+deposit/mint/withdraw/redeem and on fee sweeps; there is no standalone public
+poke.
 
-This is how Null accounts for donations, rebases, fee-on-transfer effects, or other balance changes that happen outside explicit pool deposits and redemptions.
+Protocol fees are reserved first. If the recorded protocol fees exceed the
+actual balance, they are capped to that balance and no collateral remains for
+the pools.
+
+The remaining balance is compared with `receiverPool + payerPool`:
+
+- a surplus is allocated between pools in proportion to their recorded assets
+- a deficit is deducted proportionally, with integer-rounding remainder charged
+  to the larger pool first
+- if both pool balances are zero, any remaining collateral is recorded as
+  protocol fees
+
+This captures donations and rebases in pool accounting. It does not make
+fee-on-transfer or otherwise non-standard tokens compliant with the factory's
+documented transfer assumptions.
 
 <Tip>
-  If the collateral token's `balanceOf(market)` grows over time, that growth is
-  reflected through reconciliation. The market does not track a collateral
-  share-price checkpoint.
+  Reconciliation uses collateral-token units. It does not separately track the
+  value of the collateral in an underlying asset.
 </Tip>
 
 ---
 
 ## Token Selection Risks
 
-Reconciliation keeps accounting tied to actual collateral, but it does not make every ERC-20 equally good collateral. Rebasing tokens, fee-on-transfer tokens, tokens with blacklists, and tokens with external strategy risk can change market outcomes in ways users need to understand.
+Rebasing tokens, fee-on-transfer tokens, blacklists, hooks, and external
+strategy risk can change outcomes or break expected transfers. Review token
+behavior rather than relying on the factory's nonzero-address check.
 
 ---
 
 ## Depositing and Withdrawing
 
-The core pools accept the market asset directly. If the market asset is an ERC-4626 vault share, direct pool callers deposit and withdraw vault shares.
+The core pools accept the market collateral directly. If the collateral is an
+ERC-4626 vault, direct pool callers deposit and withdraw vault shares.
 
-`NullV1Router` can make ERC-4626 markets easier for users: on deposit it accepts the vault underlying and wraps it into the market asset; on redemption it unwraps the market asset and returns the underlying.
+Both `NullV1Router` and `NullV1PayableRouter` optimistically detect ERC-4626
+collateral by calling `asset()`. On deposit, the router:
+
+1. pulls the requested amount of underlying from the user
+2. deposits it into the collateral vault
+3. deposits the resulting vault shares into the selected Null pool
+
+On redemption, it receives collateral vault shares from the Null pool, redeems
+them through the vault, and sends the underlying to the user. Router asset
+amounts and slippage checks are therefore in underlying units for ERC-4626
+collateral, but in collateral-token units for plain ERC-20 collateral.
+
+If `asset()` reverts, the router treats the token as a plain ERC-20. A token
+that exposes `asset()` but is not a conforming ERC-4626 vault may fail later in
+the flow.
 
 <Note>
-  Receiver and Payer positions are still ERC-4626-compatible pool shares. This
-  ERC-4626 behavior belongs to the Null pool tokens, not to the market
-  collateral asset.
+  Receiver and payer positions are themselves ERC-4626-compatible Null pool
+  shares. They are distinct from an ERC-4626 vault used as market collateral.
 </Note>
 
 ---

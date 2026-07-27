@@ -12,16 +12,16 @@ All fee parameters are set by the protocol owner and are bounded by immutable on
 
 ## Entry fee
 
-The entry fee is deducted from the assets you deposit **before** your shares are calculated. This means you receive fewer shares than a fee-free deposit would produce.
+On `deposit`, the entry fee is included in the assets paid and deducted before shares are calculated. On `mint`, the fee is added to the raw assets required for the requested shares.
 
 | Property | Value |
 |---|---|
 | Maximum | `500` bps (5%) |
 | Applied on | `deposit` and `mint` calls |
-| Collected by | Protocol owner, immediately at deposit time |
+| Accrues to | Market `protocolFees`; transferred on `sweepFees()` |
 | On-chain constant | `MAX_ENTRY_FEE = 500` |
 
-**Example:** If the entry fee is 50 bps (0.5%) and you deposit 1,000 USDC, the effective deposit used to calculate your shares is 995 USDC. The remaining 5 USDC goes to the protocol.
+**Example:** If the entry fee is 50 bps (0.5%) and you deposit 1,000 USDC, the fee-on-total formula is `ceil(1,000 × 50 / 10,050)` in raw token units: approximately 4.975125 USDC at 6 decimals. Approximately 995.024875 USDC is used to calculate shares.
 
 To read the current entry fee for a market:
 
@@ -31,16 +31,16 @@ const entryFeeBps = await market.entryFee(); // e.g. 50 for 0.5%
 
 ## Exit fee
 
-The exit fee is deducted from the assets you receive **when you redeem shares or withdraw assets**. Your shares are burned in full, but the assets returned to you are reduced by the fee.
+On `redeem`, the exit fee is deducted from the gross assets represented by the burned shares. On `withdraw`, the fee is added to the raw pool debit required to deliver the requested net assets.
 
 | Property | Value |
 |---|---|
 | Maximum | `500` bps (5%) |
 | Applied on | `redeem` and `withdraw` calls |
-| Collected by | Protocol owner, immediately at redemption time |
+| Accrues to | Market `protocolFees`; transferred on `sweepFees()` |
 | On-chain constant | `MAX_EXIT_FEE = 500` |
 
-**Example:** If the exit fee is 30 bps (0.3%) and your shares are worth 1,000 USDC, you receive 997 USDC. The remaining 3 USDC goes to the protocol.
+**Example:** If the exit fee is 30 bps (0.3%) and your shares have a gross redemption value of 1,000 USDC, the fee-on-total formula is `ceil(1,000 × 30 / 10,030)` in raw token units: approximately 2.991027 USDC at 6 decimals. You receive approximately 997.008973 USDC.
 
 To read the current exit fee for a market:
 
@@ -85,7 +85,7 @@ console.log(`Collateral fee: ${Number(collateralFee) / 100}% annualized`);
 
 ## How preview functions account for fees
 
-Both `previewDeposit` and `previewRedeem` already incorporate the relevant fee, so you do not need to apply any manual deduction when computing slippage parameters.
+Both `previewDeposit` and `previewRedeem` incorporate the relevant pool fee, so do not apply a second manual deduction. They use the last settled market state, however, and router amounts for ERC-4626 collateral are denominated in the vault underlying rather than collateral shares.
 
 <CodeGroup>
 
@@ -102,7 +102,7 @@ const assetsOut = await receiverPool.previewRedeem(sharesIn);
 </CodeGroup>
 
 <Tip>
-Always use `previewDeposit` and `previewRedeem` — rather than manually dividing by the pool rate — when computing your `minReceiverShares`, `minPayerShares`, `minReceiverAssets`, or `minPayerAssets` values. This ensures your slippage floor correctly accounts for the current fee.
+Use the preview functions as fee-aware estimates and add a suitable slippage margin. For ERC-4626 collateral, also apply the collateral vault's wrap or unwrap conversion before using router minimums.
 </Tip>
 
 ## Fee summary
@@ -113,6 +113,6 @@ All maximums are enforced by immutable on-chain constants. The protocol owner ca
 
 | Fee type | Basis points max | Percentage max | Applies to | Collected |
 |---|---|---|---|---|
-| Entry fee | 500 | 5% | All markets | Immediately on deposit |
-| Exit fee | 500 | 5% | All markets | Immediately on redeem |
-| Collateral fee | 500 | 5% annualized | All markets | During market updates |
+| Entry fee | 500 | 5% | `deposit` and `mint` | Accrues during entry |
+| Exit fee | 500 | 5% | `withdraw` and `redeem` | Accrues during exit |
+| Collateral fee | 500 | 5% annualized | Pool assets over elapsed time | Accrues during settlement |

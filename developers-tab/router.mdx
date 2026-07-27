@@ -1,10 +1,15 @@
 ---
-title: "Router"
-description: "Use NullV1Router for market creation, deposits, redemptions, oracle updates, deadlines, and slippage checks."
+title: "Router flows"
+description: "Choose the correct Null V1 router for fee-less or payable oracle updates, then create, deposit, and redeem safely."
 sidebarTitle: "Router"
 ---
 
-`NullV1Router` is the periphery contract for common user flows. It does not own core market accounting. It wraps convenience behavior around the factory, pools, and oracle update flow.
+Null V1 provides two periphery routers with the same market-operation signatures:
+
+- `NullV1Router` is stateless and ownerless. It calls fee-less oracle updates without forwarding ETH and is the correct choice for Chainlink Data Streams markets.
+- `NullV1PayableRouter` is Ownable and pre-funded with ETH. It pays an oracle's native update fee from its own balance and is the correct choice for Pyth markets.
+
+Neither router owns core market accounting.
 
 Use the router when you need:
 
@@ -13,9 +18,9 @@ Use the router when you need:
 - deadline checks;
 - minimum share or asset checks;
 - push-oracle `updateData`;
-- ERC-4626 market-asset wrapping and unwrapping.
+- ERC-4626 collateral wrapping and unwrapping.
 
-## Oracle update data
+## Choose a router
 
 Router methods accept:
 
@@ -23,14 +28,20 @@ Router methods accept:
 bytes[] calldata updateData
 ```
 
-If `updateData.length > 0`, the router treats the market oracle as an updatable oracle:
+If `updateData.length > 0`, `NullV1Router` calls the fee-less updater:
+
+```solidity
+INullV1UpdatableOracle(address(oracle)).update(updateData);
+```
+
+`NullV1PayableRouter` instead queries and pays the native fee:
 
 ```solidity
 uint256 fee = updatable.getUpdateFee(updateData);
-updatable.update{ value: fee }(updateData);
+updatable.update{value: fee}(updateData);
 ```
 
-The update fee is paid from the router's ETH balance. If the balance is insufficient, the call reverts with `InsufficientUpdateFeeBalance`.
+If its balance is insufficient, the payable router reverts with `InsufficientUpdateFeeBalance`. Its owner can recover unused ETH with `withdrawEth`; users do not attach `msg.value` to market operations.
 
 If the oracle does not require push updates, pass an empty array.
 
@@ -39,9 +50,9 @@ If the oracle does not require push updates, pass an empty array.
 ```solidity
 function createMarket(
     INullV1Factory factory,
-    IERC20 asset,
+    IERC20 collateral,
     INullV1Oracle oracle,
-    uint24 mu,
+    INullV1FundingRateModel frm,
     bytes[] calldata updateData
 ) external returns (INullV1Market market);
 ```
@@ -49,10 +60,10 @@ function createMarket(
 This optionally updates the oracle, then calls:
 
 ```solidity
-factory.createMarket(asset, oracle, mu)
+factory.createMarket(collateral, oracle, frm)
 ```
 
-The factory rejects zero asset addresses, zero oracle addresses, zero `mu`, and duplicate `(asset, oracle, mu)` tuples.
+The factory requires nonzero dependencies, an enabled FRM, and a previously unused `(collateral, oracle, frm)` tuple.
 
 ## Deposit market
 
@@ -72,7 +83,7 @@ The router:
 
 1. checks `deadline`;
 2. optionally updates the market oracle;
-3. pulls market assets from the caller, wrapping ERC-4626 underlying when needed;
+3. pulls collateral from the caller, wrapping ERC-4626 underlying when needed;
 4. deposits into the Receiver pool if `receiverAssets > 0`;
 5. deposits into the Payer pool if `payerAssets > 0`;
 6. verifies returned shares against `minReceiverShares` and `minPayerShares`.
@@ -104,7 +115,7 @@ The router:
 2. optionally updates the market oracle;
 3. redeems Receiver shares if `receiverShares > 0`;
 4. redeems Payer shares if `payerShares > 0`;
-5. pushes market assets to the caller, unwrapping ERC-4626 market assets when needed;
+5. pushes collateral to the caller, unwrapping ERC-4626 collateral when needed;
 6. verifies returned assets against `minReceiverAssets` and `minPayerAssets`.
 
 If returned assets are below the provided minimums, the call reverts with:
@@ -114,23 +125,23 @@ SlippageReceiverAssets(expected, actual)
 SlippagePayerAssets(expected, actual)
 ```
 
-## ERC-4626 market assets
+## ERC-4626 collateral
 
-Core markets still hold the market asset directly. If that asset is an ERC-4626 vault share, the router improves the user path by accepting the vault underlying on deposit and returning the vault underlying on redemption.
+Core markets hold their collateral token directly. If that token is an ERC-4626 vault share, the router accepts the vault underlying on deposit and returns the underlying on redemption.
 
 On deposit:
 
 1. the router pulls the vault underlying from the user;
-2. deposits it into the ERC-4626 market asset;
-3. deposits the received market-asset shares into the selected Null pool.
+2. deposits it into the ERC-4626 collateral vault;
+3. deposits the received collateral shares into the selected Null pool.
 
 On redemption:
 
-1. the router redeems Null pool shares for market-asset shares;
+1. the router redeems Null pool shares for collateral-vault shares;
 2. redeems those shares from the ERC-4626 vault;
 3. sends the underlying token to the user.
 
-If the market asset does not expose `asset()`, the router treats it as a plain ERC-20.
+If the collateral does not expose `asset()`, the router treats it as a plain ERC-20.
 
 ## Deadlines
 
@@ -146,12 +157,12 @@ Use short deadlines for user-facing transactions so stale quotes do not execute 
 
 ## Approvals
 
-For plain ERC-20 markets, users approve the router to spend the market asset. For ERC-4626 market assets, users approve the router to spend the vault underlying.
+For plain ERC-20 collateral, users approve the router to spend the collateral. For ERC-4626 collateral, users approve the router to spend the vault underlying.
 
 ## Operational notes
 
-- The router must hold enough ETH to pay oracle update fees when `updateData` is provided.
-- The router is `nonReentrant` on deposit, redeem, and owner ETH withdrawal paths.
+- Only `NullV1PayableRouter` holds ETH or pays native oracle update fees.
+- Both routers are `nonReentrant` on deposit and redeem; payable-router withdrawals are also guarded.
 - The router resets token approvals after wrapping and pool deposits.
 - Router slippage checks happen after pool execution returns shares or assets.
 - Core accounting still lives in the market and pools. The router is convenience periphery.

@@ -11,8 +11,7 @@ Use these docs as source context when asking an AI assistant to reason about Nul
 For protocol behavior, include the Learn pages:
 
 - [Learn overview](/learn/overview)
-- [Receiver and Payer](/learn/receiver-and-payer)
-- [How markets update](/learn/how-markets-update)
+- [Market update](/developers-tab/market-update)
 - [Funding and carry](/learn/funding-and-carry)
 - [Risks and parameters](/learn/risks-and-parameters)
 
@@ -28,18 +27,19 @@ For integration work, include the Developers pages:
 
 When generating code or explanations, keep these terms precise:
 
-- **Receiver:** the pool that receives positive reference-asset returns and pays funding.
-- **Payer:** the pool that backs Receiver exposure, receives funding, and takes the opposite price risk.
-- **Exposure ratio `E`:** Receiver pool value divided by Payer pool value.
-- **Funding:** value paid from Receiver to Payer.
+- **Receiver:** the pool that receives positive reference-asset returns and takes the opposite side of signed funding.
+- **Payer:** the pool that backs Receiver exposure, takes the opposite price risk, and takes the other side of signed funding.
+- **Coverage ratio `P/R`:** Payer pool value divided by Receiver pool value.
+- **Funding-rate model (FRM):** the immutable market dependency that computes signed funding from prepared market state.
+- **Funding:** a signed transfer between Receiver and Payer. Positive rates mean Receiver pays Payer; negative rates reverse the flow.
 - **Price settlement:** directional value transfer based on oracle price movement.
-- **Solvency bound:** the cap that prevents either pool from paying more than its available collateral.
+- **Solvency bound:** the cap that limits the net funding-plus-price transfer to the paying pool's assets above `MIN_POOL_ASSETS`.
 
 ## Integration guardrails
 
 AI-generated integrations should preserve these rules:
 
-- Discover markets by `(asset, oracle, mu)`.
+- Discover markets by `(collateral, oracle, frm)`.
 - Read Receiver and Payer pool addresses from the market.
 - Treat pool shares as ERC-4626 shares.
 - Remember that state-changing pool actions update the market before execution.

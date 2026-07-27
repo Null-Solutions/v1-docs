@@ -15,35 +15,35 @@ Null V1 has **no liquidation mechanism**. Your maximum loss in any pool is bound
 <Accordion title="Directional Risk — Receiver Pool">
   When you deposit into the **receiver pool**, you gain exposure to price appreciation of the underlying index. If the index price rises, the payer pool transfers value to the receiver pool and your position grows. If the index price **falls**, the receiver pool transfers value to the payer pool and your position shrinks.
 
-  Your losses from price movement are bounded by the total assets in the receiver pool. The protocol cannot transfer more than what the pool holds, so a complete wipeout of your position is only possible if the index moves enough to exhaust the entire pool — an extreme but theoretically possible outcome in highly leveraged or thinly funded markets.
+  Your losses from settlement are bounded by the assets available from the receiver pool above the protocol's minimum-pool floor. The protocol cannot transfer more collateral than the pool can settle.
 
-  In addition to directional exposure, receiver pool participants **pay funding continuously** to the payer pool. When the receiver pool is large relative to the payer pool, funding rates are lower; as the imbalance grows, funding becomes a more significant drag on returns even when the index is flat.
+  Funding is signed. Receiver pays Payer when Payer coverage is below the FRM target, but receives funding when Payer coverage is above it. With the default model, the zero crossing is `P = 0.5R`.
 
   **Factors that increase directional risk for receivers:**
   - High implied volatility of the underlying index
-  - A large receiver pool relative to the payer pool (amplifies funding costs)
+  - Payer coverage below the FRM target, which makes funding a Receiver cost
   - Sustained downward price trends that accumulate across many update windows
 </Accordion>
 
 <Accordion title="Reserve Risk — Payer Pool">
-  When you deposit into the **payer pool**, you benefit when the index price falls, and you are exposed to losses when the index price **rises sharply**. A sustained upward trend — or a sudden large spike that clears the circuit breaker over successive updates — can drain the payer pool.
+  When you deposit into the **payer pool**, you benefit when the index price falls, and you are exposed to losses when the index price **rises**. A sustained upward trend made of moves within the time-scaled circuit-breaker threshold can drain the payer pool.
 
-  The circuit breaker limits how much PnL is settled in any single update window (at most 7% of the reference price per hour), but it does not prevent cumulative losses across many windows. If the index rises by 7% every hour for several hours, each update settles in full, and a small payer pool can be emptied quickly.
+  The circuit breaker skips price PnL when a move exceeds the time-scaled threshold; it does not clamp and partially settle an oversized move. A move at or below the threshold—7% after one hour—settles in full. If the index rises by 7% every hour for several hours, each update can settle in full and quickly erode a small Payer pool.
 
-  Payer pool participants **earn funding** from the receiver pool. In markets where the payer pool is thin relative to the receiver pool, this funding income can be substantial — but a thin payer pool also means the buffer against a price rise is narrow.
+  Payer participants earn funding while Payer coverage is below the FRM target. Above the target, the signed rate reverses and Payer pays Receiver. Thin Payer coverage can produce high funding income on Payer capital, but it also leaves a narrow buffer against price appreciation.
 
   **Factors that increase reserve risk for payers:**
   - Rapid and sustained upward price movement in the underlying index
-  - A small payer pool relative to the receiver pool (higher APR but lower buffer)
+  - A small Payer pool relative to the Receiver pool (higher funding income while under target, but a lower price-risk buffer)
   - Circuit breaker triggering repeatedly from a new higher baseline rather than reverting
 </Accordion>
 
 <Accordion title="Oracle Risk — Staleness and Outages">
-  Null V1 markets rely on external oracle price feeds to update state. If the oracle stops publishing prices — due to a network issue, a feed deprecation, or a deliberate attack — the market stops settling PnL and funding. Your position is effectively frozen at its last recorded state.
+  Null V1 markets rely on external oracle price feeds to update state. During the normal stale period, an oracle read reverts and the pool action that attempted settlement cannot complete.
 
-  **Short outages** (under 10 days) are handled by the protocol passively: no updates occur, but your principal is not at risk from further price movement because no transfers happen without a fresh price. Funding does not accrue during an outage either.
+  **Short outages** (under 10 days) block settlement-dependent pool actions. When updates resume, elapsed-time funding is evaluated at the next successful settlement.
 
-  **Prolonged outages** (10 days or more without an oracle update) trigger the stale-price escape period. After this threshold, you are permitted to redeem your pool shares using the last recorded price, even without a fresh oracle update. This prevents your capital from being permanently locked if an oracle feed is discontinued.
+  **Prolonged outages** (10 days or more without an oracle update) trigger the stale-price escape behavior. The oracle can return its last stored value so settlement-dependent exits are no longer blocked solely by freshness.
 
   <Warning>
   The last recorded price may not reflect the current fair value of the underlying index. If the oracle fails during a large market move, you could redeem at a price that is significantly stale. You bear the basis risk between the last oracle price and the true market value at the time of your redemption.
@@ -61,7 +61,7 @@ Null V1 has **no liquidation mechanism**. Your maximum loss in any pool is bound
   Do not deposit more capital than you are prepared to lose entirely. Smart contract exploits — including bugs in the math libraries, reentrancy vectors, or oracle integration — could result in a total or partial loss of deposited funds.
   </Warning>
 
-  If you want to review the code directly, core accounting lives in `NullV1Factory`, `NullV1Market`, `NullV1Pool`, and the `NullV1Math` library used by the market. `NullV1Router` is periphery for user-facing flows.
+  If you want to review the code directly, core accounting lives in `NullV1Factory`, `NullV1Market`, `NullV1Pool`, and `SettlementLib`. `NullV1Router` and `NullV1PayableRouter` are periphery for user-facing flows.
 </Accordion>
 
 <Accordion title="Collateral Risk">
@@ -76,14 +76,14 @@ Null V1 has **no liquidation mechanism**. Your maximum loss in any pool is bound
 </Accordion>
 
 <Accordion title="Liquidity Risk — Thin Markets">
-  In a market where the payer pool is very small relative to the receiver pool, the funding rate paid to payers rises — but the buffer that absorbs price increases shrinks. A single sustained price move can exhaust the payer pool faster than new depositors can respond.
+  In a market where the Payer pool is very small relative to the Receiver pool, the funding rate paid to Payers approaches the FRM's positive bound — but the buffer that absorbs price increases shrinks. A sustained price move can erode the pool faster than new depositors respond.
 
   From the receiver side, a thin payer pool means the maximum gain from a price increase is capped at the payer pool size. In a heavily one-sided market, you may be earning funding but effectively holding a position with a low ceiling on price-return gains.
 
   There is no guaranteed exit mechanism from either pool. If you need to withdraw and the pool cannot cover your redemption — because total losses have eroded the pool below your deposit value — you will receive less than you put in. Null V1 does not provide a liquidity guarantee or backstop.
 
   <Tip>
-  Before depositing, check the current pool sizes for the market you are entering. A healthy market has balanced receiver and payer pools, which keeps funding rates moderate and ensures meaningful buffers on both sides.
+  Before depositing, check both pool sizes, the FRM's target coverage, the current signed funding rate, and the available buffers. Equal pool sizes are not the default model's funding equilibrium.
   </Tip>
 </Accordion>
 

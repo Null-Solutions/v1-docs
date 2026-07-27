@@ -1,108 +1,85 @@
 ---
-title: "Building an Indexer for Null V1 Markets"
+title: "Indexer Integration"
 sidebarTitle: "Indexer"
-description: "Learn how to discover markets, track on-chain state, and index user positions for Null V1 using events, Lens view calls, and oracle metadata."
+description: "Discover Null V1 markets, index exact protocol events, and batch current-state projections."
 ---
 
-Building a reliable indexer for Null V1 means listening to a small set of well-defined events and supplementing them with off-chain view calls via `NullV1Lens`. Because user positions are represented entirely as ERC-20 share token balances — with no separate position struct — your indexing logic stays straightforward: discover markets from the factory, record state snapshots from each market, and follow standard `Transfer` events on the two pool share tokens per market.
+A Null V1 indexer discovers markets from the factory, indexes market settlement events, and tracks pool ERC-20 balances. Use Lens or Multicall for current projections; events remain the historical record.
 
-## Architecture Overview
+## Discover markets
 
-A Null V1 indexer needs three data feeds per market:
-
-1. **Market discovery** — watch `NullV1Factory` for `MarketCreated` to learn about new markets.
-2. **Market state history** — index `StateUpdated` events emitted by each `NullV1Market` to build pool balance and price history.
-3. **User position history** — track ERC-20 `Transfer` events on the `receiverPool` and `payerPool` share tokens to reconstruct each user's balance over time.
-
-The `NullV1Lens` contract provides a convenient off-chain read layer for current state without requiring a subgraph or local replay.
-
----
-
-## Step-by-Step Indexing Guide
-
-<Steps>
-
-### Watch NullV1Factory for MarketCreated
-
-Every new Null V1 market is announced by a single factory event. Subscribe to this event at the factory deployment block and process all historical logs at startup.
+Start at the factory deployment block and index:
 
 ```solidity
-// NullV1Factory
-event MarketCreated(
-    address indexed asset,
+event CreateMarket(
+    address indexed collateral,
     address indexed oracle,
-    uint24 indexed mu,
+    address indexed frm,
     address market,
     address receiverPool,
     address payerPool
 );
+
+event EnableFrm(address indexed frm);
 ```
 
-When you receive a `MarketCreated` event, persist **all six fields**. You will need both `receiverPool` and `payerPool` addresses immediately to set up Transfer event listeners for user position tracking.
-
-<Note>
-  Store `receiverPool` and `payerPool` addresses as soon as `MarketCreated` fires. If you defer this step you will miss early Transfer events and your position history will be incomplete.
-</Note>
-
-### Index StateUpdated Events for Pool and Price History
-
-Each `NullV1Market` emits `StateUpdated` on every meaningful state transition — deposits, redeems, and periodic settlement ticks. These events are the canonical source of truth for pool balance and price history.
+Persist all six `CreateMarket` fields. Market identity is the exact `(collateral, oracle, frm)` tuple, which can also be resolved with:
 
 ```solidity
-// NullV1Market
-event StateUpdated(
-    uint256 indexed timestamp,
+factory.getMarket(collateral, oracle, frm);
+```
+
+Subscribe to both pool addresses immediately so early share transfers are not missed.
+
+## Index market state
+
+```solidity
+event UpdateState(
+    uint256 indexed lastUpdate,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
     uint256 protocolFees,
-    uint256 price
+    uint256 price,
+    bool circuitBreakerFired
+);
+
+event SetFees(
+    uint16 entryFee,
+    uint16 exitFee,
+    uint16 collateralFee
+);
+
+event CollectFees(uint256 fee);
+```
+
+`UpdateState` is emitted when pool execution or an owner fee operation settles the market. There is no periodic permissionless update function. Store `circuitBreakerFired`: when true, the new price was recorded but price PnL for that update was skipped; funding still settled.
+
+Prices are scaled by `1e36`. Pool assets and protocol fees are raw market-collateral units. If collateral is an ERC-4626 vault, use Lens `collateralSharePrice` or the vault conversion to express those units in underlying terms.
+
+## Track positions
+
+Pool positions are ERC-20 balances. Index standard `Transfer` events on both receiver and payer pools:
+
+```solidity
+event Transfer(
+    address indexed from,
+    address indexed to,
+    uint256 value
 );
 ```
 
-Index these events per market address and store each field. A few important unit notes:
-
-- `price` is **1e36-scaled**. To convert to a human-readable price divide by `1e36`.
-- `receiverPoolAssets` and `payerPoolAssets` are denominated in the market collateral token units. If the market asset is an ERC-4626 vault share, those are vault-share units.
-- For ERC-4626 market assets, multiply pool units by `wrapper.convertToAssets(1e18)` (then divide by `1e18`) to express balances in underlying token terms.
-
-<Tip>
-  Persist raw 1e36-scaled price values in your database and convert to display units at query time. This avoids precision loss and keeps your stored data consistent with on-chain values.
-</Tip>
-
-Also subscribe to the fee events if you want to track configuration changes:
+Use standard ERC-4626 events for transaction context:
 
 ```solidity
-event FeesUpdated(uint16 entryFee, uint16 exitFee, uint16 collateralFee);
-event FeesCollected(uint256 fee);
-```
-
-### Track User Positions via Transfer Events
-
-Null V1 has no dedicated position struct. A user's position in the receiver or payer pool **is** their ERC-20 share token balance on `receiverPool` or `payerPool` respectively. Index standard ERC-20 Transfer events on both pool addresses:
-
-```solidity
-// NullV1Pool (ERC-4626 share token — standard ERC-20)
-event Transfer(address indexed from, address indexed to, uint256 value);
-```
-
-Apply the same balance-delta logic you would for any ERC-20:
-
-- `from == address(0)` → mint (deposit)
-- `to == address(0)` → burn (redeem)
-- Otherwise → transfer between accounts
-
-You can cross-reference with the ERC-4626 `Deposit` and `Withdraw` events for richer context (e.g. the `assets` amount involved in a mint or burn):
-
-```solidity
-// NullV1Pool (ERC-4626 standard events)
 event Deposit(
-    address indexed caller,
+    address indexed sender,
     address indexed owner,
     uint256 assets,
     uint256 shares
 );
+
 event Withdraw(
-    address indexed caller,
+    address indexed sender,
     address indexed receiver,
     address indexed owner,
     uint256 assets,
@@ -110,92 +87,42 @@ event Withdraw(
 );
 ```
 
-<Note>
-  Remember to subscribe to Transfer events on **both** `receiverPool` and `payerPool` for every market. A user may hold positions in one or both pools.
-</Note>
+Pool shares use `collateral.decimals() + 10` decimals because the ERC-4626 decimals offset is 10.
 
-### Use NullV1Lens for Current State
-
-`NullV1Lens` provides a single call that aggregates current market state for off-chain callers. Use it to power live dashboards without replaying all historical events.
+## Read projected state
 
 ```solidity
 struct SimulateResponse {
-    MarketState state; // {timestamp, receiverPool, payerPool, protocolFees, price}
+    MarketState state;
     uint256 totalAssets;
     uint256 receiverTotalSupply;
     uint256 payerTotalSupply;
-    uint256 fundingApr; // WAD-scaled (1e18 = 100%)
+    int256 fundingRate;
+    uint256 collateralRate;
+    uint256 collateralSharePrice;
 }
-
-function previewMarket(address market)
-    external
-    view
-    returns (SimulateResponse memory);
-
-function simulateMarket(address market, uint256 price)
-    external
-    view
-    returns (SimulateResponse memory);
 ```
 
-Call `previewMarket(market)` to get the current on-chain state. Call `simulateMarket(market, price)` to project what state would look like at an arbitrary price — useful for scenario displays.
+Use `previewMarket(market)` for a settlement projection at `oracle.priceView()`, or `simulateMarket(market, price)` for a caller-provided `1e36`-scaled price. `fundingRate` is signed and WAD-scaled. `collateralRate` and `collateralSharePrice` are unsigned and WAD-scaled.
 
-<ResponseField name="state.price" type="uint256">
-  The current oracle price, 1e36-scaled. Divide by `1e36` to get a human-readable value.
-</ResponseField>
-
-<ResponseField name="fundingApr" type="uint256">
-  WAD-scaled (1e18 = 100%). Divide by `1e18` then multiply by 100 to get a percentage string, e.g. `3e16 / 1e18 * 100 = 3%`.
-</ResponseField>
-
-To resolve a user's current asset value at query time without relying solely on indexed data:
+For batches:
 
 ```solidity
-uint256 shares = pool.balanceOf(user);
-uint256 assets = pool.previewRedeem(shares);
+multicall.previewAll(lens, markets);
+multicall.simulateAll(lens, markets, externalPrices);
 ```
 
-### Use Oracle Metadata for Display Names
+The response order matches the market order. A reverted per-market call produces an all-zero `SimulateResponse` rather than reverting the batch. Record that entry as unavailable, not as an empty market. `simulateAll` itself reverts with `LengthMismatch` if the market and price arrays differ in length.
 
-Each `NullV1Market` exposes an oracle that implements a standard metadata interface. Pull these values when you first discover a market and cache them — they rarely change.
+## Metadata
+
+The market oracle exposes:
 
 ```solidity
-oracle.oracleName()    // e.g. "Pyth"
-oracle.baseName()      // e.g. "Apple Inc."
-oracle.baseSymbol()    // e.g. "AAPL"
-oracle.quoteName()     // e.g. "US Dollar"
-oracle.quoteSymbol()   // e.g. "USD"
-oracle.displayName()   // bytes32 display key, e.g. keccak256("PYTH_CORE_PULL")
+oracle.baseName();
+oracle.baseSymbol();
+oracle.quoteName();
+oracle.quoteSymbol();
 ```
 
-A human-readable market label is typically `baseSymbol / quoteSymbol` (e.g. `AAPL / USD`), while `baseName` and `quoteName` suit longer descriptions.
-
-</Steps>
-
----
-
-## Unit Reference
-
-| Field | Scale | Human Conversion |
-|---|---|---|
-| `StateUpdated.price` | 1e36 | `price / 1e36` |
-| `StateUpdated.receiverPoolAssets` | Collateral token units | Multiply by `convertToAssets(1e18) / 1e18` for ERC-4626 market assets |
-| `StateUpdated.payerPoolAssets` | Collateral token units | Same as above |
-| `SimulateResponse.fundingApr` | WAD (1e18 = 100%) | `fundingApr / 1e18 * 100` → percent |
-
----
-
-## ABI and Bytecode Artifacts
-
-After making contract changes, regenerate ABI and Lens bytecode artifacts so your indexer always has up-to-date ABIs and can perform off-chain simulation calls using the deployed bytecode.
-
-```bash
-forge build
-npm run codegen
-```
-
-`codegen` exports the Lens bytecode to:
-- `src/generated/lens-bytecode.ts`
-- `../v1-indexer/src/utils/lens-bytecode.ts`
-
-Use the deployed Lens bytecode with `eth_call` (no deployment required) for off-chain state simulation.
+Cache these values for display labels. They are interface methods, but an indexer should still handle individual RPC failures defensively.

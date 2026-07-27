@@ -4,13 +4,13 @@ sidebarTitle: "Quick Start"
 description: "Enter a Null V1 market in four steps: choose a side, find a market, preview the action, and deposit through the router or pool."
 ---
 
-Null V1 markets have two sides. Receiver shares get synthetic long exposure to the reference price and pay funding. Payer shares back that exposure, receive funding, and take the opposite price risk.
+Null V1 markets have two sides. Receiver shares get synthetic long exposure to the reference price. Payer shares back that exposure and take the opposite price risk. Funding is signed: Receiver pays Payer below the FRM's target Payer coverage, and Payer pays Receiver above it.
 
 Your first position is four steps away.
 
 <CardGroup cols={3}>
   <Card title="Choose a side" icon="split">
-    Pick Receiver for synthetic exposure, or Payer to back the market and earn funding.
+    Pick Receiver for synthetic exposure, or Payer to back the market. Which side earns funding depends on Payer coverage relative to the FRM target.
   </Card>
 
   <Card title="Bring collateral" icon="wallet">
@@ -24,14 +24,14 @@ Your first position is four steps away.
 
 <Steps>
   <Step title="Choose Receiver or Payer">
-    Read [Receiver and Payer](/learn/receiver-and-payer) if you are unsure which side fits your goal.
+    Read the [protocol overview](/learn/overview) if you are unsure which side fits your goal.
 
-    - Choose **Receiver** if you want reference-asset upside and accept funding cost plus downside risk.
-    - Choose **Payer** if you want the funding stream and accept the opposite price risk.
+    - Choose **Receiver** if you want reference-asset upside and accept downside risk plus signed funding.
+    - Choose **Payer** if you want to back Receiver exposure and accept the opposite price risk plus signed funding.
   </Step>
 
   <Step title="Find the market">
-    A market is identified by `(asset, oracle, mu)`. Use the app, an indexer, or `NullV1Factory.getMarket(asset, oracle, mu)` to find the market address.
+    A market is identified by `(collateral, oracle, frm)`. Use the app, an indexer, or `NullV1Factory.getMarket(collateral, oracle, frm)` to find the market address. The funding-rate model (FRM) contains the market's funding parameters.
 
     Use [Live Deployments](/resources/addresses) for the current factory, router, lens, and supported network details.
 
@@ -39,7 +39,7 @@ Your first position is four steps away.
   </Step>
 
   <Step title="Preview the action">
-    Use the target pool's ERC-4626 preview function before sending a transaction.
+    Use the target pool's ERC-4626 preview function before sending a transaction. Pool previews take market-collateral units. If the market collateral is itself an ERC-4626 vault, router amounts are instead denominated in that vault's underlying, so quote the vault conversion before the pool preview.
 
     ```ts
     const shares = await receiverPool.previewDeposit(receiverAssets);
@@ -49,7 +49,7 @@ Your first position is four steps away.
   </Step>
 
   <Step title="Deposit with protection">
-    For most users and integrations, call `NullV1Router.depositMarket`. The router supports Receiver and Payer deposits in one transaction, ERC-4626 market-asset wrapping, slippage minimums, deadlines, and optional oracle `updateData`.
+    For most users and integrations, call the router selected for the market's oracle. The routers support Receiver and Payer deposits in one transaction, ERC-4626 collateral wrapping, slippage minimums, deadlines, and optional oracle `updateData`.
 
     ```ts
     await router.depositMarket(

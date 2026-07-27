@@ -1,274 +1,127 @@
 ---
-title: "Integrating Null V1 into Your Frontend UI"
+title: "Frontend Integration"
 sidebarTitle: "UI"
-description: "Fetch live market state, display funding APR and pool balances, and build deposit and redeem flows for Null V1 using NullV1Lens and ethers.js."
+description: "Read settlement-aware market data and submit slippage-protected Null V1 deposits and redemptions."
 ---
 
-Integrating Null V1 into a UI is straightforward because the protocol exposes a single lens contract — `NullV1Lens` — that aggregates all the data you need in one view call. From pool balances and share prices to funding APR, a single `previewMarket` call gives you everything required to render a market card. This guide walks you through fetching current market state, displaying key metrics, estimating user values, and wiring up deposit and redeem transaction flows.
+Use `NullV1Lens` for display data and the router matching the market's oracle fee model for writes:
 
-## Key Data to Display
+- `NullV1Router` for fee-less updates such as Chainlink.
+- Pre-funded `NullV1PayableRouter` for native-fee updates such as Pyth.
 
-For each market your UI should surface the following information:
+Both routers expose the same `createMarket`, `depositMarket`, and `redeemMarket` signatures. Do not send ETH with user calls.
 
-- **Pool balances** — total assets in the receiver pool and payer pool
-- **Share price** — current value of one share in collateral terms
-- **Funding APR** — the annualised funding rate between receiver and payer pools
-- **User share balances** — how many receiver and/or payer shares the connected wallet holds
-- **Estimated current value** — the user's shares redeemed at the current share price
-
----
-
-## Fetching Current Market State
-
-Use `NullV1Lens.previewMarket` as the single source of truth for all live market data. The function returns a `SimulateResponse` struct that contains the full current state.
+## Read a market
 
 ```solidity
 struct SimulateResponse {
-    MarketState state; // {timestamp, receiverPool, payerPool, protocolFees, price}
+    MarketState state;
     uint256 totalAssets;
     uint256 receiverTotalSupply;
     uint256 payerTotalSupply;
-    uint256 fundingApr; // WAD-scaled (1e18 = 100%)
-}
-
-function previewMarket(address market)
-    external
-    view
-    returns (SimulateResponse memory);
-```
-
-Here is a complete example using ethers.js v6:
-
-<CodeGroup>
-
-```typescript ethers.js v6
-import { Contract, JsonRpcProvider } from "ethers";
-import lensAbi from "./abis/NullV1Lens.json";
-
-const LENS_ADDRESS = "0x...";   // deployed NullV1Lens
-const MARKET_ADDRESS = "0x..."; // market to query
-
-const provider = new JsonRpcProvider(process.env.RPC_URL);
-const lens = new Contract(LENS_ADDRESS, lensAbi, provider);
-
-async function fetchMarketState(market: string) {
-  const response = await lens.previewMarket(market);
-
-  const fundingAprPct =
-    (Number(response.fundingApr) / 1e18) * 100; // e.g. 3.00
-
-  const priceHuman =
-    Number(response.state.price) / 1e36; // e.g. 182.47
-
-  return {
-    receiverPoolAssets: response.state.receiverPool,
-    payerPoolAssets:    response.state.payerPool,
-    fundingAprPct,      // percentage, e.g. 3.00
-    priceHuman,         // human-readable price
-    receiverTotalSupply: response.receiverTotalSupply,
-    payerTotalSupply:    response.payerTotalSupply,
-  };
+    int256 fundingRate;
+    uint256 collateralRate;
+    uint256 collateralSharePrice;
 }
 ```
 
-```typescript ethers.js v5
-import { Contract, providers } from "ethers";
-import lensAbi from "./abis/NullV1Lens.json";
-
-const LENS_ADDRESS = "0x...";
-const MARKET_ADDRESS = "0x...";
-
-const provider = new providers.JsonRpcProvider(process.env.RPC_URL);
-const lens = new Contract(LENS_ADDRESS, lensAbi, provider);
-
-async function fetchMarketState(market: string) {
-  const response = await lens.previewMarket(market);
-
-  const fundingAprPct =
-    response.fundingApr.mul(100).div("1000000000000000000").toNumber(); // bps path
-
-  return {
-    receiverPoolAssets:  response.state.receiverPool,
-    payerPoolAssets:     response.state.payerPool,
-    fundingAprPct,
-    receiverTotalSupply: response.receiverTotalSupply,
-    payerTotalSupply:    response.payerTotalSupply,
-  };
-}
-```
-
-</CodeGroup>
-
-<Note>
-  After making any contract changes, run `forge build && npm run codegen` to regenerate ABI artifacts. This updates `src/generated/lens-bytecode.ts` and keeps your frontend ABIs in sync.
-</Note>
-
----
-
-## Displaying Funding APR
-
-`fundingApr` in `SimulateResponse` is WAD-scaled, where `1e18` represents 100%. Convert it to a display percentage like this:
+`previewMarket(market)` projects settlement using `oracle.priceView()`. `fundingRate` is a signed WAD-scaled annualized rate; `collateralRate` and `collateralSharePrice` are unsigned WAD-scaled metrics.
 
 ```typescript
-// fundingApr is a BigInt from ethers.js v6
-const fundingAprPct = (Number(fundingApr) / 1e18) * 100;
+import { formatUnits } from "viem";
 
-// Examples:
-// 3e16  → 3.00%
-// 5e17  → 50.00%
-// 1e18  → 100.00%
+const response = await publicClient.readContract({
+  address: lensAddress,
+  abi: lensAbi,
+  functionName: "previewMarket",
+  args: [marketAddress],
+});
 
-const display = `${fundingAprPct.toFixed(2)}%`;
+const fundingPercent =
+  Number(formatUnits(response.fundingRate, 18)) * 100;
+const collateralAprPercent =
+  Number(formatUnits(response.collateralRate, 18)) * 100;
 ```
 
-<Tip>
-  For high-precision APR display, avoid converting to JavaScript `Number` directly for very large or very small values. Use a BigInt-aware decimal library (e.g. `decimal.js`) and divide by `10n ** 18n`.
-</Tip>
+Keep values as `bigint` for calculations. A zero collateral metric can mean unsupported or unavailable because Lens catches failures in those external reads.
 
----
+## Deposit
 
-## Estimating a User's Current Value
-
-Because user positions are share token balances, use `previewRedeem` on the relevant pool contract to convert a user's shares into their current collateral value:
+Approve the router for the token it pulls. For plain ERC-20 market collateral this is the collateral token. For ERC-4626 market collateral this is the vault's underlying token, and `receiverAssets` and `payerAssets` are underlying-token units.
 
 ```typescript
-import { Contract } from "ethers";
-import poolAbi from "./abis/NullV1Pool.json";
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
 
-async function getUserValue(
-  poolAddress: string,
-  userAddress: string,
-  provider: any
-) {
-  const pool = new Contract(poolAddress, poolAbi, provider);
-  const shares = await pool.balanceOf(userAddress);
-  const assets = await pool.previewRedeem(shares); // current collateral value
-  return assets;
-}
+await walletClient.writeContract({
+  address: tokenToPullAddress,
+  abi: erc20Abi,
+  functionName: "approve",
+  args: [routerAddress, receiverAssets + payerAssets],
+  account,
+});
+
+const hash = await walletClient.writeContract({
+  address: routerAddress,
+  abi: routerAbi,
+  functionName: "depositMarket",
+  args: [
+    marketAddress,
+    receiverAssets,
+    payerAssets,
+    minReceiverShares,
+    minPayerShares,
+    deadline,
+    updateData,
+  ],
+  account,
+});
 ```
 
-If the market asset is an **ERC-4626 vault share**, the pool balances are in wrapper token units. To display the value in underlying terms, multiply by the wrapper's conversion rate:
+Set one side's assets and minimum shares to zero to deposit only into the other side.
+
+## Redeem
+
+The router burns shares owned by `msg.sender`, so approve it on each pool used by the redemption.
 
 ```typescript
-const wrapperRate = await wrapper.convertToAssets(BigInt(1e18)); // rate per 1e18 shares
-const underlyingValue = (assets * wrapperRate) / BigInt(1e18);
+await walletClient.writeContract({
+  address: receiverPoolAddress,
+  abi: erc20Abi,
+  functionName: "approve",
+  args: [routerAddress, receiverShares],
+  account,
+});
+
+const hash = await walletClient.writeContract({
+  address: routerAddress,
+  abi: routerAbi,
+  functionName: "redeemMarket",
+  args: [
+    marketAddress,
+    receiverShares,
+    0n,
+    minReceiverAssets,
+    0n,
+    deadline,
+    updateData,
+  ],
+  account,
+});
 ```
 
----
+For ERC-4626 market collateral, returned amounts and minimums are underlying-token units because the router unwraps collateral before checking slippage.
 
-## Building a Deposit UI
+## Preview caveats
 
-Before sending a deposit transaction, show the user a preview of how many shares they will receive.
+Pool `previewDeposit` and `previewRedeem` use the last settled market state, while execution settles first. Refresh `NullV1Lens.previewMarket` near submission and include a suitable slippage margin.
 
-<Steps>
+For ERC-4626 collateral, a router deposit amount is underlying units, but `pool.previewDeposit` expects collateral-vault share units. First quote the vault wrapping conversion, then quote the pool; do not pass underlying units directly to the pool preview.
 
-### Preview shares for a given asset amount
+## Oracle update data
 
-Call `pool.previewDeposit(assets)` to get the expected share amount at the current share price:
+Pass `[]` to skip an update. With nonempty data:
 
-```typescript
-const shares = await pool.previewDeposit(assetsIn);
-```
+- `NullV1Router` calls the fee-less oracle `update(bytes[])`.
+- `NullV1PayableRouter` obtains the fee and pays it from its existing ETH balance.
 
-Display this as a confirmation: *"You will receive approximately X shares."*
-
-### Apply slippage tolerance
-
-Set a minimum acceptable share amount before calling the router:
-
-```typescript
-const slippageBps = 50n; // 0.5%
-const minShares = shares - (shares * slippageBps) / 10_000n;
-```
-
-### Call router.depositMarket
-
-```typescript
-const tx = await router.depositMarket(
-  marketAddress,
-  poolAddress,   // receiverPool or payerPool
-  assetsIn,
-  minShares,     // slippage-protected minimum
-  userAddress    // receiver of shares
-);
-await tx.wait();
-```
-
-</Steps>
-
----
-
-## Building a Redeem UI
-
-The redeem flow mirrors the deposit flow, but works in reverse — the user specifies shares and receives assets.
-
-<Steps>
-
-### Preview assets for a given share amount
-
-Call `pool.previewRedeem(shares)` to get the expected asset amount:
-
-```typescript
-const assets = await pool.previewRedeem(sharesIn);
-```
-
-Display this as a confirmation: *"You will receive approximately X tokens."*
-
-### Apply slippage tolerance
-
-```typescript
-const slippageBps = 50n; // 0.5%
-const minAssets = assets - (assets * slippageBps) / 10_000n;
-```
-
-### Call router.redeemMarket
-
-```typescript
-const tx = await router.redeemMarket(
-  marketAddress,
-  poolAddress,   // receiverPool or payerPool
-  sharesIn,
-  minAssets,     // slippage-protected minimum
-  userAddress    // receiver of assets
-);
-await tx.wait();
-```
-
-</Steps>
-
-<Note>
-  Both `previewDeposit` and `previewRedeem` are view calls that reflect the current on-chain share price. Refresh them before the user confirms the transaction to minimise unexpected slippage.
-</Note>
-
----
-
-## Displaying Market Names with Oracle Metadata
-
-Use oracle metadata functions to label markets with human-readable names instead of raw addresses:
-
-```typescript
-const baseName    = await oracle.baseName();     // e.g. "Apple Inc."
-const baseSymbol  = await oracle.baseSymbol();   // e.g. "AAPL"
-const quoteName   = await oracle.quoteName();    // e.g. "US Dollar"
-const quoteSymbol = await oracle.quoteSymbol();  // e.g. "USD"
-const oracleName  = await oracle.oracleName();   // e.g. "Pyth"
-
-// Recommended market label
-const marketLabel = `${baseSymbol} / ${quoteSymbol}`; // "AAPL / USD"
-
-// Longer description
-const description = `${baseName} priced in ${quoteName} via ${oracleName}`;
-```
-
-Cache these values on page load — they are static per market and incur no meaningful RPC cost once fetched.
-
----
-
-## Unit Reference
-
-| Value | Scale | Display Conversion |
-|---|---|---|
-| `state.price` | 1e36 | `price / 1e36` |
-| `state.receiverPool` / `state.payerPool` | Collateral token units | Multiply by `convertToAssets(1e18) / 1e18` for ERC-4626 market assets |
-| `fundingApr` | WAD (1e18 = 100%) | `fundingApr / 1e18 * 100` → `%` string |
-| `pool.balanceOf(user)` | Share token units | Pass to `previewRedeem` for collateral value |
+Fetching and validating update payloads is oracle-specific. A payable-router call reverts with `InsufficientUpdateFeeBalance` if its pre-funded balance cannot cover the fee.

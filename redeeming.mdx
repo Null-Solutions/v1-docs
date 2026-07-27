@@ -4,7 +4,7 @@ sidebarTitle: "Redeeming"
 description: "Convert your Null V1 receiver or payer pool shares back to collateral via the router, with slippage protection and ERC-4626 unwrapping."
 ---
 
-Redeeming turns your pool shares back into collateral. When you call `router.redeemMarket`, the protocol updates the market, settles collateral fees, funding, and oracle price movement for the current block, then burns your shares and returns assets. For ERC-4626 market assets, the router unwraps the market asset and returns the vault underlying.
+Redeeming turns your pool shares back into collateral. When you call `router.redeemMarket`, the protocol updates the market, settles collateral fees, funding, and oracle price movement for the current block, then burns your shares and returns assets. For ERC-4626 collateral, the router unwraps the collateral share and returns the vault underlying.
 
 ## Shares-in vs. assets-out
 
@@ -15,11 +15,11 @@ Null V1 gives you two ways to exit a pool position:
 | `redeemMarket` (router) | Exact share amounts | Asset amounts determined by pool state |
 | `pool.withdraw` (direct ERC-4626) | Exact asset amounts | Share amounts determined by pool state |
 
-For most users the router's `redeemMarket` function is the right choice. You burn a precise number of shares and accept whatever assets the pool's current rate implies, subject to the slippage floor you set. Use `pool.withdraw` directly when you need to receive an exact asset amount (for example, to repay a precise loan).
+For most users the router's `redeemMarket` function is the right choice. You burn a precise number of shares and accept whatever assets the pool's current rate implies, subject to the slippage floor you set. Use `pool.withdraw` directly when you need to receive an exact amount of market collateral. If that collateral is an ERC-4626 vault share, the direct amount is in vault-share units, not underlying-token units.
 
 ## Previewing assets before you redeem
 
-Call `previewRedeem` on the pool contract to estimate how many assets you will receive for a given number of shares. The preview accounts for the exit fee, so it reflects the actual amount that will land in your wallet.
+Call `previewRedeem` on the pool contract to estimate the collateral returned for a given number of shares. It accounts for the exit fee but uses the last settled market state, so execution can differ after the market settles.
 
 ```ts
 const receiverPool = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, provider);
@@ -30,7 +30,7 @@ const estimatedPayerAssets    = await payerPool.previewRedeem(payerShares);
 ```
 
 <Note>
-`previewRedeem` deducts the exit fee before returning the estimate. The assets you receive will be less than a fee-free calculation would suggest. See [Fees](/fees) for the exit fee constants and how to read the current fee values.
+For plain ERC-20 collateral, the pool preview and router minimum use the same units. For ERC-4626 collateral, the pool preview returns collateral-vault shares while the router minimum is in vault-underlying units. Convert the previewed shares through the collateral vault's `previewRedeem` before applying slippage.
 </Note>
 
 ## Slippage protection
@@ -76,10 +76,13 @@ const minPayerAssets    = 0n;
 
 ## Oracle update data
 
-Like deposits, redemptions may require a fresh price payload for updatable-oracle markets. Pass `[]` for onchain or stateless oracles, or supply a signed update for updatable oracles such as Pyth.
+Like deposits, redemptions may require a fresh signed price payload. Pass `[]` only when the stored oracle price is already usable.
+
+Use `NullV1Router` for fee-less Chainlink updates and the pre-funded
+`NullV1PayableRouter` for native-fee Pyth updates.
 
 ```ts
-// Static oracle — no update needed
+// Stored oracle price is already fresh
 const updateData = [];
 
 // Push oracle — fetch fresh attestation
@@ -88,13 +91,13 @@ const updateData = await pythConnection.getPriceFeedsUpdateData([priceFeedId]);
 
 ## ERC-4626 collateral through the router
 
-If the market asset is an ERC-4626 vault share, the router unwraps redeemed market assets back into the vault underlying before transferring funds to you.
+If the market collateral is an ERC-4626 vault share, the router unwraps redeemed collateral shares back into the vault underlying before transferring funds to you.
 
 The flow is:
 
 1. The router burns your Null pool shares.
-2. The pool returns ERC-4626 market-asset shares to the router.
-3. The router redeems those market-asset shares from the vault.
+2. The pool returns ERC-4626 collateral-vault shares to the router.
+3. The router redeems those collateral shares from the vault.
 4. The vault underlying arrives in your wallet.
 
 ## State update on redemption
@@ -142,15 +145,32 @@ const tx = await router.redeemMarket(
 const receipt = await tx.wait();
 console.log("Redemption confirmed in block", receipt.blockNumber);
 ```
+
+This example assumes plain ERC-20 collateral. With ERC-4626 collateral, convert
+the pool preview from collateral shares to underlying units before setting
+`minReceiverAssets` or `minPayerAssets`.
   </Tab>
   <Tab title="Solidity">
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {INullV1Router} from "./interfaces/INullV1Router.sol";
 import {INullV1Market} from "./interfaces/INullV1Market.sol";
 import {INullV1Pool}   from "./interfaces/INullV1Pool.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// Minimal local interface shared by NullV1Router and NullV1PayableRouter.
+interface INullV1Router {
+    function redeemMarket(
+        INullV1Market market,
+        uint256 receiverShares,
+        uint256 payerShares,
+        uint256 minReceiverAssets,
+        uint256 minPayerAssets,
+        uint256 deadline,
+        bytes[] calldata updateData
+    ) external returns (uint256 receiverAssets, uint256 payerAssets);
+}
 
 contract RedeemExample {
     INullV1Router public immutable router;
@@ -161,6 +181,7 @@ contract RedeemExample {
 
     function redeemAll(
         INullV1Market market,
+        IERC20 outputToken,
         uint256 minReceiverAssets,
         uint256 minPayerAssets,
         uint256 deadline,
@@ -190,9 +211,9 @@ contract RedeemExample {
             updateData
         );
 
-        // Forward collateral to the original caller
-        IERC20 asset = market.asset();
-        asset.transfer(msg.sender, receiverAssets + payerAssets);
+        // outputToken is plain collateral, or the vault underlying when the
+        // market collateral implements ERC-4626.
+        outputToken.transfer(msg.sender, receiverAssets + payerAssets);
     }
 }
 ```

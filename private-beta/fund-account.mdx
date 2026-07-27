@@ -1,0 +1,39 @@
+---
+title: "Fund Account"
+sidebarTitle: "Fund Account"
+description: "Fund a Null position by depositing supported collateral directly into a market's non-custodial pools."
+---
+
+On Null, funding means depositing supported collateral into a specific market. It is not a bank transfer, wire, or deposit into a custodial Null account.
+
+The transaction moves collateral from your wallet into the market's smart contracts and mints pool shares to your wallet. Null does not hold the collateral in a custodial account.
+
+<Steps>
+  <Step title="Choose a market">
+    Go to `/markets`, select a market, and open its page at `/markets/[address]`.
+  </Step>
+
+  <Step title="Choose a side">
+    Select the Receiver or Payer side. Each side has a separate pool and risk profile.
+
+    Read [Learn Null V1](/learn/overview) before choosing if you are unfamiliar with the Receiver/Payer model.
+  </Step>
+
+  <Step title="Enter an amount">
+    Use collateral supported by that market. Review the preview, fees, expected shares, and transaction conditions shown by your wallet and the app.
+  </Step>
+
+  <Step title="Approve and confirm">
+    If required, approve the market flow to use the collateral, then confirm the deposit transaction in your wallet.
+  </Step>
+
+  <Step title="Verify the position">
+    After confirmation, the position and pool-share balance appear in your signed-in portfolio.
+  </Step>
+</Steps>
+
+<Warning>
+A market deposit exposes your collateral to the selected pool's price, funding, oracle, liquidity, and smart-contract risks. It is not a cash balance.
+</Warning>
+
+For deposit mechanics, approvals, previews, slippage protection, and deadlines, read [Depositing](/depositing). See [Fees](/fees) for protocol fee behavior.

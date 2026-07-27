@@ -3,9 +3,10 @@ flowchart LR
   payer(("Payer"))
   funding["Funding rate"]
 
-  receiver -- "pays funding" --> payer
-  funding -. "sets Receiver cost" .-> receiver
-  funding -. "sets Payer income" .-> payer
+  receiver -- "positive funding" --> payer
+  payer -- "negative funding" --> receiver
+  funding -. "sets signed Receiver leg" .-> receiver
+  funding -. "sets signed Payer leg" .-> payer
 
   classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
   classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;

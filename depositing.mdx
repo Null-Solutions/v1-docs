@@ -4,7 +4,7 @@ sidebarTitle: "Depositing"
 description: "Deposit collateral into Null V1 receiver and payer pools via the router or directly via ERC-4626, with slippage and deadline protection."
 ---
 
-Depositing into a Null V1 market means supplying collateral to the receiver pool, the payer pool, or both simultaneously. The `NullV1Router` is the recommended entry point because it supports combined deposits, ERC-4626 collateral wrapping, slippage minimums, and transaction deadlines in a single call. If you prefer more granular control, you can also interact with each `NullV1Pool` directly using the standard ERC-4626 interface.
+Depositing into a Null V1 market means supplying collateral to the receiver pool, the payer pool, or both simultaneously. Use `NullV1Router` for fee-less Chainlink updates and `NullV1PayableRouter` for native-fee Pyth updates. Both support combined deposits, ERC-4626 collateral wrapping, slippage minimums, and transaction deadlines. You can also interact with each `NullV1Pool` directly through ERC-4626.
 
 ## Receiver pool vs. payer pool
 
@@ -19,7 +19,7 @@ Set either value to `0` to skip that pool entirely. For example, to deposit only
 
 ## Previewing shares before you deposit
 
-Before sending a deposit transaction, call `previewDeposit` on the target pool to estimate how many shares you will receive. The preview already accounts for the entry fee, so the number you get back is the exact shares minted (assuming no state change between the preview and the transaction).
+Before sending a deposit transaction, call `previewDeposit` on the target pool to estimate how many shares you will receive. The preview accounts for the entry fee but uses the market's last settled state. Execution settles first, so elapsed funding, price PnL, collateral fees, or balance reconciliation can change the result even when no earlier user transaction lands.
 
 ```ts
 const receiverPool = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, provider);
@@ -31,7 +31,7 @@ const estimatedPayerShares    = await payerPool.previewDeposit(payerAssets);
 ```
 
 <Note>
-`previewDeposit` reflects the entry fee charged by the protocol. The actual shares minted will be less than a fee-free calculation would suggest. See [Fees](/fees) for the fee constants and how to read the current fee values.
+`previewDeposit` reflects the entry fee. For ERC-4626 collateral, router amounts are underlying units while pool previews expect collateral-vault share units. Quote the vault wrapping conversion before calling the pool preview. See [Fees](/fees) for current fee values.
 </Note>
 
 ## Slippage protection
@@ -64,10 +64,10 @@ const deadline = BigInt(Math.floor(Date.now() / 1000) + 5 * 60);
 
 ## Oracle update data
 
-Some markets use **updatable oracles** that require a signed price payload to be submitted alongside each transaction. Pass that payload as `updateData`. For markets using onchain or stateless oracles, pass an empty array.
+Supported markets use pull-based oracles. Pass a fresh signed payload as `updateData` when the oracle needs updating, or an empty array only when its stored price is already usable.
 
 ```ts
-// Static oracle — no update needed
+// Already-fresh stored price — skip update
 const updateData = [];
 
 // Push oracle (e.g. Pyth) — fetch a fresh price attestation
@@ -75,19 +75,19 @@ const updateData = await pythConnection.getPriceFeedsUpdateData([priceFeedId]);
 ```
 
 <Note>
-The current router pays oracle update fees from the router's ETH balance. If that balance is insufficient, the router reverts with `InsufficientUpdateFeeBalance(balance, required)`. Check the deployment's operational setup before relying on push-oracle `updateData`.
+`NullV1Router` submits fee-less Chainlink updates. `NullV1PayableRouter` pays Pyth update fees from its pre-funded ETH balance and reverts with `InsufficientUpdateFeeBalance(balance, required)` when underfunded.
 </Note>
 
 ## ERC-4626 collateral through the router
 
-If the market asset is an ERC-4626 vault share, the router accepts the vault's underlying token and wraps it before depositing into the Null pool. Direct pool calls still use the market asset itself.
+If the market collateral is an ERC-4626 vault share, the router accepts the vault's underlying token and wraps it before depositing into the Null pool. Direct pool calls still use the collateral share itself.
 
 The flow is:
 
 1. You approve the router to spend the underlying token.
 2. You call `depositMarket` with underlying-token amounts.
-3. The router wraps the underlying into the ERC-4626 market asset.
-4. The router deposits market-asset shares into the Receiver and/or Payer pool.
+3. The router wraps the underlying into the ERC-4626 collateral token.
+4. The router deposits collateral-vault shares into the Receiver and/or Payer pool.
 
 ## Full deposit example
 
@@ -118,7 +118,7 @@ await asset.approve(ROUTER_ADDRESS, receiverAssets);
 
 // Set deadline 3 minutes out
 const deadline   = BigInt(Math.floor(Date.now() / 1000) + 180);
-const updateData = []; // static oracle
+const updateData = []; // stored oracle price is already fresh
 
 const tx = await router.depositMarket(
   MARKET_ADDRESS,
@@ -133,16 +133,32 @@ const tx = await router.depositMarket(
 const receipt = await tx.wait();
 console.log("Deposit confirmed in block", receipt.blockNumber);
 ```
+
+This example assumes plain ERC-20 collateral. For ERC-4626 collateral, approve
+the vault underlying and convert the underlying amount to expected collateral
+shares before calling the Null pool's `previewDeposit`.
   </Tab>
   <Tab title="Solidity">
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {INullV1Router} from "./interfaces/INullV1Router.sol";
 import {INullV1Market} from "./interfaces/INullV1Market.sol";
 import {INullV1Pool}   from "./interfaces/INullV1Pool.sol";
 import {IERC20}        from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+// Minimal local interface shared by NullV1Router and NullV1PayableRouter.
+interface INullV1Router {
+    function depositMarket(
+        INullV1Market market,
+        uint256 receiverAssets,
+        uint256 payerAssets,
+        uint256 minReceiverShares,
+        uint256 minPayerShares,
+        uint256 deadline,
+        bytes[] calldata updateData
+    ) external returns (uint256 receiverShares, uint256 payerShares);
+}
 
 contract DepositExample {
     INullV1Router public immutable router;
@@ -153,14 +169,14 @@ contract DepositExample {
 
     function depositReceiverOnly(
         INullV1Market market,
-        IERC20 asset,
+        IERC20 depositToken,
         uint256 receiverAssets,
         uint256 minReceiverShares,
         uint256 deadline,
         bytes[] calldata updateData
     ) external returns (uint256 receiverShares) {
-        asset.transferFrom(msg.sender, address(this), receiverAssets);
-        asset.approve(address(router), receiverAssets);
+        depositToken.transferFrom(msg.sender, address(this), receiverAssets);
+        depositToken.approve(address(router), receiverAssets);
 
         (receiverShares, ) = router.depositMarket(
             market,
@@ -183,7 +199,7 @@ contract DepositExample {
 
 ## Direct ERC-4626 deposit (advanced)
 
-If you want to bypass the router and interact with the pool contract directly, use the standard ERC-4626 `deposit` function. You are responsible for approving the market asset accepted by the pool and for making sure any push-oracle price has already been updated before the pool action runs.
+If you want to bypass the router and interact with the pool contract directly, use the standard ERC-4626 `deposit` function. You are responsible for approving the market collateral accepted by the pool and for making sure any push-oracle price has already been updated before the pool action runs.
 
 ```ts
 const pool  = new ethers.Contract(receiverPoolAddress, nullV1PoolAbi, signer);
