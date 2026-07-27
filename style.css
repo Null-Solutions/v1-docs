@@ -1,0 +1,8 @@
+img.nav-logo {
+  width: auto !important;
+  height: 20px !important;
+}
+
+.nav-dropdown-item-icon {
+  display: none !important;
+}
