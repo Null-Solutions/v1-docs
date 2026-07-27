@@ -4,18 +4,59 @@ sidebarTitle: "Fees"
 description: "Understand the fees shown when minting or burning a Null position."
 ---
 
-The trading summary shows the estimated protocol fee for the action you are preparing.
+Null markets can charge three protocol fees:
 
-- **Mint** uses the market's entry fee.
-- **Burn** uses the market's exit fee.
-- A market can also charge an annualized collateral fee as its pools update.
+| Fee | When it applies | Where to check |
+| --- | --- | --- |
+| **Entry fee** | When you **Mint** pool shares | Trading summary and **Advanced details** |
+| **Exit fee** | When you **Burn** pool shares | Trading summary and **Advanced details** |
+| **Collateral fee** | Over time on both pool balances when the market settles | Market details |
 
 Fee settings can differ by market. Always use the values shown in the current transaction preview.
+
+## Hypothetical mint example
+
+Assume a market shows a **0.50% entry fee** and you enter **1,000 units** of collateral. These are example values, not current market settings.
+
+For a collateral amount that includes the fee:
+
+```text
+estimated entry fee ≈ 1,000 × 0.50 / 100.50
+                    ≈ 4.98 collateral units
+
+collateral used to mint shares ≈ 995.02 units
+```
+
+The pool-share output also depends on the pool's share conversion after settlement. Use the app's estimated output instead of calculating shares from the fee alone.
+
+## Hypothetical burn example
+
+Assume a market shows a **0.30% exit fee** and the shares have a gross redemption value of **1,000 collateral units**. These are example values.
+
+```text
+estimated exit fee ≈ 1,000 × 0.30 / 100.30
+                   ≈ 2.99 collateral units
+
+estimated collateral returned ≈ 997.01 units
+```
+
+The confirmed output can change because the market settles before burning the shares.
+
+## Hypothetical collateral-fee example
+
+Assume a market shows a **1.00% annualized collateral fee**. If a pool held a constant 1,000 collateral units for 30 days, a simplified estimate would be:
+
+```text
+estimated fee ≈ 1,000 × 1.00% × 30 / 365
+              ≈ 0.82 collateral units
+```
+
+Actual accrual uses elapsed time and the pool balance at settlement. The collateral fee is charged on pool assets. It is not only a fee on collateral yield.
 
 Wallet, network, onramp, off-ramp, or provider costs are separate from the market's protocol fees.
 
 <Note>
-Displayed estimates can change before confirmation as the amount or market state changes.
+Examples on this page are illustrative. They do not state the live fee for any market. Displayed estimates can change before confirmation as the amount or market state changes.
 </Note>
 
 For the protocol-level fee mechanics, see [Null V1 fees](/developers/fees).

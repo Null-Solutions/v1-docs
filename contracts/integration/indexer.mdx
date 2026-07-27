@@ -4,13 +4,11 @@ sidebarTitle: "Indexer"
 description: "Discover Null V1 markets from the factory, index settlement and share events, and batch current-state projections with Lens or Multicall."
 ---
 
-A Null indexer discovers markets from the factory, indexes settlement events, and tracks pool ERC-20 balances. Use Lens or Multicall for current projections; events remain the historical record.
-
-There is no published partner API. If you run your own indexer (or reuse Null's product indexer deployment), treat it as infrastructure you control — not a keyed public trading API.
+Build integrations from public onchain interfaces. Discover markets from the factory, index market and pool events for history, and use Lens or Multicall for current projections.
 
 ## Discover markets
 
-Start at the factory deployment block ([Live deployments](/resources/addresses)) and index:
+Start at the canonical factory deployment block listed under [Live deployments](/resources/addresses). On Sepolia, that block is `11321037`.
 
 ```solidity
 event CreateMarket(
@@ -25,9 +23,43 @@ event CreateMarket(
 event EnableFrm(address indexed frm);
 ```
 
-Persist all six `CreateMarket` fields. Identity is the exact `(collateral, oracle, frm)` tuple, also resolvable with `factory.getMarket(...)`.
+Persist all six `CreateMarket` fields. A market's identity is the exact `(collateral, oracle, frm)` tuple. Verify a record with the public `factory.getMarket(collateral, oracle, frm)` function.
 
 Subscribe to both pool addresses immediately so early share transfers are not missed. Do not hardcode per-market pools.
+
+```ts
+import { parseAbiItem } from "viem";
+
+const factory = "0xc4d61E729225E8fA6612969fA705a36a8446B6CF" as const;
+const createMarketEvent = parseAbiItem(
+  "event CreateMarket(address indexed collateral, address indexed oracle, address indexed frm, address market, address receiverPool, address payerPool)",
+);
+
+const logs = await publicClient.getLogs({
+  address: factory,
+  event: createMarketEvent,
+  fromBlock: 11_321_037n,
+  toBlock: "latest",
+});
+
+const discoveredMarkets = logs.flatMap((log) => {
+  const { collateral, oracle, frm, market, receiverPool, payerPool } = log.args;
+  if (
+    !collateral ||
+    !oracle ||
+    !frm ||
+    !market ||
+    !receiverPool ||
+    !payerPool
+  ) {
+    return [];
+  }
+
+  return [{ collateral, oracle, frm, market, receiverPool, payerPool }];
+});
+```
+
+Persist `discoveredMarkets` with idempotent writes keyed by chain ID, factory address, and market address. Handle chain reorganizations by retaining block number, block hash, transaction hash, and log index.
 
 ## Index market state
 
@@ -45,7 +77,7 @@ event SetFees(uint16 entryFee, uint16 exitFee, uint16 collateralFee);
 event CollectFees(uint256 fee);
 ```
 
-`UpdateState` fires when pool execution or an owner fee op settles the market. There is no periodic permissionless update. When `circuitBreakerFired` is true, the new price was recorded but price PnL was skipped; funding still settled.
+`UpdateState` fires when a pool action or a fee operation settles the market. There is no periodic permissionless settlement call. When `circuitBreakerFired` is true, the market records the new price but skips price PnL; funding still settles.
 
 Prices are `1e36`-scaled. Pool assets and protocol fees are raw market-collateral units. If collateral is ERC-4626, use Lens `collateralSharePrice` or vault conversion for underlying terms.
 
@@ -66,6 +98,8 @@ event Withdraw(
 
 Pool shares use `collateral.decimals() + 10` decimals.
 
+Use `Transfer` as the source of truth for current share balances. Use `Deposit` and `Withdraw` for action history and asset/share amounts. A router operation can emit vault, collateral, and pool events in the same transaction; filter by known contract address instead of symbol.
+
 ## Projected state
 
 ```solidity
@@ -80,10 +114,10 @@ struct SimulateResponse {
 }
 ```
 
-- `previewMarket(market)` — settlement projection at `oracle.priceView()`
-- `simulateMarket(market, price)` — caller-provided `1e36` price
+- `previewMarket(market)` projects settlement at `oracle.priceView()`.
+- `simulateMarket(market, price)` projects settlement at a caller-provided nonzero `1e36` price.
 
-Batch:
+For batches, call the public Multicall functions:
 
 ```solidity
 multicall.previewAll(lens, markets);
@@ -91,6 +125,8 @@ multicall.simulateAll(lens, markets, externalPrices);
 ```
 
 Response order matches input order. A reverted per-market call yields an all-zero `SimulateResponse` — treat as unavailable, not empty. `simulateAll` reverts with `LengthMismatch` if array lengths differ.
+
+Lens responses are current block snapshots, not historical records. They do not update oracle storage or market state. Store events for history and refresh projections at the cadence your application needs.
 
 ## Metadata
 
@@ -101,7 +137,35 @@ oracle.quoteName();
 oracle.quoteSymbol();
 ```
 
-Cache for labels; handle individual RPC failures defensively.
+Cache these values as display labels and handle individual RPC failures. Pool token names follow `<baseName> Receiver Share` / `<baseName> Payer Share`, with symbols `r<baseSymbol>` / `p<baseSymbol>`. Determine the side from the market's pool addresses or `poolKind()`, not from labels.
+
+## Collateral units
+
+Keep these units distinct in your schema:
+
+```text
+market state assets = market collateral units
+pool totalAssets    = market collateral units
+pool balances       = Null pool share units
+router vault input  = ERC-4626 underlying units
+```
+
+If `collateral.asset()` succeeds, the router treats collateral as ERC-4626:
+
+```text
+underlying ↔ market collateral vault shares ↔ Null pool shares
+```
+
+On Sepolia `nUSDC` markets, the underlying is `MockUSDC`. Verify the addresses before applying those labels. Do not assume all markets use that pair.
+
+## Reliability checklist
+
+- Backfill from the canonical factory deployment block before following the chain head.
+- Deduplicate logs and support rollback on reorganization.
+- Subscribe to newly discovered market and pool addresses without delay.
+- Read token decimals onchain and store raw integer values.
+- Treat all-zero batch simulations as unavailable.
+- Reconcile indexed pool balances against `balanceOf` after backfills or reorgs.
 
 ## Related
 

@@ -4,101 +4,144 @@ sidebarTitle: "Depositing"
 description: "Deposit collateral into Receiver and/or Payer pools via the router or direct ERC-4626, with previews, slippage, deadlines, and oracle update data."
 ---
 
-Depositing supplies collateral to the Receiver pool, the Payer pool, or both. Prefer the router for production UIs: deadlines, slippage floors, optional `updateData`, combined sides, and ERC-4626 wrap. Direct pool `deposit` / `mint` remain available when you manage those safeguards yourself.
+Depositing supplies collateral to the Receiver pool, the Payer pool, or both. Use a router for production UIs. It supports both sides in one transaction, deadlines, minimum shares, oracle updates, and ERC-4626 collateral wrapping.
 
 Use `NullV1Router` for Chainlink and `NullV1PayableRouter` for Pyth. See [Router](/developers/router).
 
-## Receiver vs Payer amounts
+## Choose the input token
 
-| Parameter | Effect |
-| --- | --- |
-| `receiverAssets` | Assets into Receiver; mint Receiver shares |
-| `payerAssets` | Assets into Payer; mint Payer shares |
+Read the market's `collateral()` before building the transaction. Then probe that token's ERC-4626 `asset()` function:
 
-Set either side to `0` (and its min shares to `0`) to skip that pool.
+| Market collateral                   | Router input                           | Amount units      | Approval                                 |
+| ----------------------------------- | -------------------------------------- | ----------------- | ---------------------------------------- |
+| `asset()` reverts or is unavailable | Market collateral token                | Market collateral | Approve the router for market collateral |
+| `asset()` succeeds                  | Vault underlying returned by `asset()` | Vault underlying  | Approve the router for the underlying    |
 
-## Preview shares
+The router uses the same detection rule. A successful `asset()` call selects the ERC-4626 path. If another required vault call then fails, the transaction reverts rather than falling back to plain ERC-20 handling.
 
-```ts
-const estimatedReceiverShares = await publicClient.readContract({
-  address: receiverPool,
-  abi: poolAbi,
-  functionName: "previewDeposit",
-  args: [receiverAssets],
-});
+On the current Sepolia deployment, markets collateralized by `nUSDC` use `MockUSDC` as router input:
+
+```text
+MockUSDC underlying → nUSDC vault shares → Receiver or Payer pool shares
 ```
 
-`previewDeposit` includes the entry fee but uses the last settled state. Execution settles first — funding, price PnL, fees, or reconciliation can change the result.
+Do not label every collateral token as `nUSDC` or every underlying as `MockUSDC`. Those names apply only to deployments that use those contracts.
 
-<Note>
-For ERC-4626 collateral, router amounts are **underlying** units while `previewDeposit` expects **vault share** units. Convert through the vault before applying slippage. Fee details: [Fees](/developers/fees).
-</Note>
+## Quote the complete unit pipeline
 
-## Slippage
+For plain ERC-20 collateral:
 
-```ts
-const slippageBps = 50n; // 0.5%
-const minReceiverShares =
-  (estimatedReceiverShares * (10_000n - slippageBps)) / 10_000n;
+```text
+router input (collateral) → pool.previewDeposit(collateral) → pool shares
 ```
 
-Typed reverts:
+For ERC-4626 collateral:
 
-- `SlippageReceiverShares(expected, actual)`
-- `SlippagePayerShares(expected, actual)`
-
-<Warning>
-`minReceiverShares = 0` or `minPayerShares = 0` disables protection for that side. Use only in tests or when you independently control the rate.
-</Warning>
-
-## Deadline
-
-Unix seconds. If `block.timestamp > deadline`, the router reverts with `TransactionTooOld(deadline)`.
-
-```ts
-const deadline = BigInt(Math.floor(Date.now() / 1000) + 5 * 60);
+```text
+router input (underlying)
+  → collateralVault.previewDeposit(underlying)
+  → pool.previewDeposit(vault shares)
+  → pool shares
 ```
 
-## Oracle update data
+Apply slippage once, to the final pool-share quote:
 
 ```ts
-const updateData = []; // stored price already usable
-// or fetch Pyth / Chainlink attestation bytes for a push update
+const BPS = 10_000n;
+const slippageBps = 50n; // 0.50%
+
+function applySlippageFloor(quotedOutput: bigint): bigint {
+  return (quotedOutput * (BPS - slippageBps)) / BPS;
+}
 ```
 
-## ERC-4626 collateral via router
+Pool previews include the entry fee but use the last settled market state. Execution settles first, so funding, price PnL, collateral fees, reconciliation, or another transaction can change the result. For a settlement projection, use `NullV1Lens.previewMarket`; still enforce router minimums.
 
-1. Approve router to spend vault **underlying**
-2. Call `depositMarket` with underlying amounts
-3. Router wraps into collateral vault shares
-4. Router deposits those shares into Receiver and/or Payer
+## Sepolia nUSDC example
 
-## Full example
+This example deposits `1,000 MockUSDC` into the Receiver pool of an existing `nUSDC` market. It assumes configured `publicClient`, `walletClient`, and `account` objects.
 
-<Tabs>
-  <Tab title="viem">
 ```ts
-import { parseUnits } from "viem";
+import { parseAbi, parseUnits } from "viem";
+
+const market = "0x..." as const; // discover from the canonical factory
+const router = "0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03" as const;
+const nUsdc = "0x77508321f1EF8C707Cd5869557365468BCeD0613" as const;
+const mockUsdc = "0x5A316865F2C9c261aD1B254C46788b6356d2F135" as const;
+
+const marketAbi = parseAbi([
+  "function collateral() view returns (address)",
+  "function receiverPool() view returns (address)",
+]);
+const erc20Abi = parseAbi([
+  "function balanceOf(address account) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+]);
+const vaultAbi = parseAbi([
+  "function asset() view returns (address)",
+  "function previewDeposit(uint256 assets) view returns (uint256 shares)",
+]);
+const poolAbi = parseAbi([
+  "function previewDeposit(uint256 assets) view returns (uint256 shares)",
+  "function deposit(uint256 assets, address receiver) returns (uint256 shares)",
+]);
+const routerAbi = parseAbi([
+  "function depositMarket(address market, uint256 receiverAssets, uint256 payerAssets, uint256 minReceiverShares, uint256 minPayerShares, uint256 deadline, bytes[] updateData) returns (uint256 receiverShares, uint256 payerShares)",
+]);
+
+const [collateral, receiverPool, underlying] = await Promise.all([
+  publicClient.readContract({
+    address: market,
+    abi: marketAbi,
+    functionName: "collateral",
+  }),
+  publicClient.readContract({
+    address: market,
+    abi: marketAbi,
+    functionName: "receiverPool",
+  }),
+  publicClient.readContract({
+    address: nUsdc,
+    abi: vaultAbi,
+    functionName: "asset",
+  }),
+]);
+
+if (collateral.toLowerCase() !== nUsdc.toLowerCase()) {
+  throw new Error("This example requires nUSDC market collateral");
+}
+if (underlying.toLowerCase() !== mockUsdc.toLowerCase()) {
+  throw new Error("This nUSDC deployment does not use MockUSDC");
+}
 
 const receiverAssets = parseUnits("1000", 6);
 const payerAssets = 0n;
-
-const expectedShares = await publicClient.readContract({
+const quotedVaultShares = await publicClient.readContract({
+  address: nUsdc,
+  abi: vaultAbi,
+  functionName: "previewDeposit",
+  args: [receiverAssets],
+});
+const quotedPoolShares = await publicClient.readContract({
   address: receiverPool,
   abi: poolAbi,
   functionName: "previewDeposit",
-  args: [receiverAssets], // convert first if collateral is ERC-4626
+  args: [quotedVaultShares],
 });
-const minReceiverShares = (expectedShares * 9900n) / 10_000n;
+const minReceiverShares = (quotedPoolShares * (10_000n - 50n)) / 10_000n;
 
-await walletClient.writeContract({
-  address: asset, // collateral or vault underlying
+const approvalHash = await walletClient.writeContract({
+  account,
+  address: mockUsdc,
   abi: erc20Abi,
   functionName: "approve",
   args: [router, receiverAssets],
 });
+await publicClient.waitForTransactionReceipt({ hash: approvalHash });
 
-const hash = await walletClient.writeContract({
+const updateData: readonly `0x${string}`[] = []; // only when the stored price is usable
+await walletClient.writeContract({
+  account,
   address: router,
   abi: routerAbi,
   functionName: "depositMarket",
@@ -108,72 +151,32 @@ const hash = await walletClient.writeContract({
     payerAssets,
     minReceiverShares,
     0n,
-    BigInt(Math.floor(Date.now() / 1000) + 180),
-    [],
+    BigInt(Math.floor(Date.now() / 1000) + 5 * 60),
+    updateData,
   ],
 });
 ```
-  </Tab>
-  <Tab title="Solidity">
-```solidity
-interface INullV1Router {
-    function depositMarket(
-        INullV1Market market,
-        uint256 receiverAssets,
-        uint256 payerAssets,
-        uint256 minReceiverShares,
-        uint256 minPayerShares,
-        uint256 deadline,
-        bytes[] calldata updateData
-    ) external returns (uint256 receiverShares, uint256 payerShares);
-}
 
-function depositReceiverOnly(
-    INullV1Market market,
-    IERC20 depositToken,
-    uint256 receiverAssets,
-    uint256 minReceiverShares,
-    uint256 deadline,
-    bytes[] calldata updateData
-) external returns (uint256 receiverShares) {
-    depositToken.transferFrom(msg.sender, address(this), receiverAssets);
-    depositToken.approve(address(router), receiverAssets);
+Set a side's assets and minimum shares to `0n` to skip it. A zero minimum on an active side disables slippage protection.
 
-    (receiverShares, ) = router.depositMarket(
-        market,
-        receiverAssets,
-        0,
-        minReceiverShares,
-        0,
-        deadline,
-        updateData
-    );
+## Deadline and update data
 
-    market.receiverPool().transfer(msg.sender, receiverShares);
-}
-```
-  </Tab>
-</Tabs>
+`deadline` is Unix time in seconds. The router reverts with `TransactionTooOld(deadline)` when `block.timestamp > deadline`.
+
+Use nonempty `updateData` when the market requires a fresh push update. Fetch payloads from the oracle's data source:
+
+- [Pyth update data](/contracts/oracles/pyth#update-data)
+- [Chainlink update requirements](/contracts/oracles/chainlink#nonpayable-fee-zero-routing)
+
+Pass `[]` only when the oracle's stored price is usable. For Pyth, the payable router pays the update fee from its pre-funded ETH balance. Do not attach ETH to `depositMarket`.
 
 ## Direct ERC-4626 deposit
 
-```ts
-await walletClient.writeContract({
-  address: collateral,
-  abi: erc20Abi,
-  functionName: "approve",
-  args: [receiverPool, assets],
-});
+Direct pool calls always use **market collateral units**. For an `nUSDC` market, wrap `MockUSDC` into `nUSDC` first, then approve the selected pool to spend `nUSDC`.
 
-await walletClient.writeContract({
-  address: receiverPool,
-  abi: poolAbi,
-  functionName: "deposit",
-  args: [assets, user],
-});
-```
+After the vault deposit confirms, use the actual `nUSDC` balance received as the pool's `assets` input. Do not reuse the original `MockUSDC` amount: vault underlying units and vault-share units can differ.
 
-You must ensure oracle freshness, slippage, and deadlines yourself. Prefer the router for user-facing flows.
+The direct call has no router deadline, output floor, oracle payload, or automatic vault wrap. Add those safeguards in your integration.
 
 ## Related
 

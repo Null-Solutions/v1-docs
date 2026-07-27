@@ -6,24 +6,76 @@ description: "Troubleshoot common private-beta funding and trading issues."
 
 ## Cannot enter the beta
 
-Confirm that you signed in with the account and wallet used for your application. Agreement completion and on-chain wallet approval are separate.
+Confirm that you signed in with the account and wallet used for your application. A signed agreement means the application was received. An administrator must still approve that wallet onchain before protected features become available.
+
+If you changed accounts or wallets, return to the approved combination and sign in again.
+
+## Market is unavailable
+
+A market can be visible while a transaction is unavailable. Check the trading panel for:
+
+- an **online**, **closed**, or **missing Payer funds** state;
+- missing or unavailable price data; and
+- the selected market, side, and collateral.
+
+Ordinary stale oracle periods block settlement-dependent actions. Wait for valid price data instead of repeatedly submitting the same transaction. A circuit-breaker event is different: it skips price PnL for that update but does not, by itself, revert settlement.
 
 ## Cannot mint
 
 Check that:
 
-1. the market is available;
-2. current price data is available;
-3. your wallet holds enough of the market's collateral;
-4. you selected Receiver or Payer; and
-5. any approval and transaction requests were confirmed.
+1. the market is available and has current price data;
+2. your connected wallet is the approved wallet;
+3. the wallet holds enough of the market's collateral, not only another token;
+4. you selected Receiver or Payer and entered an amount; and
+5. you confirmed each required approval and transaction request.
+
+Funding your wallet does not mint a position. After funds arrive, return to the market and submit **Mint** separately.
 
 ## Cannot burn
 
-Confirm that the connected wallet holds shares in the selected pool and that the entered amount does not exceed the available balance.
+Confirm that the connected wallet holds shares in the selected Receiver or Payer pool. The amount cannot exceed that pool-share balance. A wallet balance, portfolio estimate, or position on the other side is not a burnable balance for the selected pool.
+
+Burn output reflects the pool's value after settlement. It can differ from an earlier estimate because funding, price PnL, fees, and reconciliation run before redemption.
+
+## Transaction expired or reverted
+
+Null's router protects private-beta transactions with deadlines and minimum outputs. Documented contract errors include:
+
+- `TransactionTooOld` — the transaction executed after its deadline. Refresh the quote and submit a new transaction.
+- `SlippageReceiverShares` or `SlippagePayerShares` — a mint would return fewer shares than the submitted minimum.
+- `SlippageReceiverAssets` or `SlippagePayerAssets` — a burn would return fewer assets than the submitted minimum.
+- `StalePrice` — the oracle price is outside its ordinary freshness window.
+
+Refresh the market state before retrying. Do not keep resubmitting a slippage or stale-price failure without obtaining a current preview.
+
+`InsufficientUpdateFeeBalance` refers to the payable router's native-token balance for an oracle update. It does not mean your collateral balance is too low. Report it with the market and transaction details.
+
+## Transaction is pending or missing
+
+After confirmation in your wallet, wait for the transaction to confirm onchain. If the app has not updated:
+
+1. copy the transaction hash from your wallet;
+2. check whether it is pending, successful, or reverted;
+3. confirm that the connected wallet still matches the transaction sender; and
+4. refresh the portfolio after confirmation.
+
+Avoid submitting the same action again until you know the first transaction's status.
 
 ## Funding has not arrived
 
-Crypto bridging and cash onramp transfers can take time. Check the provider status and destination wallet before retrying.
+Confirm that the faucet transaction succeeded on Sepolia and that `MockUSDC` arrived in the approved wallet. `MockUSDC`, `nUSDC`, and Sepolia ETH are separate assets. The faucet does not provide Sepolia ETH for gas.
 
-For community help, use the Telegram link shown after your beta application. Include the route, market address, transaction hash when available, and the exact error. Never share private credentials.
+Do not send mainnet USDC or other production assets to a Sepolia token contract. Testnet assets have no cash value.
+
+## Get help
+
+Use the Telegram link shown after your beta application. Include:
+
+- the page route and market address;
+- the connected wallet address;
+- the transaction hash, if one exists;
+- whether the transaction is pending, successful, or reverted; and
+- the exact error text or a screenshot with sensitive information removed.
+
+Never share a seed phrase, private key, password, one-time code, or wallet recovery secret. Support does not need them.

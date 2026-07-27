@@ -6,12 +6,48 @@ description: "Understand Receiver and Payer positions in the Null app."
 
 Every Null market has two pools:
 
-- **Receiver** — the Receiver side of the market's price and funding exposure.
-- **Payer** — the Payer side of the market's price and funding exposure.
+- **Receiver** takes the tracked asset's price return.
+- **Payer** supplies the reserve that backs Receiver and takes the opposite price transfer.
 
 Minting deposits collateral into the selected pool and gives you pool shares. Burning redeems your shares for the collateral available from that pool.
 
-Your result can change with the market price, funding, collateral performance, fees, liquidity, and pool state.
+## Compare the two sides
+
+| Question | Receiver | Payer |
+| --- | --- | --- |
+| What price exposure do I take? | Gains when the tracked price rises and loses when it falls, subject to settlement limits. | Takes the opposite transfer: loses when the tracked price rises and gains when it falls, subject to settlement limits. |
+| How large can the price effect be? | The price transfer is calculated from Receiver pool assets, so its price return normally follows the tracked move before other effects. | Payer backs the Receiver exposure one-for-one at the notional level. The resulting transfer is allocated across Payer shares, so low coverage can produce a larger percentage change in share value. |
+| How does funding work? | Pays when the signed funding rate is positive. Receives when it is negative. | Receives when the signed funding rate is positive. Pays when it is negative. Each holder receives or pays its pro-rata share of funding on Receiver exposure notional. |
+| Do I own the tracked asset? | No. You own ERC-4626 Receiver pool shares. | No. You own ERC-4626 Payer pool shares. |
+| What do I receive when I exit? | Your shares' claim on collateral then available in the Receiver pool, after the exit fee. | Your shares' claim on collateral then available in the Payer pool, after the exit fee. |
+| What should I check first? | Oracle, price direction, funding, collateral, fees, and both pool balances. | Payer coverage, funding, collateral, fees, and the size of a possible price transfer relative to Payer liquidity. |
+
+## Worked price example
+
+Suppose a market has 1,000 collateral units in Receiver and 200 in Payer. The tracked price then rises by 2%.
+
+```text
+Price transfer = 2% × 1,000 = 20 units
+
+Receiver: 1,000 → 1,020  (+2%)
+Payer:      200 →   180  (-10%)
+```
+
+Both pools exchange the same 20-unit transfer. The percentage results differ because the Payer pool is smaller. If the tracked price fell by 2%, the transfer would normally run in the other direction.
+
+This example ignores funding, fees, collateral yield, reconciliation, and the protocol's settlement bounds. It illustrates price exposure, not a guaranteed outcome.
+
+## Add funding to the decision
+
+Funding accrues between market updates and is netted with price movement when the market settles.
+
+- A **positive** funding rate transfers value from Receiver to Payer.
+- A **negative** funding rate transfers value from Payer to Receiver.
+- If either pool is empty, the standard model applies neither funding nor price movement.
+
+Funding can offset or compound the price result. It is variable, not fixed yield. The protocol applies the funding rate to Receiver notional, then allocates the transfer pro rata across Payer shares.
+
+Your final result can also change with collateral performance, entry and exit fees, liquidity, oracle behavior, and pool state.
 
 <Warning>
 Receiver and Payer are pool positions, not conventional order-book orders. The app does not offer a user-selected leverage setting.

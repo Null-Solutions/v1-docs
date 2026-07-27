@@ -4,7 +4,7 @@ sidebarTitle: "Fees"
 description: "Entry, exit, and annualized collateral fees — caps, fee-on-total vs fee-on-raw, and how previews account for them."
 ---
 
-Null V1 charges three fee types. All values are basis points (1 bp = 0.01%). The protocol owner sets each fee; immutable onchain constants cap every fee at **500 bps (5%)**.
+Null V1 supports three fee types. All values are basis points (1 bp = 0.01%). Every market starts with all three values set to zero. The factory owner can set market-specific values with `setFees(entryFee, exitFee, collateralFee)`, subject to immutable **500 bps (5%)** caps.
 
 | Fee | Max | When | Accrues to |
 | --- | --- | --- | --- |
@@ -12,13 +12,34 @@ Null V1 charges three fee types. All values are basis points (1 bp = 0.01%). The
 | Exit | 500 bps | `redeem` / `withdraw` | `protocolFees` |
 | Collateral | 500 bps annualized | Each settlement, on pool balances over time | `protocolFees` |
 
-Fees are swept only to the factory owner via `sweepFees()`.
+`setFees` settles using the old values before storing the new values. Read the market's current values instead of assuming a deployment default. Fees accrue to `protocolFees` and can be swept only to the factory owner via `sweepFees()`.
+
+## Exact fee helpers
+
+For raw integer asset amount `A`, fee basis points `b`, and `BPS = 10_000`, the contracts use:
+
+```text
+feeOnTotal(A, b) = ceil(A × b / (BPS + b))
+feeOnRaw(A, b)   = ceil(A × b / BPS)
+```
+
+`feeOnTotal` extracts a fee from an amount that already includes the fee. `feeOnRaw` adds a fee on top of an amount before fees. Both round the fee up to the next raw collateral unit.
 
 ## Entry fee
 
-On `deposit`, the fee is included in assets paid (fee-on-total) and deducted before shares. On `mint`, the fee is added to the raw assets required (fee-on-raw).
+On `deposit(A)`, the fee is included in the assets paid:
 
-**Example:** entry fee 50 bps, deposit 1,000 USDC → fee-on-total ≈ `ceil(1,000 × 50 / 10,050)` in raw units (~4.975 USDC at 6 decimals). ~995.025 USDC mints shares.
+```text
+entry fee        = feeOnTotal(A, entryFee)
+assets for shares = A - entry fee
+```
+
+On `mint(shares)`, ERC-4626 conversion first calculates the raw assets `A` needed for those shares, then adds:
+
+```text
+entry fee  = feeOnRaw(A, entryFee)
+assets paid = A + entry fee
+```
 
 ```ts
 const entryFeeBps = await publicClient.readContract({
@@ -30,9 +51,20 @@ const entryFeeBps = await publicClient.readContract({
 
 ## Exit fee
 
-On `redeem`, deducted from gross assets (fee-on-total). On `withdraw`, added to the raw pool debit needed to deliver net assets (fee-on-raw).
+On `redeem(shares)`, ERC-4626 conversion first calculates gross assets `A`, then deducts:
 
-**Example:** exit fee 30 bps, gross 1,000 USDC → ~2.991 USDC fee; ~997.009 USDC to the user.
+```text
+exit fee      = feeOnTotal(A, exitFee)
+assets to user = A - exit fee
+```
+
+On `withdraw(A)`, `A` is the net amount requested by the user. The market debits the pool by:
+
+```text
+exit fee       = feeOnRaw(A, exitFee)
+pool debit      = A + exit fee
+assets to user  = A
+```
 
 ```ts
 const exitFeeBps = await publicClient.readContract({
@@ -44,13 +76,13 @@ const exitFeeBps = await publicClient.readContract({
 
 ## Collateral fee
 
-Annualized fee on Receiver and Payer balances during settlement — not a cut of measured yield. If collateral earns 5% externally and `collateralFee` is 100 bps, net collateral carry before funding is roughly 4%.
+The collateral fee is annualized on each prepared pool balance during settlement. It is not a cut of measured yield.
 
 ```text
-pool fee = pool balance * collateralFee / 10,000 * elapsed / 365 days
+pool fee = floor(floor(pool balance × collateralFee / 10,000) × elapsed / 365 days)
 ```
 
-Accrues into `protocolFees`, excluded from Receiver/Payer settlement until swept. See [Settlement](/developers/settlement).
+Each pool's fee is capped at that pool's balance. The fee accrues into `protocolFees` and is excluded from Receiver/Payer settlement until swept. If time has not advanced or `collateralFee` is zero, no collateral fee accrues. See [Settlement](/developers/settlement).
 
 ```ts
 const collateralFeeBps = await publicClient.readContract({
@@ -72,7 +104,9 @@ const [entryFee, exitFee, collateralFee] = await Promise.all([
 
 ## Previews already include fees
 
-Do not apply a second manual deduction on top of `previewDeposit` / `previewRedeem`. They still use last settled state, and router ERC-4626 amounts are in vault underlying rather than collateral shares.
+Do not apply a second manual fee on top of any ERC-4626 preview. `previewDeposit`, `previewMint`, `previewWithdraw`, and `previewRedeem` already apply the corresponding formula.
+
+Direct pool previews still use the last settled state, while execution settles first. For settlement-aware quotes, use `NullV1Lens.previewMarket` and apply the projected pool state to your integration. Router ERC-4626 amounts are in vault underlying rather than collateral shares.
 
 ```ts
 const sharesOut = await publicClient.readContract({
@@ -90,7 +124,7 @@ const assetsOut = await publicClient.readContract({
 });
 ```
 
-Use previews as fee-aware estimates, then add slippage. For ERC-4626 collateral, also apply vault wrap/unwrap before router minimums.
+Use previews as fee-aware estimates, then add slippage. For ERC-4626 collateral, also account for vault wrap or unwrap before setting router minimums.
 
 ## Related
 

@@ -4,7 +4,7 @@ sidebarTitle: "Farm the Basis"
 description: "Evaluate the funding spread, collateral yield, capital efficiency, and risks of a hedged Null Payer position."
 ---
 
-Basis farming on Null means holding Payer, hedging its price exposure with an external long, and targeting the remaining carry. The strategy earns only when Null funding and collateral yield exceed external funding, execution costs, and basis losses.
+Basis farming combines a short position on Null through Payer with a long position elsewhere. The external long offsets much of Payer's tracked-price exposure. What remains is a carry trade that earns only when Null funding and collateral yield exceed external funding, execution costs, and basis losses.
 
 ## The return sources
 
@@ -21,8 +21,8 @@ Trading fees, slippage, gas, liquidation losses, and oracle-to-venue basis chang
 Let:
 
 - `p` be your Payer position value;
-- `E = R / P` be Payer's exposure multiple;
-- `f` be Null's signed market funding rate, where positive means Receiver pays Payer;
+- `E = R / P` allocate Receiver exposure across Payer shares, using current Receiver assets `R` and Payer assets `P`;
+- `f` be Null's signed market funding rate produced by the market's funding-rate model, where positive means Receiver pays Payer;
 - `f_ext` be the external funding rate, where positive means the external long pays; and
 - `y` be the collateral yield rate.
 
@@ -35,20 +35,19 @@ H = pE
 Projected annual carry is:
 
 ```text
-Null funding       =  p * E * f
+Null funding       =  H * f
 Collateral yield   =  p * y
 External funding   = -H * f_ext
 
 Net carry          =  p * [y + E * (f - f_ext)]
-Payer-capital APR  =  y + E * (f - f_ext)
 ```
 
-Do not add the displayed APRs without weighting them by notional. External funding applies to hedge notional `H`, which can be several times larger than Payer capital `p`.
+Both funding rates apply to the same exposure notional `H`. Null does not multiply `f` into a separate Payer funding rate: `E` determines how much Receiver notional belongs to the Payer position.
 
-Null's displayed Payer funding APR is `f_P = E * f`. The correct like-for-like comparison is nevertheless raw Null funding `f` against external funding `f_ext`, because both apply to each dollar of exposure.
+Compare raw Null funding `f` with external funding `f_ext` directly, then apply the spread to `H`.
 
 <Info>
-The sign of the opportunity comes from `f - f_ext`. Payer's exposure multiple `E` scales the result, while collateral yield `y` adds a separate carry source.
+The sign of the opportunity comes from `f - f_ext`. The allocated exposure notional `H = pE` determines the size of that funding spread, while collateral yield `y` adds a separate carry source.
 </Info>
 
 ## Worked example
@@ -56,29 +55,29 @@ The sign of the opportunity comes from `f - f_ext`. Payer's exposure multiple `E
 Assume:
 
 ```text
-Payer capital p         = $100
-Exposure multiple E     = 5
+Payer position p        = $100
+Exposure allocation E   = 5
 Null funding f          = 1.5%
 External long funding   = 1%
 Collateral yield y      = 5%
 ```
 
-The displayed Payer funding APR is `5 * 1.5% = 7.5%`, and the external hedge is `$500`. Projected annual carry is:
+The Payer position represents `$500` of Receiver exposure, so the external hedge notional is also `$500`. Projected annual carry is:
 
 ```text
-Null funding       = $100 * 5 * 1.5% =  $7.50
+Null funding       = $500 * 1.5%     =  $7.50
 Collateral yield   = $100 * 5%       =  $5.00
 External funding   = $500 * 1%       = -$5.00
 Net carry          =                      $7.50
 ```
 
-That is a projected `7.5%` return on the `$100` Payer position before costs. If external funding rises to `3%`, the displayed Payer APR remains `7.5%`, but net carry becomes:
+If external funding rises to `3%`, Null funding remains 1.5% of the same exposure notional, but projected annual net carry becomes:
 
 ```text
-5% + 5 * (1.5% - 3%) = -2.5%
+$5 + $500 * (1.5% - 3%) = -$2.50
 ```
 
-The exposure multiple amplifies a negative spread just as readily as a positive one. Capital posted as external margin also dilutes the realized return on all capital deployed.
+A larger allocated exposure notional increases a negative funding spread just as readily as a positive one. Capital posted as external margin also affects the realized return on all capital deployed.
 
 ## Where Null funding comes from
 
@@ -88,16 +87,18 @@ The standard imbalance funding-rate model uses:
 f = mu * (cR - P) / (cR + P)
 ```
 
-Where:
+For the standard imbalance funding-rate model:
 
-- `c` is the target Payer coverage ratio;
-- `mu` controls the curve's sensitivity;
+- `c` is the immutable target Payer coverage ratio where funding crosses zero;
+- `mu` is the immutable model sensitivity that bounds and scales the curve;
 - `R` is Receiver assets; and
 - `P` is Payer assets.
 
+Each market references a funding-rate model deployment. `c` and `mu` come from that model's onchain parameters, while `R` and `P` come from current pool state. The model computes `f` from those values. Do not assume every interface exposes each input separately; verify the market's model and onchain state when evaluating the trade.
+
 When `P < cR`, Payer is scarce and `f` is positive: Receiver pays Payer. When `P > cR`, funding reverses and Payer pays Receiver. At `P = cR`, Null funding is zero.
 
-A high displayed Payer APR usually indicates scarce backing and therefore higher effective exposure `R/P`. It is compensation for risk, not free yield.
+When Payer backing is scarce, each Payer share represents more Receiver exposure. Evaluate the funding rate against that exposure notional.
 
 ## Screen an opportunity
 
@@ -123,7 +124,7 @@ Review at least:
 - venue depth, lot size, minimum notional, and leverage limits; and
 - the amount of equity required to keep the external long away from liquidation.
 
-Do not open solely because one snapshot shows a high APR. Both funding rates can change sign.
+Do not open solely because one funding snapshot looks attractive. Both funding rates can change sign.
 
 ## Understand basis PnL
 
@@ -144,19 +145,9 @@ Net PnL = Null PnL + Hedge PnL
 
 After separating carry and execution costs, the remaining residual is basis PnL. It includes oracle-versus-venue price drift and entry or rebalance slippage. A position can have attractive projected carry and still lose money through basis or execution.
 
-## Rebalance efficiently
+## Manage the hedge
 
-Ordinary price settlement leaves the ideal hedge approximately unchanged. Rebalancing is mainly driven by Receiver flows, Payer flows, your own share changes, funding drift, and exceptional settlement states.
-
-Use a no-trade band so expected improvement exceeds the cost of trading. Every order should also pass:
-
-- fresh-state and valid-price checks;
-- venue lot and minimum-notional checks;
-- a margin-capacity check;
-- a conservative per-order notional cap; and
-- a check that the correction is in the expected direction.
-
-If market state is stale, stop rebalancing. The external venue can continue moving while Null cannot settle, making a hedge based on frozen pool state unreliable.
+Follow the sizing and no-trade-band process in [Market Making](/private-beta/market-make/overview). Recompute from fresh pool state instead of trading every price move. Stop automated resizing when Null state is stale or an exceptional settlement makes the ordinary hedge assumptions unreliable.
 
 ## Key risks
 

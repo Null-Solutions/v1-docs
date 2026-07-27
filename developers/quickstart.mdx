@@ -4,109 +4,282 @@ sidebarTitle: "Quickstart"
 description: "Discover a Sepolia market, preview shares, and deposit or redeem through the Null V1 router."
 ---
 
-This is the shortest path from zero to a working deposit and redeem against live Sepolia contracts. Pin addresses from [Live deployments](/resources/addresses).
+This guide resolves an existing Sepolia market, deposits `MockUSDC` into its Receiver pool through the router, and shows the matching redeem flow.
+
+The repository does not publish an example market or oracle address. You must supply the oracle address for an existing market. Do not substitute an arbitrary address.
 
 ## Prerequisites
 
-- Sepolia RPC and a funded wallet
-- ABIs for Factory, Market, Pool, and Router (from the contracts repo or your app's ABI folder)
-- Market inputs: `collateral`, `oracle`, and an enabled `frm`
+- A browser wallet connected to Sepolia and funded with Sepolia ETH
+- `viem` installed in your app
+- `MockUSDC` for the deposit
+- The deployed oracle address and oracle type for the market you want to use
 
-## 1. Resolve the market
+This page uses minimal inline ABIs so it does not depend on an unpublished ABI package. For a production integration, use verified ABIs from your contracts source or deployment artifacts.
+
+## 1. Add Sepolia constants
+
+Copy `NULL_V1_SEPOLIA` into a local file in your app. It is a documentation snippet from [Live deployments](/resources/addresses), not an importable Null package.
 
 ```ts
-import { createPublicClient, http } from "viem";
+export const NULL_V1_SEPOLIA = {
+  chainId: 11155111,
+  startBlock: 11321037,
+  factory: "0xc4d61E729225E8fA6612969fA705a36a8446B6CF",
+  router: "0x2ab2C1CcF7a1b843F73CD82d48fA60d3FB18FA7f",
+  payableRouter: "0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03",
+  frm: "0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014",
+  lens: "0x261841f1a2964232995e79ce7466c734cb2b25b7",
+  multicall: "0x779d7243cb816c5adc08d11d49c0222b8f36f3dc",
+  collateral: {
+    nUsdc: "0x77508321f1EF8C707Cd5869557365468BCeD0613",
+    mockUsdc: "0x5A316865F2C9c261aD1B254C46788b6356d2F135",
+  },
+} as const;
+```
+
+`nUSDC` is the market collateral vault share. `MockUSDC` is its underlying token. Router deposit and redeem amounts use `MockUSDC` units; pool previews use `nUSDC` vault-share units.
+
+## 2. Create clients and minimal ABIs
+
+```ts
+import {
+  createPublicClient,
+  createWalletClient,
+  custom,
+  http,
+  parseAbi,
+} from "viem";
 import { sepolia } from "viem/chains";
+import { NULL_V1_SEPOLIA } from "./null-v1-sepolia";
 
-const client = createPublicClient({ chain: sepolia, transport: http() });
+const ethereum = (
+  window as Window & { ethereum?: Parameters<typeof custom>[0] }
+).ethereum;
+if (!ethereum) {
+  throw new Error("Connect a browser wallet");
+}
 
-const market = await client.readContract({
-  address: factory,
+const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
+const walletClient = createWalletClient({
+  chain: sepolia,
+  transport: custom(ethereum),
+});
+const [account] = await walletClient.requestAddresses();
+if (!account) {
+  throw new Error("Approve a wallet account");
+}
+
+const factoryAbi = parseAbi([
+  "function getMarket(address collateral, address oracle, address frm) view returns (address market)",
+]);
+const marketAbi = parseAbi([
+  "function receiverPool() view returns (address)",
+  "function payerPool() view returns (address)",
+  "function state() view returns (uint256 lastUpdate, uint256 receiverPoolAssets, uint256 payerPoolAssets, uint256 protocolFees, uint256 price)",
+]);
+const poolAbi = parseAbi([
+  "function previewDeposit(uint256 assets) view returns (uint256 shares)",
+  "function previewRedeem(uint256 shares) view returns (uint256 assets)",
+  "function balanceOf(address owner) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+]);
+const vaultAbi = parseAbi([
+  "function previewDeposit(uint256 assets) view returns (uint256 shares)",
+  "function previewRedeem(uint256 shares) view returns (uint256 assets)",
+]);
+const erc20Abi = parseAbi([
+  "function decimals() view returns (uint8)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+]);
+const routerAbi = parseAbi([
+  "function depositMarket(address market, uint256 receiverAssets, uint256 payerAssets, uint256 minReceiverShares, uint256 minPayerShares, uint256 deadline, bytes[] updateData) returns (uint256 receiverShares, uint256 payerShares)",
+  "function redeemMarket(address market, uint256 receiverShares, uint256 payerShares, uint256 minReceiverAssets, uint256 minPayerAssets, uint256 deadline, bytes[] updateData) returns (uint256 receiverAssets, uint256 payerAssets)",
+]);
+```
+
+If you run this outside a browser, replace the injected-wallet setup with your own `viem` account and transport.
+
+## 3. Supply the market oracle
+
+Set these two required inputs from a deployed market:
+
+```ts
+import { getAddress, isAddress, type Hex } from "viem";
+
+const oracleInput = window.prompt("Existing Null market oracle address");
+if (!oracleInput || !isAddress(oracleInput)) {
+  throw new Error("A deployed market oracle address is required");
+}
+
+const oracle = getAddress(oracleInput);
+const oracleKindInput = window.prompt("Oracle type: chainlink or pyth");
+if (oracleKindInput !== "chainlink" && oracleKindInput !== "pyth") {
+  throw new Error("Oracle type must be chainlink or pyth");
+}
+
+const oracleKind = oracleKindInput;
+const updateData: Hex[] = []; // Use only while the stored oracle price is usable.
+```
+
+For a fresh update, fetch signed payloads before submitting the transaction. Follow [Oracle update flow](/markets/oracles#update-flow), then use the implementation-specific [Pyth](/contracts/oracles/pyth#update-data) or [Chainlink](/contracts/oracles/chainlink) instructions. Do not fabricate payload bytes.
+
+## 4. Resolve the market and read its pools
+
+```ts
+import { zeroAddress } from "viem";
+
+const market = await publicClient.readContract({
+  address: NULL_V1_SEPOLIA.factory,
   abi: factoryAbi,
   functionName: "getMarket",
-  args: [collateral, oracle, frm],
+  args: [
+    NULL_V1_SEPOLIA.collateral.nUsdc,
+    oracle,
+    NULL_V1_SEPOLIA.frm,
+  ],
 });
 
-if (market === "0x0000000000000000000000000000000000000000") {
-  // Market does not exist for this tuple yet.
-  // Create via factory.createMarket(...) or router.createMarket(...).
+if (market === zeroAddress) {
+  throw new Error("No market exists for this (collateral, oracle, frm) tuple");
 }
-```
 
-Then read pools and state:
-
-```ts
 const [receiverPool, payerPool, state] = await Promise.all([
-  client.readContract({ address: market, abi: marketAbi, functionName: "receiverPool" }),
-  client.readContract({ address: market, abi: marketAbi, functionName: "payerPool" }),
-  client.readContract({ address: market, abi: marketAbi, functionName: "state" }),
+  publicClient.readContract({
+    address: market,
+    abi: marketAbi,
+    functionName: "receiverPool",
+  }),
+  publicClient.readContract({
+    address: market,
+    abi: marketAbi,
+    functionName: "payerPool",
+  }),
+  publicClient.readContract({
+    address: market,
+    abi: marketAbi,
+    functionName: "state",
+  }),
 ]);
 
-const [, receiverAssets, payerAssets] = state;
-// Coverage proxy: E = receiverAssets / payerAssets (handle payerAssets === 0)
+const [, receiverPoolAssets, payerPoolAssets] = state;
+const coverageWad =
+  receiverPoolAssets === 0n
+    ? undefined
+    : (payerPoolAssets * 10n ** 18n) / receiverPoolAssets; // P/R
+const payerExposureWad =
+  payerPoolAssets === 0n
+    ? undefined
+    : (receiverPoolAssets * 10n ** 18n) / payerPoolAssets; // E = R/P
 ```
 
-## 2. Choose a router
+Coverage is `P/R`. Payer exposure is its inverse, `E = R/P`. Each ratio is undefined when its denominator is zero.
 
-| Oracle | Router | Why |
-| --- | --- | --- |
-| Chainlink Data Streams | `NullV1Router` | Fee-less `update(bytes[])` |
-| Pyth | `NullV1PayableRouter` | Pays native update fee from its own ETH balance |
+## 5. Preview and deposit
 
-Pass `updateData: []` when the stored oracle price is already usable.
-
-## 3. Preview, then apply slippage
-
-Pool previews use the **last settled** state. Execution settles first, so final shares can differ.
+This example deposits into Receiver only. The router wraps `MockUSDC` into `nUSDC`, but the pool preview accepts `nUSDC` shares. Quote that conversion first.
 
 ```ts
-const estimatedShares = await client.readContract({
+import { parseUnits } from "viem";
+
+const router =
+  oracleKind === "pyth"
+    ? NULL_V1_SEPOLIA.payableRouter
+    : NULL_V1_SEPOLIA.router;
+const underlyingDecimals = await publicClient.readContract({
+  address: NULL_V1_SEPOLIA.collateral.mockUsdc,
+  abi: erc20Abi,
+  functionName: "decimals",
+});
+const receiverAssets = parseUnits("100", underlyingDecimals);
+const collateralShares = await publicClient.readContract({
+  address: NULL_V1_SEPOLIA.collateral.nUsdc,
+  abi: vaultAbi,
+  functionName: "previewDeposit",
+  args: [receiverAssets],
+});
+const estimatedReceiverShares = await publicClient.readContract({
   address: receiverPool,
   abi: poolAbi,
   functionName: "previewDeposit",
-  args: [receiverAssets],
+  args: [collateralShares],
 });
 
 const slippageBps = 50n; // 0.5%
 const minReceiverShares =
-  (estimatedShares * (10_000n - slippageBps)) / 10_000n;
-```
+  (estimatedReceiverShares * (10_000n - slippageBps)) / 10_000n;
 
-<Warning>
-For ERC-4626 collateral, router amounts are **vault underlying** units. Pool `previewDeposit` expects **collateral vault share** units. Quote the vault wrap conversion before the pool preview.
-</Warning>
+const approvalHash = await walletClient.writeContract({
+  account,
+  address: NULL_V1_SEPOLIA.collateral.mockUsdc,
+  abi: erc20Abi,
+  functionName: "approve",
+  args: [router, receiverAssets],
+});
+await publicClient.waitForTransactionReceipt({ hash: approvalHash });
 
-## 4. Deposit
-
-Approve the token the router pulls (collateral, or vault underlying), then:
-
-```ts
-const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
-
-const hash = await walletClient.writeContract({
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 5 * 60);
+const depositHash = await walletClient.writeContract({
+  account,
   address: router,
   abi: routerAbi,
   functionName: "depositMarket",
   args: [
     market,
-    receiverAssets, // set the other side to 0n to skip it
+    receiverAssets,
     0n,
     minReceiverShares,
     0n,
     deadline,
-    [], // or fresh oracle update bytes
+    updateData,
   ],
 });
+await publicClient.waitForTransactionReceipt({ hash: depositHash });
 ```
 
-You receive ERC-4626 Receiver and/or Payer shares.
+Pool previews use the last settled state. Execution settles first, so the minimum protects you if the conversion changes.
 
-## 5. Redeem
+## 6. Preview and redeem
 
-Approve the pool share token(s) to the router, then:
+For ERC-4626 collateral, the pool preview returns `nUSDC` shares. Convert those shares to `MockUSDC` before setting the router's minimum.
 
 ```ts
-const hash = await walletClient.writeContract({
+const receiverShares = await publicClient.readContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "balanceOf",
+  args: [account],
+});
+const estimatedCollateralShares = await publicClient.readContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "previewRedeem",
+  args: [receiverShares],
+});
+const estimatedUnderlying = await publicClient.readContract({
+  address: NULL_V1_SEPOLIA.collateral.nUsdc,
+  abi: vaultAbi,
+  functionName: "previewRedeem",
+  args: [estimatedCollateralShares],
+});
+const minReceiverAssets =
+  (estimatedUnderlying * (10_000n - slippageBps)) / 10_000n;
+
+const shareApprovalHash = await walletClient.writeContract({
+  account,
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "approve",
+  args: [router, receiverShares],
+});
+await publicClient.waitForTransactionReceipt({ hash: shareApprovalHash });
+
+const redeemDeadline = BigInt(Math.floor(Date.now() / 1000) + 5 * 60);
+const redeemHash = await walletClient.writeContract({
+  account,
   address: router,
   abi: routerAbi,
   functionName: "redeemMarket",
@@ -116,46 +289,16 @@ const hash = await walletClient.writeContract({
     0n,
     minReceiverAssets,
     0n,
-    deadline,
-    [],
+    redeemDeadline,
+    updateData,
   ],
 });
+await publicClient.waitForTransactionReceipt({ hash: redeemHash });
 ```
-
-For ERC-4626 collateral, the router unwraps and returns underlying. Minimum assets are in underlying units.
-
-## 6. Track positions
-
-```ts
-const shares = await client.readContract({
-  address: receiverPool,
-  abi: poolAbi,
-  functionName: "balanceOf",
-  args: [user],
-});
-
-// Approximate value (raw collateral units of the market token):
-// value ≈ shares * totalAssets / totalSupply
-```
-
-Index these events for history:
-
-- Factory `CreateMarket`
-- Market `UpdateState`, `SetFees`
-- Pool ERC-20 `Transfer` and ERC-4626 `Deposit` / `Withdraw`
-
-## Checklist
-
-- [ ] Hardcode factory, routers, FRM, Lens — not per-market pool addresses
-- [ ] Discover markets by `(collateral, oracle, frm)`
-- [ ] Match router to oracle fee model
-- [ ] Treat previews as estimates; enforce slippage + deadline
-- [ ] Convert units correctly when collateral is ERC-4626
-- [ ] Combine share balances with `UpdateState` for valuation
 
 ## Next
 
-- Full parameter walkthrough: [Depositing](/developers/depositing) · [Redeeming](/developers/redeeming)
-- Settlement order: [Settlement](/developers/settlement)
-- UI reads: [Frontend integration](/contracts/integration/ui)
-- Exact signatures: [Router reference](/contracts/router)
+1. Read [Settlement](/developers/settlement) to understand why previews can move.
+2. Review every parameter in [Depositing](/developers/depositing) and [Redeeming](/developers/redeeming).
+3. Read [Router](/developers/router) and [Oracles](/markets/oracles) before handling user funds.
+4. Add position reads with [Frontend integration](/contracts/integration/ui) or history with [Indexer integration](/contracts/integration/indexer).

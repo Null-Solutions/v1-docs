@@ -23,12 +23,18 @@ uint256 price = oracle.price(); // 200 * 10^36 → 200 quote units
 | Oracle | Router | Fee |
 | --- | --- | --- |
 | Pyth | `NullV1PayableRouter` | Native fee paid from router ETH |
-| Chainlink V3 | `NullV1Router` | Fee-less |
-| Chainlink V11 | `NullV1Router` | Fee-less |
+| Chainlink Data Streams V3 | `NullV1Router` | No native fee |
+| Chainlink Data Streams V11 | `NullV1Router` | No native fee |
 
 ## Update flow
 
-Fetch a signed payload and pass it as `updateData` on router create / deposit / redeem. Nonempty arrays update the oracle before the market op.
+Fetch a signed payload offchain and pass it as `updateData` on router create, deposit, or redeem:
+
+- **Pyth:** fetch `binary.data` for `oracle.priceId()` from [Hermes](https://docs.pyth.network/price-feeds/core/fetch-price-updates). Each hex element becomes one `bytes` item.
+- **Chainlink V3:** fetch the signed report for `oracle.priceId()` from the [Data Streams API](https://docs.chain.link/data-streams/reference/data-streams-api).
+- **Chainlink V11:** fetch the signed report for the feed selected by the report's market status. The oracle exposes `priceId()` for regular hours, `extendedPriceId()` for pre/post-market, and `overnightPriceId()` for overnight. See the [Data Streams API reference](https://docs.chain.link/data-streams/reference/data-streams-api/interface-api).
+
+Chainlink Data Streams API requests require credentials and authentication. Fetch payloads in a trusted backend. Do not expose the API secret in browser code.
 
 ```solidity
 router.depositMarket(
@@ -44,6 +50,12 @@ router.depositMarket(
 
 Callers never attach `msg.value` for Pyth — the payable router pays from its balance.
 
+### Empty `updateData`
+
+Both routers skip the oracle update when `updateData.length === 0`, then continue to the market operation. This works only if the oracle's stored price is already accepted by `price()`.
+
+Passing `[]` directly to any supported oracle's `update(bytes[])` is different: it reverts with `UpdateDataEmpty()`. An empty router payload does not refresh a stale oracle and does not initialize an oracle that has no usable stored price.
+
 <Warning>
 Router type is part of the integration. The fee-less router cannot pay a Pyth update fee.
 </Warning>
@@ -52,13 +64,14 @@ Router type is part of the integration. The fee-less router cannot pay a Pyth up
 
 Normal freshness threshold: **60 seconds**.
 
-| Age of stored price | `price()` behavior |
+| Stored timestamp relative to `block.timestamp` | `price()` behavior |
 | --- | --- |
-| ≤ 60s old (or ≤ 60s in the future) | Accepted |
-| > 60s and < 10 days | `StalePrice()` revert |
-| ≥ 10 days | Last stored positive price returned |
+| From 60 seconds old through 60 seconds in the future | Accepted |
+| More than 60 seconds in the future | Reverts with `StalePrice()` |
+| More than 60 seconds old but less than 10 days old | Reverts with `StalePrice()` |
+| At least 10 days old | Returns the last stored positive price |
 
-The escape lives in each oracle's `price()` — it is not a separate redemption mode and does not refresh the stored price. Update acceptance is narrower (see Pyth/Chainlink refs).
+The escape lives in each oracle's `price()`—it is not a separate redemption mode and does not refresh the stored price. Update acceptance is narrower: Pyth and Chainlink V3 reject future updates, while Chainlink V11 accepts reports up to 60 seconds ahead. The escape does not make an old update payload acceptable.
 
 <Warning>
 The 10-day path restores liveness after prolonged outage. Treat the market as degraded and account for stale-price risk.
