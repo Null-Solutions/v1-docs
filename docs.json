@@ -3,9 +3,9 @@
   "name": "Null V1",
   "theme": "luma",
   "colors": {
-    "primary": "#45a5ff",
-    "light": "#b1dfff",
-    "dark": "#b8d9fa"
+    "primary": "#2d2c2c",
+    "light": "#2d2c2c",
+    "dark": "#d4dce7"
   },
   "logo": {
     "light": "/images/Logo.svg",
