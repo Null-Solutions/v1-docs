@@ -144,7 +144,8 @@
             "group": "About Null",
             "pages": [
               "private-beta/about-null/overview",
-              "private-beta/about-null/the-primitive"
+              "private-beta/about-null/the-primitive",
+              "private-beta/about-null/smart-contracts"
             ]
           },
           {
