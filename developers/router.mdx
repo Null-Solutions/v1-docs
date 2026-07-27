@@ -1,0 +1,120 @@
+---
+title: "Router"
+sidebarTitle: "Router"
+description: "Use NullV1Router or NullV1PayableRouter for create, deposit, redeem, deadlines, slippage, and oracle updates."
+---
+
+Null ships two periphery routers with the same market-operation signatures:
+
+| Contract | Use for | Fee model |
+| --- | --- | --- |
+| `NullV1Router` | Chainlink Data Streams | Fee-less `update(bytes[])` |
+| `NullV1PayableRouter` | Pyth | Pays native update fee from its own ETH |
+
+Neither owns core accounting. Callers **never** attach `msg.value` to market ops — the payable router's owner pre-funds ETH and can `withdrawEth` unused balance.
+
+Use a router when you need combined Receiver/Payer actions, deadlines, slippage floors, `updateData`, or ERC-4626 collateral wrap/unwrap.
+
+## Oracle update data
+
+```solidity
+bytes[] calldata updateData
+```
+
+If `updateData.length > 0`:
+
+- fee-less router calls `INullV1UpdatableOracle(oracle).update(updateData)`
+- payable router queries `getUpdateFee`, pays from its balance, and reverts with `InsufficientUpdateFeeBalance` if underfunded
+
+Pass `[]` when the stored price is already usable.
+
+## Create market
+
+```solidity
+function createMarket(
+    INullV1Factory factory,
+    IERC20 collateral,
+    INullV1Oracle oracle,
+    INullV1FundingRateModel frm,
+    bytes[] calldata updateData
+) external returns (INullV1Market market);
+```
+
+Optionally updates the oracle, then calls `factory.createMarket`. The factory requires nonzero deps, an enabled FRM, and an unused `(collateral, oracle, frm)` tuple.
+
+## Deposit
+
+```solidity
+function depositMarket(
+    INullV1Market market,
+    uint256 receiverAssets,
+    uint256 payerAssets,
+    uint256 minReceiverShares,
+    uint256 minPayerShares,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 receiverShares, uint256 payerShares);
+```
+
+Flow:
+
+1. Check `deadline`
+2. Optionally update the oracle
+3. Pull collateral (wrapping ERC-4626 underlying when needed)
+4. Deposit into each side where assets `> 0`
+5. Enforce `minReceiverShares` / `minPayerShares`
+
+Reverts: `TransactionTooOld`, `SlippageReceiverShares`, `SlippagePayerShares`.
+
+## Redeem
+
+```solidity
+function redeemMarket(
+    INullV1Market market,
+    uint256 receiverShares,
+    uint256 payerShares,
+    uint256 minReceiverAssets,
+    uint256 minPayerAssets,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 receiverAssets, uint256 payerAssets);
+```
+
+Flow:
+
+1. Check `deadline`
+2. Optionally update the oracle
+3. Redeem each side where shares `> 0`
+4. Push collateral (unwrapping ERC-4626 when needed)
+5. Enforce asset minimums
+
+Reverts: `TransactionTooOld`, `SlippageReceiverAssets`, `SlippagePayerAssets`.
+
+Shares must be owned by `msg.sender` (or transferred/approved appropriately when composing).
+
+## ERC-4626 collateral
+
+Core markets always hold the market collateral token. If that token is an ERC-4626 vault share:
+
+**Deposit:** pull vault underlying → deposit into vault → deposit vault shares into Null pool.
+
+**Redeem:** redeem Null shares → redeem vault shares → send underlying to user.
+
+If collateral has no `asset()`, the router treats it as a plain ERC-20.
+
+## Approvals
+
+| Collateral type | Approve router to spend |
+| --- | --- |
+| Plain ERC-20 | Market collateral |
+| ERC-4626 vault share | Vault **underlying** |
+| Redeem | Receiver and/or Payer **pool share** tokens |
+
+## Operational notes
+
+- Both routers are `nonReentrant` on deposit and redeem
+- Approvals are reset after wrapping and pool deposits
+- Slippage checks run after pool execution returns
+- Core accounting still lives in market + pools
+
+Deep dives: [Depositing](/developers/depositing) · [Redeeming](/developers/redeeming) · [Router reference](/contracts/router) · [Oracles](/contracts/oracles/overview)

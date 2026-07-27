@@ -1,127 +1,84 @@
 ---
-title: "Null V1 Market Parameters Explained"
-sidebarTitle: "Market Parameters"
-description: "Understand the immutable (collateral, oracle, frm) market identity, pool addresses, fees, and standard funding-model parameters."
+title: "Market parameters"
+sidebarTitle: "Market parameters"
+description: "Immutable (collateral, oracle, frm) identity, pools, fees, and standard imbalance FRM parameters."
 ---
 
-A Null V1 market is uniquely identified by three immutable dependency addresses:
+A market is uniquely identified by three immutable dependency addresses:
 
 ```text
 (collateral, oracle, frm)
 ```
 
-The factory permits only one market for each tuple. Changing any dependency means creating a different market.
+One market per tuple. Changing any dependency means a different market.
 
 ## Immutable identity
 
 <ParamField path="collateral" type="IERC20" required>
-  The ERC-20 held by the market and used by both ERC-4626 pools. Pool assets,
-  fees, funding, and price PnL are denominated in raw units of this token. See
-  [Collateral](/markets/collateral).
+  ERC-20 held by the market and both pools. Accounting is in raw units of this token. See [Collateral](/markets/collateral).
 </ParamField>
 
 <ParamField path="oracle" type="INullV1Oracle" required>
-  The contract that supplies the tracked asset price, normalized to `1e36`.
-  Settlement requires a nonzero price. See [Oracles](/markets/oracles).
+  Tracked asset price at `1e36`. Settlement requires nonzero. See [Oracles](/markets/oracles).
 </ParamField>
 
 <ParamField path="frm" type="INullV1FundingRateModel" required>
-  The funding-rate model queried during every settlement. The factory owner must
-  enable the FRM before a market can use it. An enabled FRM cannot be disabled.
+  Funding-rate model queried every settlement. Must be factory-enabled; cannot be disabled.
 </ParamField>
 
 <Warning>
-  A market does not have an `asset` or `mu` identity field. Its identity is
-  `(collateral, oracle, frm)`. Funding parameters such as `mu` belong to the FRM
-  implementation.
+A market has no `asset` or `mu` identity field. Funding params like `mu` live on the FRM, not the market.
 </Warning>
 
 ## Other fixed addresses
 
-<ParamField path="factory" type="address">
-  The `NullV1Factory` that cloned and registered the market. The factory owner
-  controls fees and FRM enablement but cannot replace the market dependencies.
-</ParamField>
+| Field | Role |
+| --- | --- |
+| `factory` | Cloned/registered the market; owner sets fees and enables FRMs |
+| `receiverPool` | ERC-4626 pool receiving tracked price return |
+| `payerPool` | ERC-4626 reserve; opposite price exposure |
 
-<ParamField path="receiverPool" type="INullV1Pool">
-  The ERC-4626 pool whose assets receive the tracked price return.
-</ParamField>
+Both pools are cloned at init and emitted in `CreateMarket`.
 
-<ParamField path="payerPool" type="INullV1Pool">
-  The ERC-4626 reserve pool that backs Receiver gains and takes the opposite
-  price exposure.
-</ParamField>
+## Mutable fees
 
-The factory clones both pools during market initialization and emits their addresses in `CreateMarket`.
+Factory owner can set three fees, each capped at 500 bps:
 
-## Mutable fee parameters
+| Accessor | Charged on | Max |
+| --- | --- | ---: |
+| `entryFee()` | `deposit` / `mint` | 5% |
+| `exitFee()` | `withdraw` / `redeem` | 5% |
+| `collateralFee()` | Pool assets, annualized during settlement | 5% APR |
 
-The factory owner can update three market fees. Each is expressed in basis points and capped at 500 bp:
-
-| Accessor          | Charged on                                | Maximum |
-| ----------------- | ----------------------------------------- | ------: |
-| `entryFee()`      | `deposit` and `mint`                      |      5% |
-| `exitFee()`       | `withdraw` and `redeem`                   |      5% |
-| `collateralFee()` | Pool assets, annualized during settlement |  5% APR |
-
-All fees accrue in `protocolFees`. `sweepFees()` settles the market first, then transfers accrued fees to the factory owner.
+Fees accrue in `protocolFees`. `sweepFees()` settles first, then pays the factory owner. Details: [Fees](/developers/fees).
 
 ## Standard imbalance FRM
 
-`NullV1ImbalanceFundingRateModel` has two immutable, WAD-scaled constructor parameters:
+`NullV1ImbalanceFundingRateModel` constructor params (WAD):
 
 <ParamField path="mu" type="uint256" required>
-  Funding sensitivity and the absolute rate bound. It must satisfy
-  `0 < mu <= 1e18`. The default deployment uses `1e18`, meaning `mu = 1`.
+  Sensitivity and absolute rate bound. `0 < mu <= 1e18`. Default deployment: `1e18` (`mu = 1`).
 </ParamField>
 
 <ParamField path="targetCoverage" type="uint256" required>
-  Target Payer coverage `c = P/R`. It must satisfy
-  `0 < targetCoverage <= 1e18`. The default is `0.5e18`, meaning `c = 0.5`.
+  Target Payer coverage `c = P/R`. `0 < targetCoverage <= 1e18`. Default: `0.5e18` (`c = 0.5`).
 </ParamField>
-
-For prepared Receiver assets `R` and Payer assets `P`, the signed WAD APR is:
 
 ```text
 f = mu * (cR - P) / (cR + P)
 ```
 
-- Positive `f` means Receiver pays Payer.
-- Negative `f` means Payer pays Receiver.
-- Funding is zero at `P = cR`.
-- Funding is zero if either pool is empty.
-- `|f| <= mu` by construction; there is no separate runtime cap.
-- Payer capital APR is `f * R / P`.
+- Positive `f` → Receiver pays Payer
+- Negative `f` → Payer pays Receiver
+- Zero at `P = cR` or if either pool is empty
+- `|f| <= mu` by construction
+- Payer capital APR = `f * R / P`
 
-The standard FRM is stateless. A market can instead reference another enabled implementation of `INullV1FundingRateModel`, so integrations should identify the FRM before interpreting a rate.
+The FRM is stateless. Another enabled `INullV1FundingRateModel` can replace it — always identify the FRM before interpreting rates. Worked tables: [Funding and carry](/learn/funding-and-carry).
 
-## Default-model examples
-
-With `R = 1,000`, `c = 0.5`, and `mu = 1`:
-
-| Payer assets `P` | Coverage `P/R` |    `f` |      Annual transfer | Payer capital APR |
-| ---------------: | -------------: | -----: | -------------------: | ----------------: |
-|               50 |             5% | +81.8% | 818 Receiver → Payer |           +1,636% |
-|              100 |            10% | +66.7% | 667 Receiver → Payer |             +667% |
-|              200 |            20% | +42.9% | 429 Receiver → Payer |             +214% |
-|              500 |            50% |     0% |                    0 |                0% |
-|              750 |            75% | -20.0% | 200 Payer → Receiver |            -26.7% |
-|            1,000 |           100% | -33.3% | 333 Payer → Receiver |            -33.3% |
-
-At `P = 100`, the annual transfer is 667—not 429:
-
-```text
-f = (500 - 100) / (500 + 100) = 66.7%
-66.7% * 1,000 = 667
-```
-
-Actual transfers are prorated by elapsed time, netted with price PnL, and capped by the paying pool's settleable assets.
-
-## Reading parameters onchain
+## Read onchain
 
 ```solidity
-INullV1Market market = INullV1Market(marketAddress);
-
 address factory      = market.factory();
 address collateral   = address(market.collateral());
 address oracle       = address(market.oracle());
@@ -132,16 +89,9 @@ address payerPool    = address(market.payerPool());
 uint16 entryFee      = market.entryFee();
 uint16 exitFee       = market.exitFee();
 uint16 collateralFee = market.collateralFee();
+
+uint256 mu = NullV1ImbalanceFundingRateModel(frm).mu();
+uint256 targetCoverage = NullV1ImbalanceFundingRateModel(frm).targetCoverage();
 ```
 
-For the standard FRM, query its parameters separately:
-
-```solidity
-NullV1ImbalanceFundingRateModel model =
-    NullV1ImbalanceFundingRateModel(frm);
-
-uint256 mu = model.mu();
-uint256 targetCoverage = model.targetCoverage();
-```
-
-Use `factory.getMarket(collateral, oracle, frm)` to discover the canonical market. See [Factory reference](/contracts/factory) and [Market update](/developers-tab/market-update) for the registry and settlement flow.
+Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/developers/settlement).

@@ -1,0 +1,147 @@
+---
+title: "Settlement"
+sidebarTitle: "Settlement"
+description: "Exact Null V1 market update order: oracle, reconciliation, collateral fee, funding, price PnL, circuit breaker, and solvency bounds."
+---
+
+Every `deposit`, `mint`, `withdraw`, and `redeem` settles the market **before** changing pool shares or assets. Fee updates and fee sweeps also settle first. Settlement is interaction-driven — there is no public permissionless `poke`.
+
+`NullV1Market` prepares state, queries the immutable FRM, and delegates settlement math to `SettlementLib`.
+
+## Execution order
+
+1. Read the oracle price; reject zero.
+2. Reconcile the market's external collateral balance.
+3. Charge the annualized collateral fee.
+4. Query the FRM against that prepared state.
+5. Net signed funding with price PnL.
+6. Cap and apply the net transfer.
+7. Store the new timestamp and price.
+
+```solidity
+uint256 price = oracle.price();
+if (price == 0) revert ZeroOraclePrice();
+
+MarketState memory prepared =
+    state.prepareUpdate(collateral.balanceOf(address(this)), collateralFee);
+int256 fundingRate = frm.fundingRate(_marketParams(), prepared);
+(MarketState memory updated, bool circuitBreakerFired) =
+    prepared.finalizeUpdate(price, fundingRate);
+```
+
+## Price validation
+
+Oracles normalize prices to `1e36`. If `oracle.price()` reverts or returns zero, the triggering action reverts and no market state is persisted.
+
+## Reconciliation
+
+The market passes `collateral.balanceOf(address(this))` into `prepareUpdate`. Reconciliation:
+
+1. Reserves as many recorded `protocolFees` as the external balance can cover.
+2. Compares the remainder with recorded Receiver and Payer assets.
+3. Allocates external gains and losses pro rata across both pools (rounding remainder from the larger remaining pool first).
+
+If both pools are empty, leftover external balance is assigned to `protocolFees` so unassigned collateral is not gifted to later depositors.
+
+## Collateral fee
+
+After reconciliation, each pool is charged independently:
+
+```text
+pool fee = pool balance * collateralFee / 10,000 * elapsed / 365 days
+```
+
+Each charge is capped at that pool's balance and added to `protocolFees`. It is a fee on assets over time, not a share of measured yield. See [Fees](/developers/fees).
+
+## Funding
+
+```solidity
+frm.fundingRate(
+    NullV1MarketParams({
+        collateral: address(collateral),
+        oracle: address(oracle),
+        frm: address(frm)
+    }),
+    prepared
+);
+```
+
+The FRM sees post-reconciliation, post-collateral-fee state. It returns a signed WAD-scaled APR: positive means Receiver pays Payer; negative means Payer pays Receiver.
+
+For the standard imbalance FRM (`c = 0.5`, `mu = 1` defaults):
+
+```text
+f = mu * (cR - P) / (cR + P)
+funding amount = R * abs(f) / 1e18 * elapsed / 365 days
+```
+
+No funding accrues when time has not advanced, the rate is zero, or either pool is empty. Details and examples: [Funding and carry](/learn/funding-and-carry).
+
+## Price PnL
+
+```text
+receiver base notional = R * 1e36 / previous price
+price PnL              = price delta * receiver base notional / 1e36
+```
+
+A price increase contributes a Payer → Receiver transfer; a decrease contributes Receiver → Payer. Market initialization stores the first nonzero oracle price as the anchor.
+
+## Circuit breaker
+
+```text
+maxAllowedDelta = previousPrice * 700 * elapsed / (10_000 * 1 hour)
+```
+
+When `block.timestamp <= lastUpdate`, elapsed is treated as one second. If the absolute delta exceeds the limit:
+
+- price PnL is **skipped** (not clamped)
+- funding still accrues when time advanced
+- the new price is stored as the next anchor
+- skipped PnL is **not** deferred
+
+See [Circuit breaker](/security/circuit-breaker).
+
+## Netted solvency bound
+
+Funding and price PnL are netted before collateral moves:
+
+```text
+net into Receiver = price transfer from Payer to Receiver − funding from Receiver to Payer
+```
+
+The debit is capped by:
+
+```text
+settleable assets = max(pool assets − MIN_POOL_ASSETS, 0)
+```
+
+`MIN_POOL_ASSETS` is `1e6` raw collateral units. Unpaid remainder is not recorded as debt. Reconciliation and collateral fees run earlier without this floor, so a prepared pool can already be at or below it.
+
+If either prepared pool is empty, both funding and price PnL are skipped for that update.
+
+## Persistence
+
+```solidity
+event UpdateState(
+    uint256 indexed lastUpdate,
+    uint256 receiverPoolAssets,
+    uint256 payerPoolAssets,
+    uint256 protocolFees,
+    uint256 price,
+    bool circuitBreakerFired
+);
+```
+
+Pool actions continue only after this state is stored. Indexers should treat `UpdateState` as the settlement checkpoint.
+
+## Integration implications
+
+- Previews go stale because execution updates first — always add slippage.
+- FRM reads and Lens simulations must use post-reconciliation, post-fee state (Lens does this for you).
+- Empty or one-sided markets skip funding and price PnL.
+- Circuit breaker skips price PnL only, not funding or anchor advancement.
+- Solvency applies to the **netted** transfer, not to funding and price separately.
+
+## Reference
+
+- [Market](/contracts/market) · [Funding and carry](/learn/funding-and-carry) · [Risks and parameters](/learn/risks-and-parameters)

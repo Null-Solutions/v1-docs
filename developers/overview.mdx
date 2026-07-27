@@ -1,0 +1,140 @@
+---
+title: "Developer overview"
+sidebarTitle: "Overview"
+description: "What Null V1 exposes to builders today: onchain markets, ERC-4626 pools, routers, and read helpers."
+---
+
+Null V1 is a **contracts-first** protocol. Integrators discover markets, read state, and deposit or redeem through Solidity interfaces — typically via `viem`, `ethers`, or a wallet SDK. There is no published Null npm SDK and no partner trading API with API keys.
+
+Today the live deployment is **Sepolia**. Ethereum mainnet and Base are not live. Use [Live deployments](/resources/addresses) for canonical addresses.
+
+<Note>
+The private-beta app uses Mint / Burn language for the same deposit and redeem flows. Onchain and in these docs, use ERC-4626 `deposit` / `redeem` (and router `depositMarket` / `redeemMarket`).
+</Note>
+
+## What you are integrating
+
+A Null market is a fully collateralized pooled total-return swap. Users deposit collateral into one or both of two ERC-4626 pools:
+
+| Side | Role |
+| --- | --- |
+| **Receiver** | Synthetic long on the oracle-tracked price |
+| **Payer** | Backs Receiver; takes the opposite price exposure and the other side of signed funding |
+
+There are no loans, margin accounts, liquidations, or undercollateralized claims. Settlement redistributes collateral the market already holds.
+
+A market is uniquely identified by an immutable tuple:
+
+```text
+(collateral, oracle, frm)
+```
+
+- `collateral` — ERC-20 held by the market (may itself be an ERC-4626 vault share)
+- `oracle` — price source, always scaled to `1e36`
+- `frm` — funding-rate model (must be factory-enabled)
+
+## Architecture
+
+<CardGroup cols={2}>
+  <Card title="Core" icon="boxes">
+    `NullV1Factory` deploys and registers markets.
+
+    `NullV1Market` owns accounting and settlement.
+
+    `NullV1Pool` (×2) exposes Receiver and Payer ERC-4626 shares.
+  </Card>
+  <Card title="Periphery" icon="route">
+    `NullV1Router` / `NullV1PayableRouter` wrap create, deposit, redeem, deadlines, slippage, and oracle `updateData`.
+
+    `NullV1Lens` / `NullV1Multicall` provide read-only previews and batch simulation.
+  </Card>
+</CardGroup>
+
+```text
+Factory ──create──▶ Market
+                      ├── Receiver Pool (ERC-4626)
+                      └── Payer Pool (ERC-4626)
+
+Router ──writes──▶ Pools (+ optional oracle update)
+Lens   ──reads───▶ Market / pools / FRM / collateral metrics
+```
+
+Most integrations need three rules:
+
+1. Resolve the market with `factory.getMarket(collateral, oracle, frm)` (or index `CreateMarket`).
+2. Enter and exit through a pool or through the matching router.
+3. Every state-changing pool action **settles the market first**, so previews can diverge from execution.
+
+## Surfaces at a glance
+
+### Factory
+
+```solidity
+function getMarket(address collateral, address oracle, address frm)
+    external view returns (address market);
+
+function createMarket(
+    IERC20 collateral,
+    INullV1Oracle oracle,
+    INullV1FundingRateModel frm
+) external returns (INullV1Market market);
+```
+
+### Market
+
+```solidity
+function receiverPool() external view returns (INullV1Pool);
+function payerPool() external view returns (INullV1Pool);
+function state() external view returns (
+    uint256 lastUpdate,
+    uint256 receiverPoolAssets,
+    uint256 payerPoolAssets,
+    uint256 protocolFees,
+    uint256 price
+);
+```
+
+Pools call `updateState()`. External integrators normally do not.
+
+### Pools
+
+Standard ERC-4626 entry points on each side:
+
+```solidity
+deposit / mint / withdraw / redeem
+previewDeposit / previewMint / previewWithdraw / previewRedeem
+```
+
+### Router
+
+Protected combined flows:
+
+```solidity
+depositMarket(market, receiverAssets, payerAssets, minReceiverShares, minPayerShares, deadline, updateData)
+redeemMarket(market, receiverShares, payerShares, minReceiverAssets, minPayerAssets, deadline, updateData)
+```
+
+Use `NullV1Router` for fee-less Chainlink updates. Use pre-funded `NullV1PayableRouter` for Pyth (callers do not attach `msg.value`).
+
+## What is not available
+
+| Expectation | Reality |
+| --- | --- |
+| Published Null SDK | Use ABIs + `viem` / `ethers` against the contracts |
+| Public partner REST API / webhooks | Reads are onchain (Lens) or your own indexer; the product indexer is not a keyed public API |
+| Mainnet / Base addresses | Sepolia only for now |
+| Order book / MM credentials | Markets are pooled mint/burn, not CLOB |
+
+## Recommended path
+
+<Steps>
+  <Step title="Read the model">
+    [Protocol overview](/learn/overview) → [Funding and carry](/learn/funding-and-carry) → [Settlement](/developers/settlement)
+  </Step>
+  <Step title="Ship a first flow">
+    [Quickstart](/developers/quickstart) → [Depositing](/developers/depositing) / [Redeeming](/developers/redeeming)
+  </Step>
+  <Step title="Harden the integration">
+    [Router](/developers/router) → [Frontend](/contracts/integration/ui) or [Indexer](/contracts/integration/indexer) → [Risks](/learn/risks-and-parameters)
+  </Step>
+</Steps>

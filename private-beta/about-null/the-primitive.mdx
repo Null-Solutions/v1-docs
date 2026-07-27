@@ -89,6 +89,14 @@ Null can only transfer value already held by the market. It cannot create debt o
 
 There are no leveraged accounts to monitor and no liquidation auction. Losses appear directly in pool share value and are bounded by available pool collateral.
 
+### No risk engine
+
+Null does not depend on an offchain or discretionary risk engine to decide who can trade, how much leverage an account receives, or when a position should be closed. Risk is expressed through transparent market parameters, available collateral, oracle rules, and deterministic settlement.
+
+### Onchain settlement
+
+Null settles on Ethereum (currently Sepolia for the live private beta). Markets use Ethereum's security model and can compose with standard ERC-20 / ERC-4626 tooling.
+
 ### Markets for any reliable oracle
 
 A market can track crypto, equities, commodities, rates, or other measurable values without requiring custody of the tracked asset.
@@ -100,6 +108,16 @@ Each market permanently fixes its collateral token, oracle, and funding-rate mod
 ### Permissionless, pooled infrastructure
 
 Anyone can create a canonical market from Factory-enabled components. Standardized pools and routers make those markets easier for users and applications to discover and integrate.
+
+### A deliberately small core
+
+The protocol's significant core logic is roughly 600 lines of custom Solidity. Keeping the accounting surface compact makes the primitive easier to understand, test, integrate, and review. A small codebase reduces complexity; it does not remove smart-contract risk.
+
+### Modular by design
+
+Null's goal is to make safe synthetic markets into reusable DeFi building blocks. Markets can be created by anyone from approved modules, positions use standard ERC-4626 shares, and integrations can compose those shares across wallets, vaults, interfaces, and other DeFi protocols.
+
+The result is not a closed trading venue. It is open infrastructure for creating, distributing, and using synthetic exposure throughout DeFi.
 
 ## How a position moves through Null
 
@@ -129,4 +147,4 @@ The protocol includes a minimum-pool floor and a price circuit breaker that can 
 Receiver and Payer positions can lose value. Full collateralization does not remove oracle, smart-contract, liquidity, collateral, funding, or market risk.
 </Warning>
 
-Continue with [Position Types](/private-beta/trading/position-types) for the product-level comparison, or read the [protocol overview](/learn/overview) for exact settlement mechanics.
+Continue with [Position Types](/private-beta/trading/position-types) for the product-level comparison, or read the [protocol overview](/learn/overview) for settlement mechanics.

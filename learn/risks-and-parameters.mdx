@@ -56,7 +56,7 @@ If either pool is empty, settlement applies neither funding nor price PnL. It st
 
 ## Fees
 
-Each market has entry, exit, and annualized collateral fees. Every fee is capped at 500 basis points. Fees accrue in `protocolFees` and can be swept only to the factory owner.
+Each market has entry, exit, and annualized collateral fees. Every fee is capped at 500 basis points. Fees accrue in `protocolFees` and can be swept only to the factory owner. See [Fees](/developers/fees).
 
 Deposits and redeems use fee-on-total accounting. Mints and withdrawals use fee-on-raw accounting. Integrators should rely on ERC-4626 preview functions for estimates, then apply slippage controls for execution because the market updates before the action completes.
 

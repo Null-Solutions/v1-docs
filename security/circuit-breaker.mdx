@@ -1,122 +1,64 @@
 ---
-title: "Price Circuit Breaker: How It Works"
-sidebarTitle: "Circuit Breaker"
-description: "Learn how Null V1's price circuit breaker skips price PnL when an oracle move exceeds the time-scaled threshold."
+title: "Circuit breaker"
+sidebarTitle: "Circuit breaker"
+description: "How Null V1 skips price PnL when an oracle move exceeds the time-scaled 7% per hour threshold."
 ---
 
-Null V1 includes a price circuit breaker that skips the price-PnL leg when an oracle move exceeds a time-scaled threshold. Without this guardrail, a momentary price spike — even one that reverses immediately — could drain an entire pool in a single transaction.
+The price circuit breaker skips the price-PnL leg when an oracle move exceeds a time-scaled threshold. Without it, a single-block spike could drain a pool before anyone can react.
 
-## Why It Exists
+It does **not** clamp the move to the threshold or defer the skipped PnL. Funding still accrues; the new price becomes the next anchor.
 
-Oracle prices can be pushed to extreme values in a single block. If the protocol settled PnL instantly against the full price move, the paying pool could be depleted before participants could react. The circuit breaker rejects the price-PnL leg for a move outside the threshold; it does not partially settle or clamp that move to the threshold.
-
-## The Parameters
-
-Two constants govern the circuit breaker:
+## Parameters
 
 | Constant | Value | Meaning |
-|---|---|---|
-| `MAX_PRICE_CHANGE_BPS` | `700` | Maximum price change per full window: **7%** |
-| `PRICE_CHANGE_WINDOW` | `3600` | Rolling window length in seconds: **1 hour** |
+| --- | --- | --- |
+| `MAX_PRICE_CHANGE_BPS` | `700` | Max price change per full window: **7%** |
+| `PRICE_CHANGE_WINDOW` | `3600` | Window length: **1 hour** |
 
-## The Formula
+## Formula
 
-For each oracle update, the protocol computes the maximum price move it will settle based on how much time has elapsed since the previous update:
-
-```
-allowedDelta = oldPrice × MAX_PRICE_CHANGE_BPS × elapsed
-               ──────────────────────────────────────────
-                    MAX_BASIS_POINTS × PRICE_CHANGE_WINDOW
+```text
+allowedDelta = previousPrice × 700 × elapsed / (10_000 × 3_600)
 ```
 
-Substituting the constants:
+Allowed move scales linearly with elapsed time. After 30 minutes, at most 3.5%; after one hour, 7%. When `block.timestamp <= lastUpdate`, elapsed is treated as one second.
 
-```
-allowedDelta = oldPrice × 700 × elapsed
-               ───────────────────────────
-                    10000 × 3600
-```
+## When it triggers
 
-The allowed move scales **linearly** with elapsed time. If only 30 minutes have passed, the circuit breaker allows at most 3.5% movement. After a full hour, the full 7% is permitted.
+1. Price PnL for that update is set to **zero** (not partially settled).
+2. Funding still accrues when time advanced.
+3. Reconciliation and collateral fees still run.
+4. New oracle price **and** timestamp are stored as the next baseline.
 
-## What Happens When It Triggers
+Storing the new price prevents an attacker from repeatedly triggering the breaker from the same stale baseline.
 
-When the observed price delta exceeds `allowedDelta`, the update is handled as follows:
+## Example
 
-<Steps>
-  <Step title="Price PnL set to zero">
-    The price-PnL contribution is `0` for that update cycle. Funding can still produce a net transfer between the pools.
-  </Step>
-  <Step title="Funding still accrues">
-    Funding payments between the pools continue to run normally. The circuit breaker only suppresses the price-return transfer — it does not pause the market.
-  </Step>
-  <Step title="Reconciliation still runs">
-    External collateral-balance reconciliation and collateral-fee accrual still run. Only the price-PnL component is zeroed out.
-  </Step>
-  <Step title="Timestamp and new price are stored">
-    The contract records the new oracle price **and** the current timestamp, even though no transfer occurred. The next update will measure elapsed time and price movement from this new baseline — not from the pre-spike value.
-  </Step>
-</Steps>
+Price `$1,000` → `$1,100` after 30 minutes (10% jump):
 
-<Note>
-Storing the new price even when the circuit breaker fires means the protocol "resets" its reference point. Subsequent updates measure drift from the post-spike price, which prevents an attacker from repeatedly triggering the breaker from the same stale baseline.
-</Note>
-
-## Concrete Example
-
-Suppose the index price is **$1,000** and an oracle update arrives 30 minutes (1,800 seconds) after the last one, reporting a new price of **$1,100** — a 10% jump.
-
-**Step 1 — Compute `allowedDelta`:**
-
-```
-allowedDelta = 1000 × 700 × 1800 / (10000 × 3600)
-             = 1,260,000,000 / 36,000,000
-             = 35
+```text
+allowedDelta = 1000 × 700 × 1800 / (10000 × 3600) = 35
+priceDelta   = 100
 ```
 
-The largest move that passes the check is **$35** (3.5%). The contract does not cap a larger move to $35; it skips that update's price PnL.
-
-**Step 2 — Compare to actual delta:**
-
-```
-priceDelta = |1100 − 1000| = 100
-```
-
-`100 > 35`, so the circuit breaker fires. The price-PnL contribution for this update is **zero**. Any funding contribution still settles.
-
-**Step 3 — Next update arrives 30 minutes later**, price is still $1,100 (no further move):
-
-```
-allowedDelta = 1100 × 700 × 1800 / (10000 × 3600) = 38.5
-priceDelta   = 0
-```
-
-No breaker, but no transfer either because the price didn't move. Over a **full hour** from the spike, the allowed delta grows to:
-
-```
-1100 × 700 × 3600 / (10000 × 3600) = 77  (≈ 7% of 1100)
-```
-
-Once that full hour elapses from the new baseline, the protocol can settle up to 7% of movement again.
+`100 > 35` → breaker fires; price PnL = 0; funding may still settle. Next updates measure from `$1,100`.
 
 <Warning>
-The circuit breaker protects against **sudden, large price jumps** in a short window. It does **not** prevent continuous drift. If a price genuinely moves 7% every hour for several hours, each update settles in full. Design your position sizing around sustained trend risk, not just spike risk.
+The breaker guards sudden jumps, not continuous drift. A genuine 7% move every hour settles in full each time. Size for trend risk, not only spike risk.
 </Warning>
 
-## What the Circuit Breaker Does Not Cover
+## What it does not cover
 
 <Accordion title="Continuous price drift">
-  If an asset trends steadily — say, falling 2% per hour for 12 hours — every update passes the circuit breaker check and full PnL is settled each time. The breaker addresses flash manipulation, not directional market moves. You should size positions according to the volatility of the underlying index.
+  Steady trends inside the bound settle fully each update. Position sizing must account for sustained volatility.
 </Accordion>
 
 <Accordion title="Oracle staleness">
-  If the oracle stops publishing prices entirely, the circuit breaker is never evaluated because no updates arrive. A separate **stale-price escape period** (10 days of no updates) allows users to redeem using the last known price. This mechanism is independent of the circuit breaker and is described in the [Risks](/security/risks) page.
+  If the feed stops, the breaker never evaluates. A separate ~10-day stale escape can return the last stored price so exits are not permanently blocked. See [Risks](/security/risks) and [Risks and parameters](/learn/risks-and-parameters).
 </Accordion>
 
-<Accordion title="Funding rate risk">
-  The circuit breaker only affects the price-return transfer. It does not alter the FRM's signed funding rate or elapsed-time accrual. In highly imbalanced markets, funding can be significant regardless of whether the circuit breaker has fired.
+<Accordion title="Funding">
+  The breaker does not change the FRM rate or funding accrual — only the price-return transfer.
 </Accordion>
 
-<Tip>
-You can inspect the raw circuit breaker logic in `SettlementLib`. The settlement routine computes the maximum allowed delta and skips price PnL whenever the observed delta exceeds it. Funding still accrues and the new price becomes the next settlement anchor.
-</Tip>
+Logic lives in `SettlementLib`. Broader settlement order: [Settlement](/developers/settlement).

@@ -1,0 +1,161 @@
+---
+title: "Integrator quickstart"
+sidebarTitle: "Quickstart"
+description: "Discover a Sepolia market, preview shares, and deposit or redeem through the Null V1 router."
+---
+
+This is the shortest path from zero to a working deposit and redeem against live Sepolia contracts. Pin addresses from [Live deployments](/resources/addresses).
+
+## Prerequisites
+
+- Sepolia RPC and a funded wallet
+- ABIs for Factory, Market, Pool, and Router (from the contracts repo or your app's ABI folder)
+- Market inputs: `collateral`, `oracle`, and an enabled `frm`
+
+## 1. Resolve the market
+
+```ts
+import { createPublicClient, http } from "viem";
+import { sepolia } from "viem/chains";
+
+const client = createPublicClient({ chain: sepolia, transport: http() });
+
+const market = await client.readContract({
+  address: factory,
+  abi: factoryAbi,
+  functionName: "getMarket",
+  args: [collateral, oracle, frm],
+});
+
+if (market === "0x0000000000000000000000000000000000000000") {
+  // Market does not exist for this tuple yet.
+  // Create via factory.createMarket(...) or router.createMarket(...).
+}
+```
+
+Then read pools and state:
+
+```ts
+const [receiverPool, payerPool, state] = await Promise.all([
+  client.readContract({ address: market, abi: marketAbi, functionName: "receiverPool" }),
+  client.readContract({ address: market, abi: marketAbi, functionName: "payerPool" }),
+  client.readContract({ address: market, abi: marketAbi, functionName: "state" }),
+]);
+
+const [, receiverAssets, payerAssets] = state;
+// Coverage proxy: E = receiverAssets / payerAssets (handle payerAssets === 0)
+```
+
+## 2. Choose a router
+
+| Oracle | Router | Why |
+| --- | --- | --- |
+| Chainlink Data Streams | `NullV1Router` | Fee-less `update(bytes[])` |
+| Pyth | `NullV1PayableRouter` | Pays native update fee from its own ETH balance |
+
+Pass `updateData: []` when the stored oracle price is already usable.
+
+## 3. Preview, then apply slippage
+
+Pool previews use the **last settled** state. Execution settles first, so final shares can differ.
+
+```ts
+const estimatedShares = await client.readContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "previewDeposit",
+  args: [receiverAssets],
+});
+
+const slippageBps = 50n; // 0.5%
+const minReceiverShares =
+  (estimatedShares * (10_000n - slippageBps)) / 10_000n;
+```
+
+<Warning>
+For ERC-4626 collateral, router amounts are **vault underlying** units. Pool `previewDeposit` expects **collateral vault share** units. Quote the vault wrap conversion before the pool preview.
+</Warning>
+
+## 4. Deposit
+
+Approve the token the router pulls (collateral, or vault underlying), then:
+
+```ts
+const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
+
+const hash = await walletClient.writeContract({
+  address: router,
+  abi: routerAbi,
+  functionName: "depositMarket",
+  args: [
+    market,
+    receiverAssets, // set the other side to 0n to skip it
+    0n,
+    minReceiverShares,
+    0n,
+    deadline,
+    [], // or fresh oracle update bytes
+  ],
+});
+```
+
+You receive ERC-4626 Receiver and/or Payer shares.
+
+## 5. Redeem
+
+Approve the pool share token(s) to the router, then:
+
+```ts
+const hash = await walletClient.writeContract({
+  address: router,
+  abi: routerAbi,
+  functionName: "redeemMarket",
+  args: [
+    market,
+    receiverShares,
+    0n,
+    minReceiverAssets,
+    0n,
+    deadline,
+    [],
+  ],
+});
+```
+
+For ERC-4626 collateral, the router unwraps and returns underlying. Minimum assets are in underlying units.
+
+## 6. Track positions
+
+```ts
+const shares = await client.readContract({
+  address: receiverPool,
+  abi: poolAbi,
+  functionName: "balanceOf",
+  args: [user],
+});
+
+// Approximate value (raw collateral units of the market token):
+// value ≈ shares * totalAssets / totalSupply
+```
+
+Index these events for history:
+
+- Factory `CreateMarket`
+- Market `UpdateState`, `SetFees`
+- Pool ERC-20 `Transfer` and ERC-4626 `Deposit` / `Withdraw`
+
+## Checklist
+
+- [ ] Hardcode factory, routers, FRM, Lens — not per-market pool addresses
+- [ ] Discover markets by `(collateral, oracle, frm)`
+- [ ] Match router to oracle fee model
+- [ ] Treat previews as estimates; enforce slippage + deadline
+- [ ] Convert units correctly when collateral is ERC-4626
+- [ ] Combine share balances with `UpdateState` for valuation
+
+## Next
+
+- Full parameter walkthrough: [Depositing](/developers/depositing) · [Redeeming](/developers/redeeming)
+- Settlement order: [Settlement](/developers/settlement)
+- UI reads: [Frontend integration](/contracts/integration/ui)
+- Exact signatures: [Router reference](/contracts/router)

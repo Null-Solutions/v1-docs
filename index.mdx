@@ -1,56 +1,47 @@
 ---
 title: "Null V1"
 sidebarTitle: "Introduction"
-description: "Mint fully collateralised synthetic assets with immutable market rules and pooled backing."
+description: "Fully collateralized synthetic markets with immutable rules and pooled Receiver / Payer backing."
 ---
 
-Docs for a new kind of finance.
+Null V1 is an onchain market primitive: fully collateralized synthetic exposure to an oracle-tracked asset, with immutable market rules and no broker in the middle.
 
-Null V1 brings on-chain traditional finance to self-custodied synthetic markets. Anyone can create fully collateralised synthetic exposure to an oracle-tracked asset, with immutable market rules and no broker in the middle.
+A market is fixed at creation by `(collateral, oracle, frm)`. Receivers deposit collateral for ERC-4626 shares that track the reference return. Payers supply the backing pool and take the opposite price risk. Funding is signed and flows according to Payer coverage relative to the FRM target.
 
-A market is immutable once created: its collateral token, oracle, and funding-rate model (FRM) are fixed, so Receivers know exactly what rules govern their exposure.
-
-Receivers deposit collateral to mint ERC-4626 shares that track the reference asset return. If the collateral is yield-bearing, both pools can also carry the collateral's base APR. Payers supply the backing pool and take the opposite price risk. Funding is signed and can flow in either direction according to Payer coverage relative to the FRM target.
-
-Every gain is paid from collateral already inside the market. Null can redistribute value between Receiver and Payer pools, but it cannot create debt, liquidate users, or mint an undercollateralised claim.
+Every gain is paid from collateral already inside the market. Null redistributes value between pools; it cannot create debt, liquidate users, or mint an undercollateralized claim.
 
 ## Choose your path
 
 <CardGroup cols={2}>
+  <Card title="Use the app" icon="log-in" href="/private-beta/about-null/overview">
+    Private-beta product docs: access, funding, minting, and portfolios.
+  </Card>
+
   <Card title="Learn the protocol" icon="book-open" href="/learn/overview">
-    Start with the Receiver/Payer model, market updates, funding, carry, and risk controls.
+    Receiver / Payer model, settlement, funding, fees, and risk controls.
   </Card>
 
-  <Card title="Use Null" icon="log-in" href="/quick-start">
-    Follow the practical flow for choosing a side, depositing, redeeming, and understanding fees.
+  <Card title="Build an integration" icon="code" href="/developers/overview">
+    Contracts-first integration: discover markets, deposit, redeem, index.
   </Card>
 
-  <Card title="Build an integration" icon="code" href="/developers-tab/overview">
-    Integrate markets, pools, router flows, UI reads, indexers, and market creation.
-  </Card>
-
-  <Card title="Read the reference" icon="file-code" href="/contracts/factory">
-    Look up contract functions, events, oracle interfaces, router behavior, and Lens reads.
+  <Card title="Contract reference" icon="file-code" href="/contracts/factory">
+    Factory, market, pools, routers, Lens, Multicall, and oracles.
   </Card>
 </CardGroup>
 
 ## How Null works
 
 <Steps>
-  <Step title="Two pools: Receiver and Payer">
-    A market aggregates all Receiver capital into one pool and all Payer capital into another. Users hold ERC-4626 compatible shares in the side they choose.
+  <Step title="Two pools">
+    Receiver and Payer each hold fungible ERC-4626 shares over pooled collateral.
   </Step>
-  <Step title="Updates happen before actions">
-    Before deposits, mints, withdrawals, or redemptions, the market validates the oracle price, reconciles collateral, and settles funding plus price movement.
+  <Step title="Settle before action">
+    Deposits and redeems update the market first: oracle, reconciliation, fees, funding, price PnL.
   </Step>
-  <Step title="Settlement is bounded">
-    Price settlement and funding are netted into one transfer. Settlement preserves the protocol's minimum-pool floor.
+  <Step title="Bounded settlement">
+    Funding and price PnL net into one transfer, capped by the paying pool above `MIN_POOL_ASSETS`.
   </Step>
 </Steps>
 
-## Start here
-
-- If you are new to Null, read [Learn Null V1](/learn/overview).
-- If you want to enter a position, use the [Quick start](/quick-start).
-- If you are building, start with the [Developer overview](/developers-tab/overview).
-- If you need exact function details, use the [Reference](/contracts/factory).
+Live deployments are on **Sepolia** today. See [addresses](/resources/addresses) and the [developer overview](/developers/overview).

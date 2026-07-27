@@ -6,3 +6,25 @@ img.nav-logo {
 .nav-dropdown-item-icon {
   display: none !important;
 }
+
+eyebrow,
+.eyebrow {
+  display: inline-flex !important;
+  width: fit-content;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  background: rgb(45 44 44 / 8%);
+  color: #2d2c2c !important;
+}
+
+#sidebar-content li[data-active] > a {
+  border-radius: 0.625rem;
+  background: rgb(45 44 44 / 8%);
+  color: #2d2c2c !important;
+}
+
+.dark :is(eyebrow, .eyebrow),
+.dark #sidebar-content li[data-active] > a {
+  background: rgb(255 255 255 / 10%);
+  color: #ffffff !important;
+}

@@ -48,7 +48,19 @@
     },
     {
       "source": "/private-beta/strategies",
-      "destination": "/private-beta/strategies/about-strategies"
+      "destination": "/private-beta/market-make/overview"
+    },
+    {
+      "source": "/private-beta/strategies/about-strategies",
+      "destination": "/private-beta/market-make/overview"
+    },
+    {
+      "source": "/private-beta/strategies/null-strategies",
+      "destination": "/private-beta/market-make/farm-the-basis"
+    },
+    {
+      "source": "/private-beta/support/market-making",
+      "destination": "/private-beta/market-make/overview"
     },
     {
       "source": "/private-beta/status-and-points",
@@ -61,6 +73,66 @@
     {
       "source": "/private-beta/support",
       "destination": "/private-beta/support/trading"
+    },
+    {
+      "source": "/developers-tab/overview",
+      "destination": "/developers/overview"
+    },
+    {
+      "source": "/developers-tab/integrator-quickstart",
+      "destination": "/developers/quickstart"
+    },
+    {
+      "source": "/developers-tab/market-update",
+      "destination": "/developers/settlement"
+    },
+    {
+      "source": "/developers-tab/pools-and-erc4626",
+      "destination": "/developers/pools"
+    },
+    {
+      "source": "/developers-tab/router",
+      "destination": "/developers/router"
+    },
+    {
+      "source": "/depositing",
+      "destination": "/developers/depositing"
+    },
+    {
+      "source": "/redeeming",
+      "destination": "/developers/redeeming"
+    },
+    {
+      "source": "/fees",
+      "destination": "/developers/fees"
+    },
+    {
+      "source": "/quick-start",
+      "destination": "/developers/quickstart"
+    },
+    {
+      "source": "/how-it-works",
+      "destination": "/learn/overview"
+    },
+    {
+      "source": "/receive/overview",
+      "destination": "/learn/overview"
+    },
+    {
+      "source": "/pay/overview",
+      "destination": "/learn/overview"
+    },
+    {
+      "source": "/mechanics/funding",
+      "destination": "/learn/funding-and-carry"
+    },
+    {
+      "source": "/mechanics/price-returns",
+      "destination": "/developers/settlement"
+    },
+    {
+      "source": "/mechanics/yield-bearing-collateral",
+      "destination": "/markets/collateral"
     }
   ],
   "navigation": {
@@ -99,10 +171,10 @@
             ]
           },
           {
-            "group": "Strategies",
+            "group": "Market Make",
             "pages": [
-              "private-beta/strategies/about-strategies",
-              "private-beta/strategies/null-strategies"
+              "private-beta/market-make/overview",
+              "private-beta/market-make/farm-the-basis"
             ]
           },
           {
@@ -116,7 +188,6 @@
           {
             "group": "Support",
             "pages": [
-              "private-beta/support/market-making",
               "private-beta/support/trading",
               "private-beta/support/audits",
               "private-beta/support/brand-kit"
@@ -128,32 +199,38 @@
         "dropdown": "Developers",
         "groups": [
           {
-            "group": "Start Building",
+            "group": "Get started",
             "pages": [
-              "developers-tab/overview",
-              "developers-tab/integrator-quickstart"
+              "developers/overview",
+              "developers/quickstart",
+              "developers/ai-llms"
             ]
           },
           {
-            "group": "Protocol Mechanics",
+            "group": "Protocol",
             "pages": [
               "learn/overview",
               "learn/funding-and-carry",
+              "developers/settlement",
+              "developers/fees",
               "learn/risks-and-parameters",
-              "developers-tab/market-update",
-              "developers-tab/pools-and-erc4626",
-              "developers-tab/router"
+              "security/circuit-breaker",
+              "security/risks"
             ]
           },
           {
-            "group": "Integration",
+            "group": "Integrate",
             "pages": [
+              "developers/depositing",
+              "developers/redeeming",
+              "developers/pools",
+              "developers/router",
               "contracts/integration/ui",
               "contracts/integration/indexer"
             ]
           },
           {
-            "group": "Market Setup",
+            "group": "Market setup",
             "pages": [
               "markets/creating-a-market",
               "markets/market-parameters",
@@ -168,7 +245,7 @@
             ]
           },
           {
-            "group": "Core Contracts",
+            "group": "Core contracts",
             "pages": [
               "contracts/factory",
               "contracts/market",

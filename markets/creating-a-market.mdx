@@ -1,21 +1,16 @@
 ---
-title: "Creating a Market on Null V1 Protocol"
-sidebarTitle: "Creating a Market"
-description: "Create a Null V1 market from its collateral, oracle, and enabled funding-rate model."
+title: "Creating a market"
+sidebarTitle: "Creating a market"
+description: "Create a Null V1 market from collateral, oracle, and an enabled funding-rate model."
 ---
 
-A Null V1 market is identified by the tuple
-`(collateral, oracle, frm)`: an ERC-20 collateral token, an oracle, and a
-funding-rate model (FRM). The factory stores one market for each exact tuple.
-These dependencies are fixed when the market clone is initialized.
+A market is identified by `(collateral, oracle, frm)`. The factory stores one market per exact tuple. Dependencies are fixed at initialization.
 
 ## Prerequisites
 
-- a nonzero ERC-20 `collateral`
-- a nonzero `INullV1Oracle` whose `price()` returns a nonzero `1e36`-scaled
-  price during initialization
-- a nonzero `INullV1FundingRateModel`
-- an FRM that the factory owner has already enabled with `enableFrm(frm)`
+- Nonzero ERC-20 `collateral`
+- Nonzero `INullV1Oracle` whose `price()` returns a nonzero `1e36`-scaled price during init
+- Nonzero `INullV1FundingRateModel` already enabled via `enableFrm(frm)`
 
 ```solidity
 require(factory.isFrmEnabled(address(frm)), "FRM not enabled");
@@ -23,18 +18,14 @@ address existing =
     factory.getMarket(address(collateral), address(oracle), address(frm));
 ```
 
-Only the factory owner can enable an FRM, and the current factory has no
-disable operation.
+Only the factory owner can enable an FRM. There is no disable.
 
 ## Choose the correct router
 
-All supported oracles are pull oracles, so the router can update the oracle
-before factory initialization reads `price()`:
+All supported oracles are pull-based, so the router can update the oracle before factory init reads `price()`:
 
-- Pyth: use the pre-funded `NullV1PayableRouter`
-- Chainlink V3 or V11: use the fee-less `NullV1Router`
-
-Both expose the same market-creation arguments:
+- **Pyth** → pre-funded `NullV1PayableRouter`
+- **Chainlink V3 / V11** → fee-less `NullV1Router`
 
 ```solidity
 INullV1Market market = router.createMarket(
@@ -46,25 +37,16 @@ INullV1Market market = router.createMarket(
 );
 ```
 
-For Pyth, the payable router calls `getUpdateFee` and forwards the fee from its
-own ETH balance. For Chainlink, the fee-less router calls nonpayable `update`
-and forwards no ETH.
-
-You may call `factory.createMarket(collateral, oracle, frm)` directly only when
-the oracle already has a readable price. The factory does not update it.
+Call `factory.createMarket` directly only when the oracle already has a readable price — the factory does not update it.
 
 ## Factory behavior
 
-Creation reverts for zero collateral, zero oracle, zero FRM, an FRM that is not
-enabled, or an existing tuple. Otherwise the factory:
+Creation reverts for zero deps, disabled FRM, or an existing tuple. Otherwise the factory:
 
-1. clones `NullV1Market`
-2. initializes it with collateral, oracle, FRM, and the pool implementation
-3. clones and initializes receiver and payer pools
-4. reads the initial oracle price and initializes the FRM
-5. records `getMarket[collateral][oracle][frm]`
-
-The emitted event is:
+1. Clones and initializes `NullV1Market`
+2. Clones and initializes Receiver and Payer pools
+3. Reads the initial oracle price and initializes the FRM
+4. Records `getMarket[collateral][oracle][frm]`
 
 ```solidity
 event CreateMarket(
@@ -77,4 +59,4 @@ event CreateMarket(
 );
 ```
 
-Use `getMarket(collateral, oracle, frm)` to retrieve the market later.
+Retrieve later with `getMarket(collateral, oracle, frm)`. See [Factory](/contracts/factory) · [Oracles](/markets/oracles) · [Live deployments](/resources/addresses).
