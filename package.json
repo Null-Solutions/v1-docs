@@ -2,9 +2,6 @@
   "name": "v1-docs",
   "version": "1.0.0",
   "description": "Null V1 documentation.",
-  "scripts": {
-    "diagrams": "node scripts/generate-diagrams.mjs"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Null-Solutions/v1-docs.git"
@@ -14,8 +11,5 @@
   "bugs": {
     "url": "https://github.com/Null-Solutions/v1-docs/issues"
   },
-  "homepage": "https://github.com/Null-Solutions/v1-docs#readme",
-  "devDependencies": {
-    "@mermaid-js/mermaid-cli": "^11.15.0"
-  }
+  "homepage": "https://github.com/Null-Solutions/v1-docs#readme"
 }
