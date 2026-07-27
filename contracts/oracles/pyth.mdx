@@ -1,145 +1,98 @@
 ---
-title: "Pyth Oracle Integration — Null V1 Pull Oracle"
+title: "Pyth Oracle"
 sidebarTitle: "Pyth"
-description: "Integrate the NullV1PythOracle: fetch Hermes update bytes, submit via the router, and handle staleness and error conditions."
+description: "Integrate NullV1PythOracle using payable updates and 1e36-normalized prices."
 ---
 
-The `NullV1PythOracle` wraps a Pyth Network price feed and normalizes its output to the protocol's 1e36 price scale. It is an updatable oracle, meaning that fresh price data must be fetched from the Pyth Hermes API offchain and submitted onchain before each pool operation. The router handles the submission automatically when you pass `updateData` to `depositMarket` or `redeemMarket`; the current router pays the Pyth update fee from its own ETH balance.
+`NullV1PythOracle` wraps one Pyth price feed. It reads the Pyth contract,
+validates recency and positivity, and returns a `1e36`-scaled price.
 
-## Display Key
+## Update data
 
-The Pyth oracle identifies itself with a fixed display key used by UIs and indexers:
+Fetch signed update bytes for `oracle.priceId()` from Pyth Hermes:
 
-```solidity
-bytes32 public constant DISPLAY_NAME = keccak256("PYTH_CORE_PULL");
-```
-
-## Fetching updateData
-
-Before calling any router function that touches a Pyth-backed pool, fetch a signed price update from the Pyth Hermes API. You need the `priceId` of the oracle, which you can read directly from the deployed contract:
-
-```solidity
-bytes32 feedId = oracle.priceId();
-```
-
-Then query Hermes for an update containing that feed:
-
-```
+```text
 GET https://hermes.pyth.network/v2/updates/price/latest?ids[]=<priceId>
 ```
 
-The response includes a `binary.data` array. Each element is a hex-encoded VAA that you pass as one entry in `updateData`.
+Pass the returned `binary.data` elements as `bytes[] updateData`. The oracle
+rejects an empty array and arrays longer than 3,300 entries.
 
-<CodeGroup>
-```typescript Fetch updateData (TypeScript)
+```typescript
 import { HermesClient } from "@pythnetwork/hermes-client";
 
 const hermes = new HermesClient("https://hermes.pyth.network");
-const priceId = await oracle.priceId(); // read from contract
-
+const priceId = await oracle.read.priceId();
 const response = await hermes.getLatestPriceUpdates([priceId]);
 const updateData: `0x${string}`[] = response.binary.data.map(
   (hex) => `0x${hex}`
 );
-
-// Estimate the fee
-const fee = await oracle.getUpdateFee(updateData);
 ```
 
-```solidity Read priceId on-chain
-// ABI snippet — call from your integration contract
-bytes32 feedId = INullV1UpdatableOracle(oracleAddress).priceId();
-```
-</CodeGroup>
-
-## Update Flow
-
-Once you have `updateData`, you can submit it directly to the oracle or — more commonly — let the router handle it as part of a deposit or redeem. Here is the direct update flow for testing or custom integrations:
+## Payable routing
 
 ```solidity
-// 1. Estimate the required ETH fee
 uint256 fee = oracle.getUpdateFee(updateData);
-
-// 2. Submit the price update, forwarding the fee
 oracle.update{value: fee}(updateData);
-
-// 3. Read the now-current price (1e36 scaled)
 uint256 currentPrice = oracle.price();
 ```
 
 <Note>
-  When you use the Null V1 router, steps 1 and 2 happen automatically. Pass `updateData` as the `bytes[]` parameter to `router.depositMarket(...)` or `router.redeemMarket(...)` and include sufficient ETH in your transaction. The router calculates the fee, calls `oracle.update{value: fee}(updateData)`, and then proceeds with the pool operation.
+  Use `NullV1PayableRouter` for Pyth. The router reads the fee and pays it from
+  its own pre-funded native-currency balance. Sending ETH with the user's market
+  operation is not the funding path. If the router balance is too low, it
+  reverts with `InsufficientUpdateFeeBalance`.
 </Note>
 
-## Staleness and the Escape Period
+Do not route Pyth updates through the fee-less `NullV1Router`: it calls the
+nonpayable update interface and forwards no native fee.
 
-The oracle enforces a maximum price age (`MAX_PRICE_AGE`). If the most recent stored price is older than this threshold, `price()` reverts with `StalePrice()`. This protects pools from acting on outdated data during periods of low Hermes activity.
+The Pyth oracle forwards exactly the required fee to Pyth and refunds excess
+`msg.value` to its caller. A second update in the same block is skipped and any
+attached value is refunded.
 
-As a safety valve, after `STALE_PRICE_ESCAPE_PERIOD = 10 days` of no successful updates, the oracle enters an escape mode and returns the last stored price rather than reverting. This prevents a pool from becoming permanently bricked if the upstream Pyth feed goes dark for an extended period.
+## Update validation
 
-<Warning>
-  The escape period is an emergency backstop, not a feature to rely on. In normal operation, you should always supply fresh `updateData`. A price that is 10+ days old carries significant market risk — any pool relying on escape-mode prices should be treated as degraded.
-</Warning>
+After calling Pyth, the oracle requires the new `publishTime` to be strictly
+newer than the previous value, not in the future, and no more than 60 seconds
+old. A failed check reverts the entire update.
 
-## Price Normalization
+## Price normalization
 
-Pyth prices carry a variable exponent (`expo`). The oracle converts the raw Pyth price to 1e36 scale using:
+Pyth prices carry a signed `expo`:
 
-```
+```text
 normalizedPrice = pythPrice * 10^(36 + expo)
 ```
 
-For example, if Pyth returns `price = 300000` with `expo = -2` (representing $3,000.00), the stored value is:
+For `price = 300000` and `expo = -2`, the result is
+`3000 * 10^36`. A non-positive price, zero publish time, or exponent below
+`-36` reverts with `InvalidPrice`.
 
-```
-300000 * 10^(36 + (-2)) = 300000 * 10^34 = 3000 * 10^36
-```
+## Staleness and escape behavior
 
-Exponents below `-36` are not supported and will cause an `InvalidPrice()` revert.
+`price()` accepts a publish time within 60 seconds of the current block,
+including up to 60 seconds in the future. It reverts when the age is greater
+than 60 seconds but less than 10 days. Once the age is exactly 10 days or more,
+it returns the old positive price as an emergency availability escape.
 
-## Errors
+<Warning>
+  A 10-day-old price is not fresh. The escape behavior exists to unblock
+  settlement after a prolonged outage and should be treated as degraded mode.
+</Warning>
 
-<ResponseField name="InvalidPrice()" type="error">
-  Reverts when the Pyth price data is structurally invalid. Triggered when the raw price value is zero or negative, the `publishTime` is zero, or the Pyth exponent (`expo`) is less than `-36` (which would underflow the 1e36 normalization).
-</ResponseField>
+## Creation
 
-<ResponseField name="StalePrice()" type="error">
-  Reverts when the stored price's `publishTime` is older than `MAX_PRICE_AGE` and the `STALE_PRICE_ESCAPE_PERIOD` of 10 days has not yet elapsed. Resolve by fetching fresh `updateData` from Hermes and submitting it before reading the price.
-</ResponseField>
-
-<ResponseField name="PriceFeedUpdateTimeIsNotNew(uint256 newPublishTime, uint256 currentPublishTime)" type="error">
-  Reverts when you submit update bytes whose `publishTime` is not strictly greater than the currently stored `publishTime`. This prevents replaying old updates and can happen if you reuse stale `updateData`.
-
-  <ParamField path="newPublishTime" type="uint256">
-    The `publishTime` embedded in the submitted update bytes.
-  </ParamField>
-  <ParamField path="currentPublishTime" type="uint256">
-    The `publishTime` of the price currently stored in the oracle.
-  </ParamField>
-</ResponseField>
-
-<ResponseField name="PriceFeedUpdateTimeTooOld(uint256 newPublishTime)" type="error">
-  Reverts when the submitted update bytes are valid but carry a `publishTime` that is too far in the past to be useful. Fetch a more recent update from Hermes.
-
-  <ParamField path="newPublishTime" type="uint256">
-    The `publishTime` of the rejected update.
-  </ParamField>
-</ResponseField>
-
-## Deployment
-
-Deploy a new Pyth oracle instance through `NullV1PythOracleFactory`. The factory registers the oracle and ensures it is wired to the correct Pyth contract address for the target chain.
+Create clone instances through `NullV1PythOracleFactory`:
 
 ```solidity
-address oracle = NullV1PythOracleFactory(factory).deploy(
-    pythPriceId,   // bytes32 — the Pyth feed ID for your asset
-    baseName,      // string  — e.g. "Apple Inc."
-    baseSymbol,    // string  — e.g. "AAPL"
-    quoteName,     // string  — e.g. "US Dollar"
-    quoteSymbol    // string  — e.g. "USD"
+INullV1Oracle oracle = factory.createOracle(
+    priceId,
+    baseName,
+    baseSymbol,
+    quoteName,
+    quoteSymbol
 );
 ```
 
-<Tip>
-  You can find Pyth price feed IDs for thousands of assets in the [Pyth price feed catalogue](https://pyth.network/price-feeds). Filter by asset class to locate the `priceId` for your target market.
-</Tip>
+The implementation's display key is `keccak256("PYTH_CORE_PULL")`.

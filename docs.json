@@ -24,6 +24,60 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Private Beta",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "private-beta/overview"
+            ]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "private-beta/getting-started",
+              "private-beta/fund-account"
+            ]
+          },
+          {
+            "group": "Trading",
+            "pages": [
+              "private-beta/trading"
+            ]
+          },
+          {
+            "group": "Portfolio",
+            "pages": [
+              "private-beta/portfolio"
+            ]
+          },
+          {
+            "group": "Strategies",
+            "pages": [
+              "private-beta/strategies"
+            ]
+          },
+          {
+            "group": "Status and Points",
+            "pages": [
+              "private-beta/status-and-points"
+            ]
+          },
+          {
+            "group": "Referrals",
+            "pages": [
+              "private-beta/referrals"
+            ]
+          },
+          {
+            "group": "Support",
+            "pages": [
+              "private-beta/support"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Get Started",
         "groups": [
           {
@@ -101,6 +155,7 @@
             "group": "Market Setup",
             "pages": [
               "markets/creating-a-market",
+              "markets/market-parameters",
               "markets/collateral",
               "markets/oracles"
             ]
@@ -128,7 +183,8 @@
             "group": "Periphery",
             "pages": [
               "contracts/router",
-              "contracts/lens"
+              "contracts/lens",
+              "contracts/multicall"
             ]
           },
           {
@@ -136,9 +192,7 @@
             "pages": [
               "contracts/oracles/overview",
               "contracts/oracles/pyth",
-              "contracts/oracles/chainlink",
-              "contracts/oracles/uniswap-v3",
-              "contracts/oracles/base-fee"
+              "contracts/oracles/chainlink"
             ]
           }
         ]

@@ -6,108 +6,81 @@ sidebarTitle: "Overview"
 
 ## The core idea
 
-Null turns the commonly used Traditional Finance primitive of total return swaps into pooled onchain markets. In a traditional total return swap, one receiver and one payer agree to exchange the return of a reference asset. In Null, all Receivers are aggregated into one pool, all Payers are aggregated into another pool, and the market contract settles the two pools against each other.
+Null turns the total return swap into a pooled onchain market. The Receiver pool takes the return of an oracle-tracked asset; the Payer pool supplies the collateral that backs that exposure. Each side is represented by fungible ERC-4626 shares.
 
-This design gives users synthetic exposure without requiring the protocol to lend or create debt. Gains and losses are always paid from collateral already held by one of the pools.
+A market is uniquely identified by three immutable dependencies:
+
+```text
+(collateral, oracle, frm)
+```
+
+- `collateral` is the ERC-20 deposited into both pools.
+- `oracle` supplies the tracked asset price.
+- `frm` is the funding-rate model.
+
+The market redistributes collateral it holds and attributes to the two pools. It does not lend, create debt, use liquidations, or create an undercollateralized receivable.
 
 <img
   src="/images/diagrams/protocol-overview.svg"
-  alt="Chart showing the Null V1 protocol: users deposit collateral, the market reads oracle prices, Receiver and Payer shares represent pool claims, funding flows from Receiver to Payer, and settlement is bounded by collateral."
+  alt="Null V1 users deposit collateral into Receiver and Payer pools; oracle returns and funding move value between the pools."
   style={{ width: "100%", maxWidth: "100%", height: "auto" }}
 />
 
-<Note>
-  In words: users deposit collateral, receive pool shares, and the market update moves value between pools according to oracle returns and funding. The protocol can redistribute collateral, but it cannot create debt.
-</Note>
-
-A market in Null has two pools representing two sides:
-
-- **Receiver pool:** receives the return of the reference asset and pays or receives funding. In perps-terms, it would be a 1x-pegged long position. This side of the market mints the synthetic.
-- **Payer pool:** backs Receiver exposure, receives funding, and takes the opposite price risk. This side of the market market-makes the Receivers synthetic.
-
-Both sides are represented by ERC-4626 compatible shares. A share is a proportional claim on the current value of one pool, not a private bilateral swap with a separate entry price.
-
-<CardGroup cols={3}>
-</CardGroup>
-
 ## Receiver
 
-The Receiver pool is for those that want to mint synthetics, seeking the return of the reference asset. If the oracle price rises, the Receiver pool receives value from the Payer pool. If the oracle price falls, the Receiver pool pays value to the Payer pool.
+Receiver is the synthetic-long side. A user deposits collateral, receives Receiver pool shares, and owns a proportional claim on that pool. For an ordinary settled price move:
 
-Receiver is the synthetic long side of the market. A Receiver does not need to hold the reference asset. The user deposits the market collateral, receives ERC-4626 pool shares, and owns a proportional claim on the Receiver pool.
+- a price increase moves value from Payer to Receiver;
+- a price decrease moves value from Receiver to Payer.
 
-Receivers also pays funding. Funding is the cost of using Payer collateral as backing capital. If funding is negative, the Receiver pool is paid funding from the Payer pool.
+Funding can move in either direction. A positive signed funding rate means Receiver pays Payer; a negative rate means Payer pays Receiver.
 
 ## Payer
 
-The Payer pool is for those that want to market make, supplying the collateral that backs Receiver exposure. If the oracle price rises, Payer pays Receiver. If the oracle price falls, Payer receives value from Receiver.
-
-Payer receives funding for taking this opposite price risk. A Payer can use the position in two ways:
-
-- **Directional Payer:** holds the short exposure and funding stream directly.
-- **Hedged Payer:** hedges the short exposure externally and treats the position primarily as a funding trade.
-
-The protocol does not manage the external hedge. It only defines the on-chain Payer payoff.
+Payer supplies the reserve collateral backing Receiver gains and takes the opposite price exposure. A Payer can keep that directional exposure or hedge it externally. Null defines the onchain payoff but does not execute or maintain an external hedge.
 
 ## Example
 
-Suppose:
+Ignore funding for the moment. Suppose the Receiver pool is 1,000 collateral units, the Payer pool is 200, and the oracle price falls by 2%:
 
 ```text
-Receiver pool = 1,000
-Payer pool    = 200
-funding rate = 1%
-time elapsed = 1 year
-```
+Price PnL = 2% * 1,000 = 20
 
-If the reference asset falls by 2% over the year,  that's 2% of 1,000 units, so the Receiver has to lose 20 units, with the Payer market making and absorbing the 20 units. 
-
-```text
 Receiver: 1,000 -> 980
 Payer:      200 -> 220
 ```
 
-Receiver lost 2%. Payer gained 10%. The pool ratio turns the same price move into different percentage returns for each side. The Receivers map 1x to the price move, whereas the payers for this price change moved 10%.
-
-Now taking into account the funding, which is paid from the Receiver pool to the Payer pool, of a rate of 1% over the course of the year, or 1% \* 1000 = 10. The final balance is therefore:
-
-```text
-Receiver:  980 -> 970
-Payer:      220 -> 230
-```
+Receiver loses 2%, while Payer gains 10% because the same 20-unit transfer is measured against a smaller pool. In a real update, funding and price PnL are calculated from the prepared pool state, netted, and then applied as one solvency-bounded transfer.
 
 ## Shares are pooled claims
 
-Receiver and Payer shares are ERC-4626 compatible vault shares. They are proportional claims on a pool's current value.
+Each share is a proportional claim on one pool's current assets, not a bilateral position with a private entry price. If you own 10% of a pool and no shares are minted or burned, you continue to own 10% after settlement; the value of that claim changes with the pool.
 
-If you own 10% of the Receiver pool before an update and no one else enters or exits, you still own 10% of that pool after the update. The value of that 10% changes because the pool value changes.
+## How value moves
 
-This differs from a bilateral swap. You do not have a private entry price against a single counterparty. You hold a share of an aggregate pool whose value updates through the market accounting rule.
+Each settlement follows this order:
 
-## Summary
+1. Read and validate the oracle price.
+2. Reconcile the market's external collateral balance.
+3. Charge the annualized collateral fee.
+4. Query the FRM against that prepared state.
+5. Net funding with price PnL and cap the debit at `max(pool assets - MIN_POOL_ASSETS, 0)`.
+6. Store the new timestamp and price.
 
-Receiver gets synthetic long exposure and pays funding. Payer backs that exposure, receives funding, and takes the opposite price risk. Both positions are pooled ERC-4626 shares, so users hold proportional claims on pool value rather than isolated bilateral contracts.How value moves
-
-Each market update does these important things:
-
-1. Validates the latest oracle price.
-2. Reconciles recorded pool balances against the collateral actually held by the market.
-3. Reconciles recorded pool balances against the actual collateral held by the market.
-4. Computes the reference asset return from the oracle price.
-5. Computes funding from Receiver to Payer.
-6. Nets price settlement and funding, then caps the transfer by available collateral.
-
-If the reference price rises, value tends to move from Payer to Receiver. If the reference price falls, value tends to move from Receiver to Payer. Funding always moves from Receiver to Payer because Receiver exposure uses Payer collateral as backing capital.
+If the price circuit breaker fires, the update skips price PnL but still accrues funding and stores the new price as the next anchor.
 
 ## Why full collateralization matters
 
-The protocol cannot create an undercollateralized receivable. If one side owes more than it has, the transfer is truncated at that side's available collateral. A large price move can deplete a pool, but it cannot make the depleted side negative.
+The net funding-and-PnL transfer cannot debit a pool below `MIN_POOL_ASSETS` if it starts above that floor. Reconciliation, collateral fees, and user withdrawals are separate and can leave a pool below the floor. The accounting invariant is:
 
-This is the central Null invariant: synthetic exposure is created by redistributing existing collateral, not by extending credit.
+```text
+receiverPool + payerPool + protocolFees == collateral.balanceOf(market)
+```
 
 ## What to read next
 
-- [Receiver and Payer](/learn/receiver-and-payer): learn the two sides of a Null market.
-- [How markets update](/learn/how-markets-update): follow reconciliation, price settlement, funding, and solvency.
-- [Funding and carry](/learn/funding-and-carry): understand the exposure ratio, funding curve, collateral yield, and hedged Payer strategies.
-- [Risks and parameters](/learn/risks-and-parameters): learn how oracle checks, circuit breakers, fees, and deployment parameters shape markets.
+- [Receive overview](/receive/overview): understand the synthetic-long side.
+- [Pay overview](/pay/overview): understand the reserve-liquidity side.
+- [Funding and carry](/learn/funding-and-carry): learn the signed funding curve and Payer hedge.
+- [Market update](/developers-tab/market-update): follow the exact settlement pipeline.
+- [Risks and parameters](/learn/risks-and-parameters): review solvency, oracle, and parameter risks.

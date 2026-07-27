@@ -2,7 +2,8 @@ flowchart LR
   receiver(("Receiver"))
   payer(("Payer"))
 
-  receiver -- "pays funding" --> payer
+  receiver -- "positive funding" --> payer
+  payer -- "negative funding" --> receiver
   payer -- "price rises" --> receiver
   receiver -- "price falls" --> payer
 

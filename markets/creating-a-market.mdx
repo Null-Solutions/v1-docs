@@ -1,171 +1,80 @@
 ---
 title: "Creating a Market on Null V1 Protocol"
 sidebarTitle: "Creating a Market"
-description: "Learn how to deploy a new Null V1 market by selecting an asset, oracle, and mu parameter, then calling the router's createMarket function."
+description: "Create a Null V1 market from its collateral, oracle, and enabled funding-rate model."
 ---
 
-Every Null V1 market is defined by a unique combination of three immutable parameters: a collateral asset, a price oracle, and a funding multiplier (`mu`). This triplet acts as the market's identity — if a market for a given `(asset, oracle, mu)` tuple already exists, no duplicate can be created. Once deployed, a market is permanent and permissionless: anyone can interact with it, and its core parameters can never be changed. Before creating a market, you should verify no matching market exists, choose your parameters deliberately, and use the router to handle oracle update data in a single transaction.
+A Null V1 market is identified by the tuple
+`(collateral, oracle, frm)`: an ERC-20 collateral token, an oracle, and a
+funding-rate model (FRM). The factory stores one market for each exact tuple.
+These dependencies are fixed when the market clone is initialized.
 
 ## Prerequisites
 
-Before you create a market, make sure you have the following:
-
-- The address of the deployed `NullV1Factory`
-- The address of the deployed `NullV1Router`
-- An ERC-20 collateral token address (`asset`)
-- A compatible `INullV1Oracle` implementation address (`oracle`)
-- A chosen `mu` value in parts-per-million (ppm) — see [Market Parameters](/markets/market-parameters) for guidance
-
----
-
-## How Markets Are Identified
-
-Markets are keyed by the tuple `(asset, oracle, mu)`. You can query the factory directly to check whether a market already exists for your chosen parameters before attempting to create one.
-
-<Note>
-  The factory will revert with `MarketExists(asset, oracle, mu)` if you try to
-  create a duplicate. Always call `getMarket` first to avoid wasted gas.
-</Note>
+- a nonzero ERC-20 `collateral`
+- a nonzero `INullV1Oracle` whose `price()` returns a nonzero `1e36`-scaled
+  price during initialization
+- a nonzero `INullV1FundingRateModel`
+- an FRM that the factory owner has already enabled with `enableFrm(frm)`
 
 ```solidity
-// Check whether a market already exists for this parameter tuple
-address existing = factory.getMarket(asset, oracle, mu);
-
-if (existing != address(0)) {
-    // Market already deployed — use it directly
-    INullV1Market market = INullV1Market(existing);
-}
+require(factory.isFrmEnabled(address(frm)), "FRM not enabled");
+address existing =
+    factory.getMarket(address(collateral), address(oracle), address(frm));
 ```
 
----
+Only the factory owner can enable an FRM, and the current factory has no
+disable operation.
 
-## Creation Steps
+## Choose the correct router
 
-<Steps>
-  <Step title="Choose your asset, oracle, and mu">
-    Select the ERC-20 collateral token your market will use, the oracle that
-    will price the underlying, and the `mu` funding multiplier. These three
-    values are **permanent** — they cannot be updated after deployment. Refer to
-    [Market Parameters](/markets/market-parameters) for help choosing `mu` and
-    [Collateral](/markets/collateral) for supported asset types.
-  </Step>
+All supported oracles are pull oracles, so the router can update the oracle
+before factory initialization reads `price()`:
 
-  <Step title="Check the market does not already exist">
-    Call `factory.getMarket(asset, oracle, mu)` on-chain. If the return value is
-    `address(0)`, the market has not been created yet and you can proceed. If it
-    returns a non-zero address, use that existing market instead.
+- Pyth: use the pre-funded `NullV1PayableRouter`
+- Chainlink V3 or V11: use the fee-less `NullV1Router`
 
-    ```solidity
-    address existing = factory.getMarket(asset, oracle, mu);
-    require(existing == address(0), "Market already deployed");
-    ```
-  </Step>
+Both expose the same market-creation arguments:
 
-  <Step title="Create the market via the router">
-    Call `router.createMarket(...)` rather than calling the factory directly.
-    The router accepts `updateData` (oracle price payloads) and forwards them to
-    the oracle in the same transaction, ensuring the oracle's price is fresh when
-    the market is initialised. For static oracles such as Uniswap V3 TWAP or
-    Base Fee, pass an empty `updateData` array.
+```solidity
+INullV1Market market = router.createMarket(
+    factory,
+    collateral,
+    oracle,
+    frm,
+    updateData
+);
+```
 
-    <CodeGroup>
-      ```solidity Solidity
-      import {INullV1Router} from "nullv1/interfaces/INullV1Router.sol";
-      import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
-      import {INullV1Oracle} from "nullv1/interfaces/INullV1Oracle.sol";
+For Pyth, the payable router calls `getUpdateFee` and forwards the fee from its
+own ETH balance. For Chainlink, the fee-less router calls nonpayable `update`
+and forwards no ETH.
 
-      // Pyth oracle example — supply updateData fetched off-chain
-      bytes[] memory updateData = new bytes[](1);
-      updateData[0] = pythPayload; // bytes from Pyth Hermes API
+You may call `factory.createMarket(collateral, oracle, frm)` directly only when
+the oracle already has a readable price. The factory does not update it.
 
-      INullV1Market market = router.createMarket(
-          factory,   // INullV1Factory
-          asset,     // IERC20 collateral token
-          oracle,    // INullV1Oracle implementation
-          10_000,    // mu = 1% in ppm (good for single-stock RWAs)
-          updateData
-      );
+## Factory behavior
 
-      address receiverPool = address(market.receiverPool());
-      address payerPool    = address(market.payerPool());
-      ```
+Creation reverts for zero collateral, zero oracle, zero FRM, an FRM that is not
+enabled, or an existing tuple. Otherwise the factory:
 
-      ```typescript TypeScript (viem)
-      import { encodeFunctionData, parseAbi } from "viem";
+1. clones `NullV1Market`
+2. initializes it with collateral, oracle, FRM, and the pool implementation
+3. clones and initializes receiver and payer pools
+4. reads the initial oracle price and initializes the FRM
+5. records `getMarket[collateral][oracle][frm]`
 
-      const routerAbi = parseAbi([
-        "function createMarket(address factory, address asset, address oracle, uint24 mu, bytes[] calldata updateData) returns (address market)",
-      ]);
+The emitted event is:
 
-      // For pull-based oracles: fetch updateData from Pyth Hermes
-      const hermesRes = await fetch(
-        `https://hermes.pyth.network/api/latest_vaas?ids[]=${priceId}`
-      );
-      const { binary } = await hermesRes.json();
-      const updateData = binary.data.map((d: string) => `0x${d}`);
+```solidity
+event CreateMarket(
+    address indexed collateral,
+    address indexed oracle,
+    address indexed frm,
+    address market,
+    address receiverPool,
+    address payerPool
+);
+```
 
-      const hash = await walletClient.writeContract({
-        address: ROUTER_ADDRESS,
-        abi: routerAbi,
-        functionName: "createMarket",
-        args: [FACTORY_ADDRESS, ASSET_ADDRESS, ORACLE_ADDRESS, 10_000, updateData],
-      });
-
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      // Parse the MarketCreated event from receipt.logs to get market address
-      ```
-    </CodeGroup>
-  </Step>
-
-  <Step title="Record the emitted addresses">
-    The factory emits `MarketCreated` when the market is deployed. This event
-    contains all the addresses you need to interact with the market.
-
-    ```solidity
-    event MarketCreated(
-        address indexed asset,
-        address indexed oracle,
-        uint24  indexed mu,
-        address market,
-        address receiverPool,
-        address payerPool
-    );
-    ```
-
-    Parse this event from the transaction receipt to retrieve the `market`,
-    `receiverPool`, and `payerPool` addresses. You can also retrieve them at any
-    time by calling the read-only `factory.getMarket(asset, oracle, mu)` and then
-    reading `market.receiverPool()` and `market.payerPool()`.
-  </Step>
-</Steps>
-
----
-
-## Error Reference
-
-Understanding the revert errors from the factory helps you handle failures gracefully.
-
-| Error | Cause | Resolution |
-|---|---|---|
-| `MarketExists(asset, oracle, mu)` | A market for this tuple already exists | Call `getMarket` first; use the existing market |
-| `ZeroAsset()` | The `asset` address is `address(0)` | Provide a valid ERC-20 token address |
-| `ZeroOracle()` | The `oracle` address is `address(0)` | Provide a deployed `INullV1Oracle` address |
-| `InvalidMu(mu)` | `mu` is zero | Choose a non-zero `mu` value in ppm |
-
-<Warning>
-  The `mu` parameter is immutable. If you deploy a market with the wrong `mu`,
-  you cannot update it. You must deploy a new market with a different `mu`. Plan
-  your parameterization carefully before calling `createMarket`.
-</Warning>
-
----
-
-## Direct Factory vs. Router
-
-You can call `factory.createMarket(asset, oracle, mu)` directly, but this approach does **not** update the oracle price before initialization. For updatable oracles, prefer the router so that the oracle price is current at the moment of market creation. For purely on-chain oracles such as Uniswap V3 TWAP or Base Fee, both paths are equivalent.
-
-<Tip>
-  Use the router for market creation when the oracle accepts `updateData`. The
-  current router pays update fees from its own ETH balance, so make sure the
-  deployed router is funded before relying on fee-charging oracle updates.
-</Tip>
+Use `getMarket(collateral, oracle, frm)` to retrieve the market later.

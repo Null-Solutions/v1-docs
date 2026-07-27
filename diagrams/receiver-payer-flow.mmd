@@ -5,7 +5,8 @@ flowchart LR
   payer -- "backs exposure" --> receiver
   payer -- "price up" --> receiver
   receiver -- "price down" --> payer
-  receiver -- "funding" --> payer
+  receiver -- "positive funding" --> payer
+  payer -- "negative funding" --> receiver
 
   classDef receiver fill:#FFFFFF,color:#0B0E15,stroke:#45A5FF,stroke-width:2px;
   classDef payer fill:#FFFFFF,color:#0B0E15,stroke:#1B252D,stroke-width:2px;

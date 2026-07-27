@@ -1,0 +1,49 @@
+---
+title: "NullV1Multicall"
+sidebarTitle: "Multicall"
+description: "Batch NullV1Lens previews and simulations for UIs and indexers."
+---
+
+`NullV1Multicall` batches read-only `NullV1Lens` calls while isolating failures by market.
+
+## Preview markets
+
+```solidity
+function previewAll(
+    address lens,
+    address[] calldata markets
+) external view returns (
+    NullV1Lens.SimulateResponse[] memory
+);
+```
+
+Calls `lens.previewMarket(markets[i])` for every market and returns responses in the same order.
+
+## Simulate markets
+
+```solidity
+function simulateAll(
+    address lens,
+    address[] calldata markets,
+    uint256[] calldata externalPrices
+) external view returns (
+    NullV1Lens.SimulateResponse[] memory
+);
+```
+
+Calls `lens.simulateMarket(markets[i], externalPrices[i])` for each pair. Prices are `1e36`-scaled. If the array lengths differ, the call reverts with:
+
+```solidity
+error LengthMismatch(
+    uint256 marketsLength,
+    uint256 externalPricesLength
+);
+```
+
+## Failure behavior
+
+Each per-market call is wrapped in `try/catch`. A reverted preview or simulation does **not** revert the batch; its array entry remains a fully zero-initialized `SimulateResponse`.
+
+<Warning>
+Treat an all-zero response as unavailable, not as an empty market. The caller supplies `lens`, and the multicall contract does not verify that it is a canonical deployment.
+</Warning>

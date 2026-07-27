@@ -25,16 +25,17 @@ Null V1 separates core accounting from periphery convenience, so integrations ca
 The core is intentionally small:
 
 - `NullV1Factory` deploys canonical markets.
-- `NullV1Market` owns market accounting and uses `NullV1Math` for reconciliation, collateral-fee accrual, funding, price settlement, and solvency-bounded transfers.
+- `NullV1Market` owns market accounting and uses `SettlementLib` for reconciliation, collateral-fee accrual, funding, price settlement, and solvency-bounded transfers.
 - `NullV1Pool` exposes Receiver and Payer ERC-4626 entry points.
 
 Periphery lives outside the core:
 
-- `NullV1Router` wraps common user flows for market creation, deposits, redemptions, oracle update data, slippage checks, and deadlines.
+- `NullV1Router` and `NullV1PayableRouter` wrap common user flows for market creation, deposits, redemptions, oracle update data, slippage checks, and deadlines.
+- `NullV1Lens` and `NullV1Multicall` provide read-only previews and simulations.
 
 Most integrations need three ideas:
 
-1. A market is unique for an `(asset, oracle, mu)` tuple.
+1. A market is unique for a `(collateral, oracle, frm)` tuple.
 2. Users enter and exit through the Receiver or Payer pool, or through the router.
 3. Every state-changing pool action updates the market before shares are minted, burned, or priced.
 
@@ -67,24 +68,32 @@ Pools expose ERC-4626 methods and query the market for `totalAssets()`. They do 
 Use the factory to discover or create markets.
 
 ```solidity
-function getMarket(address asset, address oracle, uint24 mu) external view returns (address market);
-function createMarket(IERC20 asset, INullV1Oracle oracle, uint24 mu) external returns (INullV1Market market);
+function getMarket(address collateral, address oracle, address frm)
+    external
+    view
+    returns (address market);
+
+function createMarket(
+    IERC20 collateral,
+    INullV1Oracle oracle,
+    INullV1FundingRateModel frm
+) external returns (INullV1Market market);
 ```
 
-`mu` is the Receiver funding multiplier in parts per million. In the current v1 contracts, it must be greater than zero. Markets are unique by `(asset, oracle, mu)`.
+The FRM must be enabled by the factory owner before market creation. Funding parameters such as `mu` and target coverage belong to the FRM, not to the market tuple.
 
 ### Market
 
 Use the market for discovery and state reads.
 
 ```solidity
-function asset() external view returns (IERC20);
+function collateral() external view returns (IERC20);
 function oracle() external view returns (INullV1Oracle);
-function mu() external view returns (uint24);
+function frm() external view returns (INullV1FundingRateModel);
 function receiverPool() external view returns (INullV1Pool);
 function payerPool() external view returns (INullV1Pool);
 function state() external view returns (
-    uint256 timestamp,
+    uint256 lastUpdate,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
     uint256 protocolFees,

@@ -1,178 +1,147 @@
 ---
 title: "Null V1 Market Parameters Explained"
 sidebarTitle: "Market Parameters"
-description: "Understand every parameter that defines a Null V1 market: asset, oracle, mu, pool addresses, and fee settings, with worked examples."
+description: "Understand the immutable (collateral, oracle, frm) market identity, pool addresses, fees, and standard funding-model parameters."
 ---
 
-A Null V1 market is governed by a small set of parameters, some of which are fixed permanently at creation and others that can be updated by the protocol owner over the market's lifetime. Understanding each parameter, especially `mu`, the funding multiplier, is essential before you deploy or integrate with a market. This page describes every field exposed by `NullV1Market`, explains the economics behind each one, and provides worked examples to help you choose sensible values.
+A Null V1 market is uniquely identified by three immutable dependency addresses:
 
----
-
-## Immutable Parameters
-
-These three parameters are set at market creation and can never be changed. They uniquely identify the market and define its fundamental economics.
-
-<ParamField path="asset" type="address" required>
-  The ERC-20 token used as collateral in this market. All deposits, withdrawals,
-  and pool balances are denominated in this token. See [Collateral](/markets/collateral)
-  for integration notes.
-</ParamField>
-
-<ParamField path="oracle" type="address" required>
-  The `INullV1Oracle` implementation that prices the market's underlying asset.
-  All oracles return prices scaled to `1e36`. The oracle address becomes part of
-  the market's identity tuple `(asset, oracle, mu)`. See
-  [Oracles](/markets/oracles) for available implementations.
-</ParamField>
-
-<ParamField path="mu" type="uint24" required>
-  The funding multiplier, expressed in **parts-per-million (ppm)**. This is the
-  single most important economic parameter in the market. It controls how
-  aggressively funding rates scale with pool imbalance. `mu` is immutable; if
-  you need different economics, deploy a new market.
-</ParamField>
-
----
-
-## Pool Addresses
-
-<ParamField path="receiverPool" type="address">
-  The address of the receiver-side liquidity pool. Liquidity providers in this
-  pool receive the reference asset return and pay funding to the Payer pool.
-  These addresses are deployed automatically by the factory at market creation
-  time and are emitted in the `MarketCreated` event.
-</ParamField>
-
-<ParamField path="payerPool" type="address">
-  The address of the payer-side liquidity pool. Liquidity providers in this pool
-  back Receiver exposure, receive funding, and take the opposite price risk.
-</ParamField>
-
----
-
-## Fee Parameters
-
-Fee values are set by the protocol owner and can be updated post-deployment, subject to protocol-enforced maximums.
-
-<ParamField path="entryFee" type="uint16">
-  Fee charged when liquidity enters a pool, expressed in **basis points** (1 bp =
-  0.01%). Maximum value: **500 bp (5%)**. Entry fees are routed to the
-  protocol owner and leave the Receiver/Payer pool system.
-</ParamField>
-
-<ParamField path="exitFee" type="uint16">
-  Fee charged when liquidity exits a pool, expressed in **basis points**.
-  Maximum value: **500 bp (5%)**. Exit fees are routed to the protocol owner
-  and are not redistributed between the two pools.
-</ParamField>
-
-## Understanding mu
-
-`mu` is the parameter you will spend the most time thinking about when creating a market. It is the lever that sets the relationship between pool imbalance (`E`) and funding rates.
-
-### The Funding Formula
-
-The annual funding rate paid by the receiver pool is:
-
-```
-fundingApr = min(mu / 1_000_000 * E, 100%)
+```text
+(collateral, oracle, frm)
 ```
 
-Where:
-- **`mu`** is the funding multiplier in ppm
-- **`E`** is the ratio of receiver pool TVL to payer pool TVL (`receiverTVL / payerTVL`)
-- The receiver pool **pays** `fundingApr` per year to the payer pool
-- The payer pool **earns** `fundingApr * E` per year (because it is smaller by definition when `E > 1`)
+The factory permits only one market for each tuple. Changing any dependency means creating a different market.
 
-### Choosing mu
+## Immutable identity
 
-Use this formula to derive the right `mu` for your target economics:
+<ParamField path="collateral" type="IERC20" required>
+  The ERC-20 held by the market and used by both ERC-4626 pools. Pool assets,
+  fees, funding, and price PnL are denominated in raw units of this token. See
+  [Collateral](/markets/collateral).
+</ParamField>
 
-```
-mu = (targetReceiverFundingApr / targetE) * 1_000_000
-```
+<ParamField path="oracle" type="INullV1Oracle" required>
+  The contract that supplies the tracked asset price, normalized to `1e36`.
+  Settlement requires a nonzero price. See [Oracles](/markets/oracles).
+</ParamField>
 
-For example, if you want Receivers to pay 3% APR when `E = 3`:
-
-```
-mu = (0.03 / 3) * 1_000_000 = 10_000
-```
-
-<Tip>
-  Think of `mu` as the funding rate per unit of pool imbalance. A higher `mu`
-  makes the market more reactive to imbalance, which can suit volatile or
-  high-conviction assets. A lower `mu` creates a more stable funding environment
-  suited to broad indexes.
-</Tip>
-
-### Common mu Values
-
-| mu value | ppm % | Best suited for |
-|---|---|---|
-| `3_000` | 0.3% | Broad index RWAs (e.g. S&P 500 tracker) |
-| `10_000` | 1.0% | Single-stock RWAs (e.g. AAPL, TSLA) |
-| `20_000` | 2.0% | High-yield or volatile RWAs |
-
----
-
-## mu Example Tables
-
-The tables below show how funding rates vary with `E` for two common `mu` settings. "Buffer" is the percentage of total TVL in the Payer pool; a smaller buffer means higher price sensitivity for Payers.
-
-### mu = 10,000 (1%) - Single-Stock RWA (e.g. AAPL)
-
-| E | Buffer | Receiver pays | Payer earns |
-|-----|--------|---------------|-------------|
-| 2   | 50%    | 2%            | 4%          |
-| 3   | 33%    | 3%            | 9%          |
-| 4   | 25%    | 4%            | 16%         |
-| 5   | 20%    | 5%            | 25%         |
-
-### mu = 3,000 (0.3%) - Broad Index RWA (e.g. S&P 500)
-
-| E     | Buffer | Receiver pays | Payer earns |
-|-------|--------|---------------|-------------|
-| 4     | 25%    | 1.2%          | 4.8%        |
-| 5     | 20%    | 1.5%          | 7.5%        |
-| 6.67  | 15%    | 2.0%          | 13.3%       |
-
-<Note>
-  Payer earnings scale quadratically with `E` because Payers receive funding
-  proportional to both the receiver pool size (which determines the total
-  funding paid) and the inverse of their own pool size (which determines their
-  per-unit share). This asymmetric payoff is intentional: payers take on price
-  risk and are compensated accordingly.
-</Note>
-
----
-
-## mu Is Immutable
-
-Once a market is created, `mu` cannot be changed. This immutability is by design: it makes market behaviour predictable and prevents governance from altering the economics of existing positions.
+<ParamField path="frm" type="INullV1FundingRateModel" required>
+  The funding-rate model queried during every settlement. The factory owner must
+  enable the FRM before a market can use it. An enabled FRM cannot be disabled.
+</ParamField>
 
 <Warning>
-  If you deploy a market with an incorrect `mu` value, the only remedy is to
-  deploy a new market with a different `(asset, oracle, mu)` tuple. The original
-  market will continue to exist and operate indefinitely with its original
-  parameters.
+  A market does not have an `asset` or `mu` identity field. Its identity is
+  `(collateral, oracle, frm)`. Funding parameters such as `mu` belong to the FRM
+  implementation.
 </Warning>
 
-If you are unsure which `mu` to use, start with a conservative value, then model the funding rates at your expected `E` using the formula above before committing to a deployment.
+## Other fixed addresses
 
----
+<ParamField path="factory" type="address">
+  The `NullV1Factory` that cloned and registered the market. The factory owner
+  controls fees and FRM enablement but cannot replace the market dependencies.
+</ParamField>
 
-## Reading Parameters On-Chain
+<ParamField path="receiverPool" type="INullV1Pool">
+  The ERC-4626 pool whose assets receive the tracked price return.
+</ParamField>
 
-You can inspect all parameters on a live market by calling these view functions directly on the `NullV1Market` contract:
+<ParamField path="payerPool" type="INullV1Pool">
+  The ERC-4626 reserve pool that backs Receiver gains and takes the opposite
+  price exposure.
+</ParamField>
+
+The factory clones both pools during market initialization and emits their addresses in `CreateMarket`.
+
+## Mutable fee parameters
+
+The factory owner can update three market fees. Each is expressed in basis points and capped at 500 bp:
+
+| Accessor          | Charged on                                | Maximum |
+| ----------------- | ----------------------------------------- | ------: |
+| `entryFee()`      | `deposit` and `mint`                      |      5% |
+| `exitFee()`       | `withdraw` and `redeem`                   |      5% |
+| `collateralFee()` | Pool assets, annualized during settlement |  5% APR |
+
+All fees accrue in `protocolFees`. `sweepFees()` settles the market first, then transfers accrued fees to the factory owner.
+
+## Standard imbalance FRM
+
+`NullV1ImbalanceFundingRateModel` has two immutable, WAD-scaled constructor parameters:
+
+<ParamField path="mu" type="uint256" required>
+  Funding sensitivity and the absolute rate bound. It must satisfy
+  `0 < mu <= 1e18`. The default deployment uses `1e18`, meaning `mu = 1`.
+</ParamField>
+
+<ParamField path="targetCoverage" type="uint256" required>
+  Target Payer coverage `c = P/R`. It must satisfy
+  `0 < targetCoverage <= 1e18`. The default is `0.5e18`, meaning `c = 0.5`.
+</ParamField>
+
+For prepared Receiver assets `R` and Payer assets `P`, the signed WAD APR is:
+
+```text
+f = mu * (cR - P) / (cR + P)
+```
+
+- Positive `f` means Receiver pays Payer.
+- Negative `f` means Payer pays Receiver.
+- Funding is zero at `P = cR`.
+- Funding is zero if either pool is empty.
+- `|f| <= mu` by construction; there is no separate runtime cap.
+- Payer capital APR is `f * R / P`.
+
+The standard FRM is stateless. A market can instead reference another enabled implementation of `INullV1FundingRateModel`, so integrations should identify the FRM before interpreting a rate.
+
+## Default-model examples
+
+With `R = 1,000`, `c = 0.5`, and `mu = 1`:
+
+| Payer assets `P` | Coverage `P/R` |    `f` |      Annual transfer | Payer capital APR |
+| ---------------: | -------------: | -----: | -------------------: | ----------------: |
+|               50 |             5% | +81.8% | 818 Receiver → Payer |           +1,636% |
+|              100 |            10% | +66.7% | 667 Receiver → Payer |             +667% |
+|              200 |            20% | +42.9% | 429 Receiver → Payer |             +214% |
+|              500 |            50% |     0% |                    0 |                0% |
+|              750 |            75% | -20.0% | 200 Payer → Receiver |            -26.7% |
+|            1,000 |           100% | -33.3% | 333 Payer → Receiver |            -33.3% |
+
+At `P = 100`, the annual transfer is 667—not 429:
+
+```text
+f = (500 - 100) / (500 + 100) = 66.7%
+66.7% * 1,000 = 667
+```
+
+Actual transfers are prorated by elapsed time, netted with price PnL, and capped by the paying pool's settleable assets.
+
+## Reading parameters onchain
 
 ```solidity
 INullV1Market market = INullV1Market(marketAddress);
 
-address asset       = address(market.asset());        // collateral token
-address oracle      = address(market.oracle());       // price oracle
-uint24  mu          = market.mu();                    // funding multiplier (ppm)
-address receiverPool = address(market.receiverPool()); // receiver LP pool
-address payerPool   = address(market.payerPool());    // payer LP pool
-uint16  entryFee    = market.entryFee();              // basis points
-uint16  exitFee     = market.exitFee();               // basis points
+address factory      = market.factory();
+address collateral   = address(market.collateral());
+address oracle       = address(market.oracle());
+address frm          = address(market.frm());
+address receiverPool = address(market.receiverPool());
+address payerPool    = address(market.payerPool());
+
+uint16 entryFee      = market.entryFee();
+uint16 exitFee       = market.exitFee();
+uint16 collateralFee = market.collateralFee();
 ```
+
+For the standard FRM, query its parameters separately:
+
+```solidity
+NullV1ImbalanceFundingRateModel model =
+    NullV1ImbalanceFundingRateModel(frm);
+
+uint256 mu = model.mu();
+uint256 targetCoverage = model.targetCoverage();
+```
+
+Use `factory.getMarket(collateral, oracle, frm)` to discover the canonical market. See [Factory reference](/contracts/factory) and [Market update](/developers-tab/market-update) for the registry and settlement flow.

@@ -18,29 +18,41 @@ This page is the canonical place for deployed Null V1 addresses. Use these value
 
 | Contract | Address | Notes |
 | --- | --- | --- |
-| `NullV1Factory` | [`0x9576F9e02F8b5a6aC96dd06ACA3E67A5dd278e3E`](https://sepolia.etherscan.io/address/0x9576F9e02F8b5a6aC96dd06ACA3E67A5dd278e3E) | Canonical market registry and market factory. |
-| `NullV1Router` | [`0xa12e648305d7297A58389b0577e93c18D1a16971`](https://sepolia.etherscan.io/address/0xa12e648305d7297A58389b0577e93c18D1a16971) | Periphery entrypoint for create, deposit, redeem, slippage checks, deadlines, and oracle update data. |
-| `NullV1Lens` | [`0xA907BC4C59e9187D2754B4D62Eaa54cFFed168e7`](https://sepolia.etherscan.io/address/0xA907BC4C59e9187D2754B4D62Eaa54cFFed168e7) | Read-only market previews for UIs, indexers, and bots. |
-| `NullV1Multicall` | [`0x7F6f239B942331A3815d451C8Ea993acDfFb7BC0`](https://sepolia.etherscan.io/address/0x7F6f239B942331A3815d451C8Ea993acDfFb7BC0) | Batch preview helper used by indexers and dashboards. |
-| `MockUSDC` | [`0x5A316865F2C9c261aD1B254C46788b6356d2F135`](https://sepolia.etherscan.io/address/0x5A316865F2C9c261aD1B254C46788b6356d2F135) | Test collateral used by the current Sepolia deployment. |
+| `NullV1Factory` | [`0xc4d61E729225E8fA6612969fA705a36a8446B6CF`](https://sepolia.etherscan.io/address/0xc4d61E729225E8fA6612969fA705a36a8446B6CF) | Canonical market registry and market factory. |
+| `NullV1Router` | [`0x2ab2C1CcF7a1b843F73CD82d48fA60d3FB18FA7f`](https://sepolia.etherscan.io/address/0x2ab2C1CcF7a1b843F73CD82d48fA60d3FB18FA7f) | Fee-less router used by Chainlink markets. |
+| `NullV1PayableRouter` | [`0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03`](https://sepolia.etherscan.io/address/0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03) | Pre-funded router used by payable-update oracles such as Pyth. |
+| `NullV1ImbalanceFundingRateModel` | [`0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014`](https://sepolia.etherscan.io/address/0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014) | Enabled funding-rate model used by the current markets. |
+| `NullV1Lens` | [`0x261841f1a2964232995e79ce7466c734cb2b25b7`](https://sepolia.etherscan.io/address/0x261841f1a2964232995e79ce7466c734cb2b25b7) | Read-only preview helper used by the Sepolia indexer. |
+| `NullV1Multicall` | [`0x779d7243cb816c5adc08d11d49c0222b8f36f3dc`](https://sepolia.etherscan.io/address/0x779d7243cb816c5adc08d11d49c0222b8f36f3dc) | Batch preview helper used by the Sepolia indexer. |
+| `nUSDC` collateral | [`0x77508321f1EF8C707Cd5869557365468BCeD0613`](https://sepolia.etherscan.io/address/0x77508321f1EF8C707Cd5869557365468BCeD0613) | Yield-bearing vault share used as collateral by the current markets. |
+| `MockUSDC` | [`0x5A316865F2C9c261aD1B254C46788b6356d2F135`](https://sepolia.etherscan.io/address/0x5A316865F2C9c261aD1B254C46788b6356d2F135) | Testnet underlying asset of the nUSDC collateral vault. |
 
 ## Indexer Source
 
-The public indexer tracks the Sepolia `NullV1Factory` from block `10976251`.
+The public indexer tracks the current Sepolia `NullV1Factory` from block `11321037`.
 
-Dynamic markets are discovered from the factory's `MarketCreated` event. Each market deploys its own Receiver pool and Payer pool, so pool addresses should be read from the market, factory events, Lens responses, or the indexer rather than hardcoded.
+Dynamic markets are discovered from the factory's `CreateMarket` event. Each market deploys its own Receiver pool and Payer pool, so pool addresses should be read from the market, factory events, Lens responses, or the indexer rather than hardcoded.
+
+<Note>
+  The deployed Sepolia Lens exposes the core `previewState`, `simulateState`,
+  `previewMarket`, and `simulateMarket` interface. Check the deployed bytecode
+  and ABI before using newer collateral-metrics helpers from the latest source.
+</Note>
 
 ## Integration Constants
 
 ```ts
 export const NULL_V1_SEPOLIA = {
   chainId: 11155111,
-  startBlock: 10976251,
-  factory: "0x9576F9e02F8b5a6aC96dd06ACA3E67A5dd278e3E",
-  router: "0xa12e648305d7297A58389b0577e93c18D1a16971",
-  lens: "0xA907BC4C59e9187D2754B4D62Eaa54cFFed168e7",
-  multicall: "0x7F6f239B942331A3815d451C8Ea993acDfFb7BC0",
+  startBlock: 11321037,
+  factory: "0xc4d61E729225E8fA6612969fA705a36a8446B6CF",
+  router: "0x2ab2C1CcF7a1b843F73CD82d48fA60d3FB18FA7f",
+  payableRouter: "0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03",
+  frm: "0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014",
+  lens: "0x261841f1a2964232995e79ce7466c734cb2b25b7",
+  multicall: "0x779d7243cb816c5adc08d11d49c0222b8f36f3dc",
   collateral: {
+    nUsdc: "0x77508321f1EF8C707Cd5869557365468BCeD0613",
     mockUsdc: "0x5A316865F2C9c261aD1B254C46788b6356d2F135",
   },
 } as const;
@@ -48,7 +60,7 @@ export const NULL_V1_SEPOLIA = {
 
 ## What To Hardcode
 
-Hardcode shared infrastructure addresses like `NullV1Factory`, `NullV1Router`, `NullV1Lens`, and `NullV1Multicall` per chain.
+Hardcode shared infrastructure addresses like `NullV1Factory`, both routers, the enabled FRM, `NullV1Lens`, and `NullV1Multicall` per chain.
 
 Do not hardcode market pool addresses unless you intentionally pin to one specific market. Receiver and Payer pools are deployed per market and should normally be discovered from `NullV1Factory`, `NullV1Market`, `NullV1Lens`, or indexer data.
 

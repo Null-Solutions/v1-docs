@@ -1,132 +1,111 @@
 ---
 title: "Funding and carry"
-description: "Understand Null V1 funding, collateral yield, exposure ratios, and how Payers can think about hedged carry."
+description: "Understand Null V1's signed funding curve, collateral yield, and the external hedge for Payer positions."
 sidebarTitle: "Funding and carry"
 ---
 
-Funding is the market's capital-allocation signal. Receivers pay Payers because Receiver exposure consumes Payer risk capacity.
+Funding is the market's capital-allocation signal. It moves value toward the side that is scarce relative to the funding-rate model's target.
 
-When Receiver demand is high relative to Payer liquidity, funding rises. This can attract more Payer capital. When Payer liquidity is abundant, funding falls and Receiver exposure becomes cheaper.
+## Signed funding rate
 
-## Exposure ratio drives funding
+For the standard `NullV1ImbalanceFundingRateModel`, let:
 
-The exposure ratio is:
-
-```text
-E = reconciled Receiver pool / reconciled Payer pool
-```
-
-`E` tells you how much Receiver exposure each unit of Payer capital backs.
-
-Null computes Receiver funding from `E`:
+- `R` be the prepared Receiver pool assets;
+- `P` be the prepared Payer pool assets;
+- `c` be the target Payer coverage ratio;
+- `mu` be the model sensitivity.
 
 ```text
-Receiver funding APR = min(mu * E, funding cap)
+f = mu * (cR - P) / (cR + P)
 ```
 
-`mu` is the market's funding usage multiplier. It is selected when the market is created and is stored on that market.
+`f` is a signed WAD-scaled annual percentage rate:
 
-Payer receives the same funding payment, but measured against the smaller Payer pool. Before the funding cap binds:
+- `f > 0`: Receiver pays Payer.
+- `f < 0`: Payer pays Receiver.
+- `f = 0`: no funding transfer.
+
+The deployed defaults are `c = 0.5` and `mu = 1`. The zero crossing is therefore `P = 0.5R`, not `P = R`.
+
+Because `|(cR - P) / (cR + P)| <= 1`, the model guarantees `|f| <= mu` by construction. There is no separate runtime funding cap. If either pool is empty, the model explicitly returns zero.
+
+## Payment and capital APR
+
+Funding accrues on Receiver assets in either direction:
 
 ```text
-Payer funding APR = mu * E^2
+annual funding transfer = f * R
+payer capital APR       = f * R / P
 ```
 
-This square relationship is important. Receiver funding grows linearly with `E`, while Payer funding grows with `E^2` because the payment is earned on a smaller capital base.
-
-<img src="/images/diagrams/funding-carry.svg" alt="Chart showing funding and carry: exposure ratio feeds the funding curve, Receiver funding is a cost, Payer funding is income, and optional collateral yield is accounted separately." style={{ width: "100%", maxWidth: "100%", height: "auto" }} />
+<img
+  src="/images/diagrams/funding-carry.svg"
+  alt="Chart showing funding and carry: the signed funding rate can move value from Receiver to Payer or from Payer to Receiver."
+  style={{ width: "100%", maxWidth: "100%", height: "auto" }}
+/>
 
 <Note>
-In words: funding is the payment between pools; collateral yield is separate. Receiver carry is collateral yield minus funding, while Payer carry is collateral yield plus funding before price movement.
+  The sign is always stated from Payer's perspective in `f * R / P`: positive
+  means Payer earns funding; negative means Payer pays funding.
 </Note>
 
-## Funding cap and empty pools
+## Worked examples
 
-Receiver funding APR is capped at 100% APR. This prevents the Receiver-side funding rate from growing without limit in extreme imbalances.
+Using `R = 1,000`, `c = 0.5`, and `mu = 1` (values rounded to the nearest whole unit or percentage point):
 
-Funding is zero when either side is empty:
+| Payer pool `P` | Coverage `P/R` | Funding APR `f` | Annual flow      | Annual transfer | Payer capital APR |
+| -------------: | -------------: | --------------: | ---------------- | --------------: | ----------------: |
+|             10 |             1% |          +96.1% | Receiver → Payer |             961 |           +9,608% |
+|             50 |             5% |          +81.8% | Receiver → Payer |             818 |           +1,636% |
+|            100 |            10% |          +66.7% | Receiver → Payer |             667 |             +667% |
+|            200 |            20% |          +42.9% | Receiver → Payer |             429 |             +214% |
+|            500 |            50% |              0% | None             |               0 |                0% |
+|            750 |            75% |          -20.0% | Payer → Receiver |             200 |            -26.7% |
+|          1,000 |           100% |          -33.3% | Payer → Receiver |             333 |            -33.3% |
+|          2,000 |           200% |          -60.0% | Payer → Receiver |             600 |            -30.0% |
 
-- If the Receiver pool is empty, there is no Receiver capital to pay funding.
-- If the Payer pool is empty, the exposure ratio is undefined, so funding returns zero.
-
-This means a one-sided market can accept deposits, but it does not behave like a normal two-sided Null market until both pools have capital.
-
-## Funding example
-
-Suppose:
-
-```text
-Receiver pool = 1,000
-Payer pool    = 200
-E             = 5
-mu            = 0.20%
-```
-
-Receiver funding APR is:
+At `P = 100`, for example:
 
 ```text
-0.20% * 5 = 1.00%
+f = (500 - 100) / (500 + 100) = 2/3 = 66.7%
+annual transfer = 66.7% * 1,000 = 667
 ```
 
-Receiver pays 1% APR on 1,000 units, or 10 units per year. Payer receives the same 10 units on a 200 unit pool, which is 5% APR.
+The payment can exceed the Payer pool when Payer capital is scarce. Actual settlement nets funding with price PnL, then limits the debit to `max(paying pool assets - MIN_POOL_ASSETS, 0)`.
 
 ## Collateral yield
 
-Some markets may use yield-bearing collateral. Collateral yield is not paid by Receiver to Payer or by Payer to Receiver. It is earned by the collateral itself and reflected when the market reconciles actual collateral against recorded balances.
+Yield-bearing collateral is separate from funding. Rebases and donations change the market's external token balance and are reconciled pro rata across both pools. For appreciating vault-share collateral, each collateral token becomes redeemable for more underlying even if the market's token count does not change.
 
-Before price movement, the simple carry view is:
+Ignoring price PnL and hedge costs:
 
 ```text
-Receiver carry = collateral yield - Receiver funding
-Payer carry    = collateral yield + Payer funding
+Receiver carry = collateral rate - f
+Payer carry    = collateral rate + f * R / P
 ```
 
-If collateral yield is high enough, it can offset some or all of Receiver funding. Payer receives both collateral yield and funding before directional price exposure.
+These expressions remain valid when `f` is negative: the funding leg simply changes direction.
 
 ## Payer hedging
 
-Payer has the opposite price exposure to Receiver. A market maker can hedge that exposure externally.
-
-For a Payer balance `B`, the simplified external long hedge target is:
+Let a market maker own `p` collateral units of a Payer pool whose total assets are `P`. With Receiver assets `R` and oracle price `S` in quote units per base unit, the external long hedge is:
 
 ```text
-H = B * E
+h = (p / P) * (R / S) base units
+H = hS = pR / P quote notional
 ```
 
-Example:
+For example, if `p = 10`, `P = 200`, `R = 1,000`, and `S = 25`:
 
 ```text
-Payer balance = 10
-E             = 5
-Hedge target  = 50
+h = (10 / 200) * (1,000 / 25) = 2 base units
+H = 2 * 25 = 50 quote units
 ```
 
-The Payer position behaves like a 50 unit short position. The market maker can buy 50 units of the tracked asset externally. If the asset rises, the external long can offset the Payer loss. If it falls, the Payer gain can offset the external long loss.
+The hedge is optional and external. Price settlement approximately preserves the hedge target because `R` and `S` move together while the Payer ownership fraction `p/P` remains unchanged. Deposits, withdrawals, funding drift, fees, and circuit-breaker events can still require rebalancing.
 
-The hedge is optional and external. Null supplies the Payer position and funding stream; it does not execute or maintain the hedge.
+## Model calibration
 
-## Deployment calibration
+`c` sets the target Payer coverage where funding is zero. `mu` scales the curve without moving that zero crossing. Both are immutable parameters of the FRM deployment; markets reference the FRM address rather than storing their own `c` or `mu`.
 
-Market deployers choose `mu` to set the funding curve. A practical calibration method is:
-
-1. Choose a representative healthy exposure ratio, `E*`.
-2. Choose a target Payer funding APR.
-3. Set `mu` so that Payer funding reaches that target around `E*`.
-
-In simplified form:
-
-```text
-mu = target Payer funding APR / (E*)^2
-```
-
-For example, if a deployer wants Payers to earn 5% APR when `E = 5`, then:
-
-```text
-mu = 5% / 25 = 0.20%
-```
-
-The live market can move away from `E*`. The multiplier only sets the curve. Funding then responds to the actual live ratio.
-
-## Summary
-
-Funding links Receiver demand and Payer liquidity. Higher Receiver demand relative to Payer capital raises both Receiver funding cost and Payer funding revenue. The same ratio also concentrates Payer price risk, which is why funding and risk must be understood together.
+See [Market parameters](/markets/market-parameters) for deployment and onchain access details, and [Market update](/developers-tab/market-update) for settlement order.

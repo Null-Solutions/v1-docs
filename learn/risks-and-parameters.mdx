@@ -4,88 +4,90 @@ description: "Learn the main Null V1 risk controls, failure modes, and deploymen
 sidebarTitle: "Risks and parameters"
 ---
 
-Null V1 is fully collateralized, but market outcomes still depend on liquidity, oracle quality, funding settings, and price movement. This page explains the main controls and failure modes.
+Null V1 is fully collateralized, but users still face pool, oracle, collateral, funding, and parameter risk.
 
-## Full collateralization
+## Solvency and pool floors
 
-Full collateralization is the primary solvency invariant. The protocol can move value between pools, but neither pool can pay more than it has.
-
-If Payer owes more than the Payer pool contains, Payer is depleted and the remaining amount is not paid. If Receiver owes more than the Receiver pool contains, Receiver is depleted and the remaining amount is not paid.
-
-This prevents protocol debt. It does not prevent one side from losing all of its pool value.
-
-## Pool depletion
-
-The exposure ratio controls how quickly Payer can be depleted by an upward move in the reference asset.
-
-Ignoring funding and circuit-breaker effects, Payer is depleted when:
+Funding and price PnL are netted before collateral moves. The debit from either pool is limited to:
 
 ```text
-price move >= 1 / E
+settleable assets = max(pool assets - MIN_POOL_ASSETS, 0)
 ```
 
-If `E = 5`, an upward move of about 20% can deplete Payer. If `E = 20`, an upward move of about 5% can deplete Payer.
+`MIN_POOL_ASSETS` is `1e6` raw collateral units. The floor applies only when the net funding-and-price-PnL leg debits a pool, and it applies regardless of share supply. If a pool starts above the floor, that transfer cannot take it below the floor. If it is already at or below the floor, its settleable amount is zero.
 
-Higher `E` can make Receiver funding cheaper while still giving Payer a useful funding APR, but it also concentrates directional risk into Payer capital.
+Reconciliation losses, collateral fees, and user withdrawals do not use this cap and can leave a pool below the floor or at zero. Any funding or price-PnL liability beyond the settleable amount is not recorded as debt or recovered later.
 
 ## Oracle risk
 
-Each market depends on its oracle. The oracle must provide a valid normalized price. If the oracle cannot provide a valid price, market updates that depend on that price revert until a valid price is available.
+Each market has one immutable oracle address. Settlement calls `oracle.price()`, requires a nonzero result, and expects prices normalized to `1e36`. A revert or zero price blocks the pool action that triggered settlement.
 
-Oracle quality matters because price settlement moves collateral between pools. Integrators should display the oracle source, market asset, and market parameters so users can understand what they are taking exposure to.
+Oracle delays, stale escape paths, bad reports, or a mismatch between the tracked asset and the displayed market can produce unexpected settlement. Integrators should expose the oracle address and implementation rather than relying only on a ticker.
 
 Some updatable oracle wrappers include a stale-price escape path. During an ordinary stale period, price reads revert and market actions that need a valid price cannot proceed. After a prolonged stale period, currently 10 days in the Pyth and Chainlink wrappers, the oracle can return the last stored price so users are not permanently locked by a retired or unavailable feed.
 
-The escape path is a liveness mechanism, not a guarantee of fair value. If the last stored price is far from the current offchain market, users still bear that basis risk.
+That escape path restores liveness; it does not guarantee current fair value. See [Oracles](/markets/oracles) for implementation-specific behavior.
 
 ## Circuit breaker
 
-The circuit breaker filters abnormal price moves. If the price move is larger than the allowed time-scaled bound, the price-transfer leg is set to zero for that update.
+The circuit breaker compares the absolute price change with a time-scaled limit:
 
-Funding still applies. The market also stores the new price as the next baseline.
+```text
+allowed delta = previous price * 700 * elapsed / (10,000 * 1 hour)
+```
 
-In v1, the paper describes a reference limit of 7% over a 1 hour window. The implementation applies the allowed move linearly with elapsed time.
-
-The circuit breaker does not protect against continuous drift. If a market moves inside the allowed bound over many updates, those moves can settle over time.
+If the move is larger, settlement skips price PnL for that update. It does not revert: signed funding still accrues, and the new oracle price is stored as the next anchor. This limits a single abnormal update but does not protect against gradual moves that remain inside the bound. See [Circuit breaker](/security/circuit-breaker).
 
 ## Collateral risk
 
-Market collateral is an ERC-20 token held directly by the market. Token-level behavior still matters: rebases, transfer fees, pauses, blacklists, or external strategy losses can change the actual collateral available to Receiver and Payer pools.
+The market assumes a standard ERC-20 whose sender and receiver balances change by exactly the transferred amount. Fee-on-transfer tokens are unsupported. Pauses, blacklists, rebases, and losses in an external vault can still affect availability or value.
 
-Before each user action, the market reconciles its actual token balance against recorded Receiver and Payer balances. External gains and losses are allocated pro rata, but reconciliation does not remove the underlying token risk.
+Before funding and price PnL, settlement reconciles actual collateral against:
+
+```text
+receiverPool + payerPool + protocolFees
+```
+
+After reserving protocol fees, external gains or losses are distributed pro rata across the pools. Reconciliation keeps the accounting aligned with token balances; it does not remove collateral risk. See [Collateral](/markets/collateral).
 
 ## Empty or one-sided markets
 
-A normal Null payoff requires capital on both sides. If either pool has no balance, funding and price-transfer calculations return zero.
-
-The market can still accept actions through the pools, but the two-sided synthetic exposure only begins once both Receiver and Payer have capital.
+If either pool is empty, settlement applies neither funding nor price PnL. It still prepares the state and stores the latest timestamp and price. Two-sided exposure starts only after both pools have assets.
 
 ## Fees
 
-Entry and exit fees leave the two-pool system. They are routed to the protocol owner rather than redistributed between Receiver and Payer.
+Each market has entry, exit, and annualized collateral fees. Every fee is capped at 500 basis points. Fees accrue in `protocolFees` and can be swept only to the factory owner.
 
 Deposits and redeems use fee-on-total accounting. Mints and withdrawals use fee-on-raw accounting. Integrators should rely on ERC-4626 preview functions for estimates, then apply slippage controls for execution because the market updates before the action completes.
 
-## Funding parameters
+## Immutable market parameters
 
-The funding usage multiplier, `mu`, determines how aggressively Receiver funding responds to the exposure ratio.
+Each market is unique by:
 
-Lower `mu` can make Receiver exposure cheaper, but may not attract enough Payer capital. Higher `mu` can attract Payer capital, but makes Receiver exposure more expensive.
+```text
+(collateral, oracle, frm)
+```
 
-The funding cap prevents Receiver funding from growing without limit in heavily imbalanced markets.
+The dependencies cannot be changed after creation. The factory owner must enable an FRM before anyone can create a market with it, and enabled FRMs cannot be disabled.
 
-## Healthy markets
+For the standard imbalance FRM:
 
-Healthy markets usually have:
+```text
+f = mu * (cR - P) / (cR + P)
+```
 
-- enough Payer liquidity to back Receiver demand;
-- enough Receiver demand to make Payer funding meaningful;
-- an oracle suitable for the reference asset;
-- external venues that allow Payers to hedge, if they choose;
-- clear frontend display of `E`, funding, oracle, fees, and circuit-breaker behavior.
+`c` controls the zero-funding coverage target, while `mu` controls sensitivity and bounds `|f|`. The defaults are `c = 0.5` and `mu = 1`, but these belong to the FRM deployment—not to the market contract. Selecting another FRM changes the funding behavior.
 
-Null does not hide these tradeoffs. It exposes them in the accounting so users and integrators can reason about them directly.
+## Evaluation checklist
 
-## Summary
+Before using a market, check:
 
-Null removes undercollateralized debt from the market design, but not economic risk. Users still face price exposure, pool depletion risk, oracle risk, funding cost, and parameter risk. The safest way to evaluate a market is to look at both sides together: collateral, `E`, funding, oracle quality, and the circuit breaker.
+- collateral address and token behavior;
+- oracle address, price source, and liveness policy;
+- FRM address, formula, `c`, and `mu`;
+- Receiver and Payer liquidity;
+- current signed funding rate and Payer capital APR;
+- entry, exit, and collateral fees;
+- circuit-breaker behavior and the `MIN_POOL_ASSETS` floor.
+
+Read [Market parameters](/markets/market-parameters) for the onchain fields and [Funding and carry](/learn/funding-and-carry) for worked funding examples.

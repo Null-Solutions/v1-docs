@@ -11,35 +11,39 @@ This guide shows the standard integration flow for a Null V1 market. Start with 
 A v1 market is identified by:
 
 ```text
-asset
+collateral
 oracle
-mu
+frm
 ```
 
-`asset` is the ERC-20 market collateral. If it is an ERC-4626 vault share, direct pool calls use the vault share and router calls can use the vault underlying.
+`collateral` is the market's ERC-20. If it is an ERC-4626 vault share, direct pool calls use the vault share and router calls can use the vault underlying.
 
 `oracle` provides the reference price. All Null oracles return prices normalized to `1e36`.
 
-`mu` is the Receiver funding usage multiplier in parts per million. It controls how aggressively Receiver funding rises as Receiver demand grows relative to Payer liquidity.
+`frm` is an enabled funding-rate model. The model owns parameters such as funding sensitivity `mu` and target coverage `c`.
 
 ## 2. Discover or create the market
 
 Read the factory first:
 
 ```solidity
-address market = factory.getMarket(asset, oracle, mu);
+address market = factory.getMarket(collateral, oracle, frm);
 ```
 
 If it returns `address(0)`, the market has not been deployed for that tuple.
 
 ```solidity
-INullV1Market market = factory.createMarket(IERC20(asset), INullV1Oracle(oracle), mu);
+INullV1Market market = factory.createMarket(
+    IERC20(collateral),
+    INullV1Oracle(oracle),
+    INullV1FundingRateModel(frm)
+);
 ```
 
 The router can also create a market and optionally update an updatable oracle before creation:
 
 ```solidity
-INullV1Market market = router.createMarket(factory, asset, oracle, mu, updateData);
+INullV1Market market = router.createMarket(factory, collateral, oracle, frm, updateData);
 ```
 
 ## 3. Read market metadata
@@ -47,9 +51,9 @@ INullV1Market market = router.createMarket(factory, asset, oracle, mu, updateDat
 After you have a market address, read:
 
 ```solidity
-IERC20 asset = market.asset();
+IERC20 collateral = market.collateral();
 INullV1Oracle oracle = market.oracle();
-uint24 mu = market.mu();
+INullV1FundingRateModel frm = market.frm();
 INullV1Pool receiverPool = market.receiverPool();
 INullV1Pool payerPool = market.payerPool();
 ```
@@ -58,7 +62,7 @@ Read the accounting state for balances and the last stored oracle price:
 
 ```solidity
 (
-    uint256 timestamp,
+    uint256 lastUpdate,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
     uint256 protocolFees,
@@ -92,14 +96,14 @@ For transactions, pass slippage limits through the router or enforce your own mi
 You can deposit into one side directly:
 
 ```solidity
-asset.approve(address(receiverPool), receiverAssets);
+collateral.approve(address(receiverPool), receiverAssets);
 uint256 shares = receiverPool.deposit(receiverAssets, user);
 ```
 
 Or deposit into one or both sides through the router:
 
 ```solidity
-asset.approve(address(router), totalAssets);
+collateral.approve(address(router), totalAssets);
 
 (uint256 receiverShares, uint256 payerShares) = router.depositMarket(
     market,
@@ -112,7 +116,7 @@ asset.approve(address(router), totalAssets);
 );
 ```
 
-Use direct pool calls when you only need one ERC-4626 pool action. Use the router when you need combined Receiver/Payer deposits, ERC-4626 market-asset wrapping, push-oracle update data, deadlines, or slippage checks.
+Use direct pool calls when you only need one ERC-4626 pool action. Use the appropriate router when you need combined Receiver/Payer deposits, ERC-4626 collateral wrapping, push-oracle update data, deadlines, or slippage checks.
 
 ## 6. Redeem
 
@@ -136,7 +140,7 @@ Or redeem from one or both pools through the router:
 );
 ```
 
-For ERC-4626 market assets, router redemptions unwrap the market asset and return the vault underlying.
+For ERC-4626 collateral, router redemptions unwrap the collateral share and return the vault underlying.
 
 ## 7. Track positions
 
@@ -149,10 +153,10 @@ payerPool.balanceOf(user);
 
 Track market changes with:
 
-- `StateUpdated` on the market;
+- `UpdateState` on the market;
 - ERC-4626 `Deposit` and `Withdraw` events on each pool;
-- `MarketCreated` on the factory;
-- `FeesUpdated` on the market.
+- `CreateMarket` on the factory;
+- `SetFees` on the market.
 
 Position value is proportional to pool value:
 
@@ -164,12 +168,12 @@ Because `totalAssets()` reads market accounting, indexers should combine share b
 
 ## Checklist
 
-- Read the canonical market from `getMarket(asset, oracle, mu)`.
+- Read the canonical market from `getMarket(collateral, oracle, frm)`.
 - Read both pool addresses from the market.
 - Preview the ERC-4626 action.
 - Account for the market update that runs before execution.
 - Use router minimums or direct-call checks for slippage.
-- Track both share balances and market `StateUpdated` events.
+- Track both share balances and market `UpdateState` events.
 
 ## API reference
 

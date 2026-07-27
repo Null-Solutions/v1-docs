@@ -1,150 +1,96 @@
 ---
-title: "NullV1Market: Accounting & Fee Authority"
+title: "NullV1Market"
 sidebarTitle: "Market"
-description: "NullV1Market is the core accounting authority that holds collateral, tracks pool balances, settles oracle prices, and distributes protocol fees."
+description: "Core collateral accounting, settlement, and fee configuration for a Null V1 market."
 ---
 
-The `INullV1Market` contract sits at the heart of every Null V1 market. It owns the collateral deposited across both the Receiver and Payer pools, maintains the authoritative on-chain state, and enforces the fee schedule. Both pools call back into the market to synchronize state before every mutating operation. You will rarely call the market directly as an end-user, but understanding its interface is essential when building integrations and dashboards.
-
-<Note>
-For the update sequence and integration implications, read [Market update](/developers-tab/market-update). This page is the function and event reference.
-</Note>
+Each `NullV1Market` holds the collateral for its receiver and payer pools. The market owns settlement accounting; the pools own ERC-4626 share accounting.
 
 ## State
 
-### `state()`
-
-Returns a snapshot of the full market state at the current block. Calling this function is the fastest way to get all critical figures in a single RPC round-trip.
-
-<ResponseField name="timestamp" type="uint256">
-  The block timestamp of the last state update.
-</ResponseField>
-
-<ResponseField name="receiverPoolAssets" type="uint256">
-  The total assets currently attributed to the Receiver pool after settlement.
-</ResponseField>
-
-<ResponseField name="payerPoolAssets" type="uint256">
-  The total assets attributed to the Payer pool after settlement.
-</ResponseField>
-
-<ResponseField name="protocolFees" type="uint256">
-  Protocol-owned assets accounted outside Receiver/Payer settlement.
-</ResponseField>
-
-<ResponseField name="price" type="uint256">
-  The oracle price used in the most recent state update, expressed in the oracle's native precision.
-</ResponseField>
-
 ```solidity
-(
-    uint256 timestamp,
+function state() external view returns (
+    uint256 lastUpdate,
     uint256 receiverPoolAssets,
     uint256 payerPoolAssets,
     uint256 protocolFees,
     uint256 price
-) = market.state();
+);
 ```
 
----
+- `lastUpdate` is set at initialization and after each completed state update.
+- `receiverPoolAssets` and `payerPoolAssets` are denominated in collateral token units.
+- `protocolFees` are collateral units reserved for the protocol owner.
+- `price` is the last accepted `1e36`-scaled oracle price.
 
-## Immutable Accessors
-
-| Function | Return type | Description |
-|---|---|---|
-| `factory()` | `address` | The `INullV1Factory` that deployed this market. |
-| `asset()` | `IERC20` | The ERC-20 collateral token. |
-| `oracle()` | `INullV1Oracle` | The price oracle supplying external reference prices. |
-| `mu()` | `uint24` | The Receiver funding multiplier governing the funding curve. |
-| `receiverPool()` | `INullV1Pool` | The ERC-4626 pool for the receiver (long funding) position. |
-| `payerPool()` | `INullV1Pool` | The ERC-4626 pool for the payer (short funding) position. |
-
----
-
-## Fees
-
-Null V1 markets collect entry, exit, and collateral fees, each capped by a protocol-enforced maximum. All fee values are expressed in basis points (1 bp = 0.01%).
-
-| Accessor | Constant cap | Maximum |
-|---|---|---|
-| `entryFee()` | `MAX_ENTRY_FEE` | 500 bp (5%) |
-| `exitFee()` | `MAX_EXIT_FEE` | 500 bp (5%) |
-| `collateralFee()` | `MAX_COLLATERAL_FEE` | 500 bp (5% annualized) |
-
-<Note>
-  `updateFees()` and `sweepFees()` are restricted to the protocol owner. If any other address calls either function, the transaction reverts with `NotProtocolOwner(address caller, address protocolOwner)`.
-</Note>
-
-### `sweepFees()`
-
-Transfers accrued `protocolFees` from the market to the protocol owner and returns the amount swept. Entry and exit fees are transferred immediately when deposits and redemptions are recorded; collateral fees accrue during state updates until this function is called.
+## Accessors
 
 ```solidity
-uint256 swept = market.sweepFees();
+function factory() external view returns (address);
+function collateral() external view returns (IERC20);
+function oracle() external view returns (INullV1Oracle);
+function frm() external view returns (INullV1FundingRateModel);
+function receiverPool() external view returns (INullV1Pool);
+function payerPool() external view returns (INullV1Pool);
+function entryFee() external view returns (uint16);
+function exitFee() external view returns (uint16);
+function collateralFee() external view returns (uint16);
 ```
+
+Fees are basis points. Entry, exit, and annualized collateral fees are each capped at `500` (5%).
+
+## Settlement
+
+State accrual is interaction-driven. There is no permissionless public “poke”: `updateState()` is callable only by the two pools. Every pool deposit, mint, withdrawal, or redemption settles first. `setFees` and `sweepFees` also settle before applying their changes.
+
+Settlement reconciles the market's actual collateral balance, accrues collateral fees, obtains the signed WAD-scaled funding rate from `frm`, and settles funding and price PnL between pools. Positive funding means receivers pay payers; negative funding means payers pay receivers.
+
+When both pools have assets, price PnL is skipped if a move exceeds the time-scaled circuit-breaker cap; funding still settles and `UpdateState.circuitBreakerFired` is `true`. If either pool is empty, both price PnL and funding transfer are skipped and the flag is `false`. Settlement transfers are capped so the debited pool retains `MIN_POOL_ASSETS` (`1e6` raw collateral units).
+
+## Owner operations
+
+The protocol owner is the current `owner()` of the factory.
+
+```solidity
+function setFees(
+    uint16 newEntryFee,
+    uint16 newExitFee,
+    uint16 newCollateralFee
+) external;
+
+function sweepFees() external returns (uint256 amount);
+```
+
+`sweepFees` settles, transfers all accrued protocol fees to the protocol owner, and emits `CollectFees` only when the amount is nonzero.
 
 ## Events
 
-### `StateUpdated`
+```solidity
+event UpdateState(
+    uint256 indexed lastUpdate,
+    uint256 receiverPoolAssets,
+    uint256 payerPoolAssets,
+    uint256 protocolFees,
+    uint256 price,
+    bool circuitBreakerFired
+);
 
-Emitted each time the market's internal state is refreshed, typically triggered by pool deposits, withdrawals, or explicit keeper calls.
+event SetFees(
+    uint16 entryFee,
+    uint16 exitFee,
+    uint16 collateralFee
+);
 
-<ResponseField name="timestamp" type="uint256 (indexed)">
-  The block timestamp at which the state was updated.
-</ResponseField>
-
-<ResponseField name="receiverPoolAssets" type="uint256">
-  The receiver pool's total assets after the update.
-</ResponseField>
-
-<ResponseField name="payerPoolAssets" type="uint256">
-  The payer pool's total assets after the update.
-</ResponseField>
-
-<ResponseField name="protocolFees" type="uint256">
-  The cumulative uncollected protocol fees as of this update.
-</ResponseField>
-
-<ResponseField name="price" type="uint256">
-  The oracle price used for this state update.
-</ResponseField>
-
-### `FeesUpdated`
-
-Emitted when the protocol owner changes the market's fee schedule.
-
-<ResponseField name="entryFee" type="uint16">
-  The new entry fee in basis points.
-</ResponseField>
-
-<ResponseField name="exitFee" type="uint16">
-  The new exit fee in basis points.
-</ResponseField>
-
-<ResponseField name="collateralFee" type="uint16">
-  The new annualized collateral fee in basis points.
-</ResponseField>
-
-### `FeesCollected`
-
-Emitted when protocol fees are transferred out of the market.
-
-<ResponseField name="fee" type="uint256">
-  The total amount of collateral token transferred to the protocol owner.
-</ResponseField>
-
----
+event CollectFees(uint256 fee);
+```
 
 ## Errors
 
-| Error | Trigger condition |
+| Error | Condition |
 |---|---|
-| `NotProtocolOwner(address caller, address protocolOwner)` | A restricted function (e.g. `updateFees` or `sweepFees`) was called by an address that is not the protocol owner. |
-| `ZeroAsset()` | The market was initialised with a zero asset address (deployment-time guard). |
-| `ZeroOraclePrice()` | The oracle returned a zero price during a state update. |
-| `InvalidFee(uint256 fee, uint256 maxFee)` | A proposed fee value exceeds the corresponding maximum constant. |
-| `NotDeployedMarket()` | A call came from an address that is not the authorised receiver or payer pool. |
-
-<Warning>
-  If your oracle can transiently return zero (e.g. during a price feed outage), any market state update will revert with `ZeroOraclePrice()`. Ensure your oracle implementation returns a sentinel non-zero value or pauses cleanly before deploying in production.
-</Warning>
+| `NotProtocolOwner(address caller, address protocolOwner)` | A non-owner calls `setFees` or `sweepFees`. |
+| `InvalidFee(uint256 fee, uint256 maxFee)` | A configured fee exceeds its cap. |
+| `NotPool(address caller, address receiverPool, address payerPool)` | A non-pool caller invokes a pool-only callback. |
+| `NotDeployedMarket()` | The factory registry no longer maps this market's `(collateral, oracle, frm)` tuple to this market. |
+| `ZeroOraclePrice()` | The oracle returns zero during initialization or settlement. |
+| `ZeroCollateral()` / `ZeroOracle()` | Initialization receives a zero dependency. |
