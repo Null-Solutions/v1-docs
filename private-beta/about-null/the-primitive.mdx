@@ -1,48 +1,132 @@
 ---
 title: "The Primitive"
 sidebarTitle: "The Primitive"
-description: "Understand the pooled, fully collateralized total-return-swap primitive behind Null."
+description: "Learn how Null creates simple, fully collateralized onchain markets for any oracle-tracked asset."
 ---
 
-Null is a pooled, fully collateralized total-return-swap primitive. It creates onchain exposure to the return of an oracle-tracked asset without borrowing, liquidations, or a bilateral counterparty.
+Null is a market primitive for creating onchain exposure to almost anything with a reliable price feed. It turns a total return swap into two transparent pools: one side receives the tracked asset's return, while the other side provides the collateral that backs it.
 
-## Two sides
+There is no loan, margin account, liquidation engine, or hidden counterparty. Every gain is paid from collateral already inside the market.
 
-Every market has two collateral pools:
+## The idea in one minute
 
-- **Receiver** takes the tracked asset's price return.
-- **Payer** supplies the reserve collateral backing Receiver gains and takes the opposite price exposure.
+Imagine a market tracking an asset such as ETH, gold, or an equity:
 
-Users deposit collateral into one side and receive fungible ERC-4626 pool shares. A share represents a proportional claim on that pool rather than a position with a private entry price.
+1. **Receiver** deposits collateral to receive the asset's price return.
+2. **Payer** deposits collateral to back Receiver and takes the other side of that return.
+3. An oracle reports how the asset's price has moved.
+4. Null moves value between the two pools to reflect that movement.
+5. Funding also moves between the pools to encourage enough Payer backing.
 
-## Immutable market rules
+If the tracked price rises, value normally moves from Payer to Receiver. If it falls, value normally moves from Receiver to Payer. Nobody is borrowing the tracked asset, and the market never needs to liquidate an account.
 
-Each market is defined by three contracts:
+<Info>
+Users do not need to own the tracked asset. They deposit the market's collateral token and receive pool shares representing their position.
+</Info>
+
+## Receiver and Payer
+
+### Receiver
+
+Receiver is the straightforward side for taking the tracked asset's return. If the asset rises by 5%, the Receiver pool is credited based on that move. If it falls by 5%, the Receiver pool is debited.
+
+Receiver is synthetic exposure, not ownership of the underlying asset. It does not provide voting rights, dividends, redemption rights, or any other benefit attached to owning that asset unless the market rules explicitly account for it.
+
+### Payer
+
+Payer supplies the reserve that makes Receiver fully collateralized. It takes the opposite price transfer and earns or pays funding according to how much Payer coverage the market has.
+
+Payer's percentage return can be larger than the tracked asset's move because the same transfer is spread across the Payer pool. A smaller Payer pool means each Payer share absorbs more of the market's price movement.
+
+## A simple example
+
+Suppose a market has:
+
+- 1,000 units in Receiver;
+- 200 units in Payer; and
+- a tracked price that rises by 2%.
+
+The price transfer is 2% of the Receiver pool, or 20 units:
 
 ```text
-(collateral, oracle, funding-rate model)
+Receiver: 1,000 → 1,020
+Payer:      200 →   180
 ```
 
-The collateral token, oracle, and funding-rate model are fixed when the market is created. The oracle supplies the reference price, while the funding-rate model adjusts payments between Receiver and Payer according to pool coverage.
+Receiver gains 2%. Payer loses 10% because the 20-unit transfer is measured against its smaller pool. A price decrease would move value in the other direction.
 
-## How settlement works
+This example ignores funding, fees, collateral yield, and safety bounds, but it shows the core exchange.
 
-Before a position changes, the market:
+## Why funding exists
 
-1. validates the latest oracle price;
-2. reconciles the collateral held by the pools;
-3. accrues collateral fees and signed funding;
-4. calculates price profit and loss; and
-5. settles the net transfer between Receiver and Payer.
+Receiver exposure is only as strong as the collateral backing it. Null uses a funding-rate model to encourage the market toward a target amount of Payer coverage.
 
-All gains come from collateral already held by the market. Settlement cannot create debt or an undercollateralized claim, and its transfer is bounded to preserve the protocol's minimum-pool floor.
+- When Payer backing is below the target, funding can flow from Receiver to Payer.
+- When Payer backing is above the target, funding can reverse and flow from Payer to Receiver.
 
-## What this means for users
+Funding is signed and automatic. It is not a fixed yield, and either side may pay it.
 
-Receiver and Payer are pooled positions, not leveraged order-book trades. Their value can change with price returns, funding, collateral performance, fees, liquidity, and the state of both pools.
+## Positions are pooled shares
+
+Depositing into either side mints ERC-4626 pool shares. Those shares represent a percentage of the entire pool, not a private trade with its own entry price.
+
+This makes positions:
+
+- **fungible** — shares from the same pool are interchangeable;
+- **composable** — wallets and other applications can hold standard tokenized shares;
+- **liquid by design** — users enter and exit against pooled collateral rather than finding a bilateral counterparty; and
+- **transparent** — share value comes from the pool's visible collateral and accounting state.
+
+If the collateral itself is yield-bearing, both pools can also benefit from that collateral yield while the market tracks its separate price exposure.
+
+## What makes Null different
+
+### Fully collateralized
+
+Null can only transfer value already held by the market. It cannot create debt or an undercollateralized receivable.
+
+### No liquidations
+
+There are no leveraged accounts to monitor and no liquidation auction. Losses appear directly in pool share value and are bounded by available pool collateral.
+
+### Markets for any reliable oracle
+
+A market can track crypto, equities, commodities, rates, or other measurable values without requiring custody of the tracked asset.
+
+### Immutable market rules
+
+Each market permanently fixes its collateral token, oracle, and funding-rate model when it is created. Participants can inspect the rules before depositing, and an administrator cannot silently replace them for an existing market.
+
+### Permissionless, pooled infrastructure
+
+Anyone can create a canonical market from Factory-enabled components. Standardized pools and routers make those markets easier for users and applications to discover and integrate.
+
+## How a position moves through Null
+
+<Steps>
+  <Step title="Choose a market">
+    Review the tracked asset, collateral, oracle, funding, fees, liquidity, and current pool coverage.
+  </Step>
+  <Step title="Choose Receiver or Payer">
+    Receiver takes the tracked return. Payer supplies backing and takes the other side.
+  </Step>
+  <Step title="Mint shares">
+    Deposit collateral into the selected pool and receive ERC-4626 shares.
+  </Step>
+  <Step title="Let the market settle">
+    When the market updates, Null validates the oracle and nets price movement with funding before moving collateral between the pools.
+  </Step>
+  <Step title="Burn shares">
+    Redeem pool shares for your proportional claim on the collateral currently available to that pool.
+  </Step>
+</Steps>
+
+## Safety boundaries
+
+The protocol includes a minimum-pool floor and a price circuit breaker that can skip unusually large price moves during a single update. These controls limit specific settlement behavior; they do not guarantee a position's value or eliminate risk.
 
 <Warning>
-Full collateralization limits the primitive to assets already held by the market. It does not remove oracle, smart-contract, liquidity, collateral, or market risk.
+Receiver and Payer positions can lose value. Full collateralization does not remove oracle, smart-contract, liquidity, collateral, funding, or market risk.
 </Warning>
 
-For the exact mechanics, see the [protocol overview](/learn/overview).
+Continue with [Position Types](/private-beta/trading/position-types) for the product-level comparison, or read the [protocol overview](/learn/overview) for exact settlement mechanics.
