@@ -29,8 +29,7 @@
           {
             "group": "Introduction",
             "pages": [
-              "index",
-              "introduction/products"
+              "index"
             ]
           },
           {
@@ -47,9 +46,7 @@
           {
             "group": "Protocol Concepts",
             "pages": [
-              "learn/overview",
-              "learn/receiver-and-payer",
-              "learn/how-markets-update"
+              "learn/overview"
             ]
           },
           {
