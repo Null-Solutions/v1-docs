@@ -32,13 +32,21 @@ Receiver takes the tracked price return against its pool assets. A 5% accepted p
 
 Payer supplies the reserve that backs Receiver's gains. It takes the opposite price transfer and earns or pays funding according to Payer coverage.
 
-Let `R` be Receiver assets and `P` be Payer assets. The exposure-allocation ratio is:
+Let `R` be Receiver assets and `P` be Payer assets. Payer's **instantaneous leverage** is:
 
 ```text
-E = R / P
+L = R / P
 ```
 
-A smaller Payer pool produces a larger `E`, so each unit of Payer pool value represents a larger pro-rata share of Receiver exposure. The exposure itself remains matched one-for-one at the notional level.
+`L` is the leverage Payer has at that market state. It is not selected by the trader and it is not fixed when you enter. It changes whenever Receiver assets, Payer assets, funding, fees, or settled price PnL change either pool.
+
+The whole Payer pool takes the opposite side of Receiver notional `R`. A Payer holder whose current position value is `p` therefore has:
+
+```text
+Payer notional = p * L = p * R / P
+```
+
+If coverage falls, `P` becomes smaller relative to `R` and Payer leverage rises. The same Receiver-side transfer then has a larger percentage effect on Payer share value.
 
 ## A simple example
 
@@ -49,11 +57,17 @@ Receiver: 1,000 → 1,020
 Payer:      200 →   180
 ```
 
-Receiver gains 2%. The Payer pool backs the full 1,000-unit Receiver notional, so it pays the same 20-unit transfer. That transfer reduces the 200-unit Payer pool by 10%.
+At that moment, Payer leverage is `L = 1,000 / 200 = 5×`. Receiver gains 2%. Payer pays the same 20-unit transfer, which reduces its 200-unit pool by 10%:
+
+```text
+Payer return ≈ -price move * L
+             ≈ -2% * 5
+             ≈ -10%
+```
 
 This simplified example excludes funding, fees, collateral changes, rounding, and settlement bounds.
 
-## Funding and exposure notional
+## Funding and Payer leverage
 
 The funding-rate model encourages the market toward a target amount of Payer coverage:
 
@@ -79,15 +93,19 @@ xychart-beta
 
 Funding is positive below 50% coverage, zero at 50%, and negative above 50%. The curve is annualized and bounded by `-mu` and `+mu`. If either pool is empty, the implementation returns zero because a one-sided market settles neither funding nor price PnL.
 
-If `f` is the signed market funding APR, it applies to Receiver exposure notional:
+If `f` is the signed market funding APR, it applies to Receiver notional:
 
 ```text
 annual funding transfer = R * f
 ```
 
-Each Payer holder receives or pays its pro-rata share of that transfer. If a holder owns fraction `p / P` of the Payer pool, its exposure notional is `pR / P`, and its annualized funding transfer is `(pR / P) * f`.
+Each Payer holder receives or pays its pro-rata share of that transfer. A holder with current position value `p` has instantaneous notional `pL`, so its annualized funding transfer is:
 
-Positive `f` means Receiver pays Payer. Negative `f` means Payer pays Receiver. `R / P` allocates Receiver exposure across Payer shares; it does not change `f`. Funding is variable, can reverse, and is not guaranteed yield.
+```text
+holder funding transfer = p * L * f
+```
+
+Positive `f` means Receiver pays Payer. Negative `f` means Payer pays Receiver. Leverage changes the holder's notional, not the funding rate `f`. Funding is variable, can reverse, and is not guaranteed yield.
 
 For the normalized curve, model calibration, and worked transfer table, see [Funding and carry](/learn/funding-and-carry).
 
@@ -126,7 +144,7 @@ If an accepted oracle move exceeds the time-adjusted circuit-breaker threshold, 
     Check the tracked price, collateral, oracle, funding-rate model, pool sizes, current funding, fees, and circuit-breaker behavior.
   </Step>
   <Step title="Choose Receiver or Payer">
-    Receiver takes the tracked return. Payer takes the opposite return with exposure scaled by `R / P`.
+    Receiver takes the tracked return. Payer takes the opposite return at the current instantaneous leverage `L = R / P`.
   </Step>
   <Step title="Mint shares">
     Deposit collateral into the selected pool and receive ERC-4626 shares.

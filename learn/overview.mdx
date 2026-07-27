@@ -33,7 +33,7 @@ Receiver is synthetic exposure, not ownership of the tracked asset (no voting, d
 
 ## Payer
 
-Payer supplies the reserve that keeps Receiver fully collateralized. The Payer pool backs Receiver exposure one-for-one at the notional level. When the Payer pool is smaller than Receiver, the same collateral transfer is allocated across fewer Payer assets and can produce a larger percentage change in Payer share value.
+Payer supplies the reserve that keeps Receiver fully collateralized. Its instantaneous leverage is `L = R / P`. When the Payer pool is smaller than Receiver, leverage is higher and the same collateral transfer produces a larger percentage change in Payer share value.
 
 A Payer can keep that directional exposure or hedge externally. Null defines the onchain payoff; it does not run the hedge.
 

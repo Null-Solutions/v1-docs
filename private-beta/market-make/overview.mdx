@@ -30,19 +30,19 @@ Let:
 - `P` be total Payer pool assets; and
 - `S` be the tracked asset's oracle price.
 
-`R`, `P`, and `p` come from the current onchain pool state and your Payer share ownership. `S` comes from the market's configured oracle. Use the exposure-allocation ratio:
+`R`, `P`, and `p` come from the current onchain pool state and your Payer share ownership. `S` comes from the market's configured oracle. Payer's instantaneous leverage is:
 
 ```text
-E = R / P
+L = R / P
 ```
 
-`E` allocates Receiver exposure across Payer shares. It does not change the funding rate or create a separate leverage setting.
+`L` is determined by the current pool balances. It is not a trader-selected setting and changes as either pool changes.
 
 The required external long is:
 
 ```text
-h = p * (R / P) / S     tracked-asset units
-H = h * S = p * (R / P) external notional
+h = p * L / S = p * (R / P) / S tracked-asset units
+H = h * S = p * L                  external notional
 ```
 
 Equivalently, if you own the fraction `p / P` of the Payer pool, you hedge that fraction of Receiver's total asset exposure `R / S`.
@@ -61,7 +61,7 @@ Oracle price S   = $105
 Then:
 
 ```text
-E = 1,050 / 150 = 7
+L = 1,050 / 150 = 7
 h = 7.50 * 7 / 105 = 0.50 units
 H = 0.50 * 105 = $52.50
 ```

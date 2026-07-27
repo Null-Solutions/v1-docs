@@ -39,7 +39,7 @@ Payer coverage = Payer pool assets / Receiver pool assets
 - **Payer liquidity** tells you the reserve taking the opposite price transfer.
 - **Payer coverage** tells you how much reserve backs each unit of Receiver collateral.
 
-A large total market can still have low Payer coverage. The Payer pool backs Receiver exposure one-for-one at the notional level. When fewer Payer assets back that exposure, the same transfer is allocated across a smaller pool and can represent a larger percentage change in its share value.
+A large total market can still have low Payer coverage. Payer's instantaneous leverage is `L = R / P`. Lower coverage means higher leverage, so the same transfer can represent a larger percentage change in Payer share value.
 
 Funding also responds to coverage. For the standard funding-rate model, funding is zero at the model's target coverage, not necessarily when both pools are equal. Check the current signed funding rate and the market's funding-rate model before choosing a side.
 

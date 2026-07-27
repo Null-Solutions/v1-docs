@@ -15,7 +15,7 @@
 - **deposit / redeem** — onchain and developer docs language
 - **Mint / Burn** — private-beta app copy for the same flows
 - **Settlement** — market update before pool actions (not a separate public poke)
-- Prefer **Sepolia** when stating live deployments; do not claim mainnet/Base unless addresses page says live
+- Target **Ethereum mainnet**; do not publish deployment addresses until the addresses page has verified mainnet values
 - Prefer **contracts-first**; do not document a published Null SDK or partner trading API unless one ships
 
 ## Style preferences
