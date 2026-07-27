@@ -12,6 +12,10 @@ img.nav-logo {
   display: none !important;
 }
 
+sidebar-group-header {
+  display: none !important;
+}
+
 eyebrow,
 .eyebrow {
   display: inline-flex !important;
