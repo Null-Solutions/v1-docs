@@ -10,7 +10,7 @@ Null V1 is fully collateralized, but every position can lose value. Full collate
 
 Receiver gains from an ordinary settled price increase and loses from a decrease. Signed funding can add to or offset that return. With the standard script parameters, Receiver pays funding when Payer coverage is below `P = 0.5R` and receives it above that target.
 
-Payer takes the opposite price transfer. The whole Payer pool backs Receiver exposure notional `R`; each holder owns its pro-rata share of that notional. When the Payer pool is small, sustained price increases can therefore consume a larger fraction of its assets. Moves inside the circuit-breaker threshold settle in full. Thin Payer coverage also caps how much Receiver can collect from an increase.
+Payer takes the opposite price transfer at instantaneous leverage `L = R / P`. When the Payer pool is small relative to Receiver, leverage is higher and sustained price increases can consume a larger fraction of its assets. Moves inside the circuit-breaker threshold settle in full. Thin Payer coverage also caps how much Receiver can collect from an increase.
 
 There is no liquidity backstop. A redemption pays the pool's current assets according to ERC-4626 share accounting, not a guaranteed principal amount.
 

@@ -19,13 +19,11 @@ Read the market's `collateral()` before building the transaction. Then probe tha
 
 The router uses the same detection rule. A successful `asset()` call selects the ERC-4626 path. If another required vault call then fails, the transaction reverts rather than falling back to plain ERC-20 handling.
 
-On the current Sepolia deployment, markets collateralized by `nUSDC` use `MockUSDC` as router input:
+For generic ERC-4626 collateral, name the unit pipeline by role:
 
 ```text
-MockUSDC underlying → nUSDC vault shares → Receiver or Payer pool shares
+underlying → collateralVault shares → Receiver or Payer pool shares
 ```
-
-Do not label every collateral token as `nUSDC` or every underlying as `MockUSDC`. Those names apply only to deployments that use those contracts.
 
 ## Quote the complete unit pipeline
 
@@ -57,23 +55,28 @@ function applySlippageFloor(quotedOutput: bigint): bigint {
 
 Pool previews include the entry fee but use the last settled market state. Execution settles first, so funding, price PnL, collateral fees, reconciliation, or another transaction can change the result. For a settlement projection, use `NullV1Lens.previewMarket`; still enforce router minimums.
 
-## Sepolia nUSDC example
+## ERC-4626 collateral example
 
-This example deposits `1,000 MockUSDC` into the Receiver pool of an existing `nUSDC` market. It assumes configured `publicClient`, `walletClient`, and `account` objects.
+This example deposits `1,000` underlying units into the Receiver pool of a published market whose collateral is an ERC-4626 vault. It assumes configured `publicClient`, `walletClient`, and `account` objects. Populate every address from canonical Ethereum deployment and market data once available; do not use placeholders in a transaction.
 
 ```ts
-import { parseAbi, parseUnits } from "viem";
+import { parseAbi, parseUnits, type Address } from "viem";
 
-const market = "0x..." as const; // discover from the canonical factory
-const router = "0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03" as const;
-const nUsdc = "0x77508321f1EF8C707Cd5869557365468BCeD0613" as const;
-const mockUsdc = "0x5A316865F2C9c261aD1B254C46788b6356d2F135" as const;
+interface DepositConfig {
+  market: Address;
+  router: Address;
+  collateralVault: Address;
+  underlying: Address;
+}
+
+declare const config: DepositConfig;
 
 const marketAbi = parseAbi([
   "function collateral() view returns (address)",
   "function receiverPool() view returns (address)",
 ]);
 const erc20Abi = parseAbi([
+  "function decimals() view returns (uint8)",
   "function balanceOf(address account) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)",
 ]);
@@ -91,33 +94,38 @@ const routerAbi = parseAbi([
 
 const [collateral, receiverPool, underlying] = await Promise.all([
   publicClient.readContract({
-    address: market,
+    address: config.market,
     abi: marketAbi,
     functionName: "collateral",
   }),
   publicClient.readContract({
-    address: market,
+    address: config.market,
     abi: marketAbi,
     functionName: "receiverPool",
   }),
   publicClient.readContract({
-    address: nUsdc,
+    address: config.collateralVault,
     abi: vaultAbi,
     functionName: "asset",
   }),
 ]);
 
-if (collateral.toLowerCase() !== nUsdc.toLowerCase()) {
-  throw new Error("This example requires nUSDC market collateral");
+if (collateral.toLowerCase() !== config.collateralVault.toLowerCase()) {
+  throw new Error("Configured collateral vault does not match the market");
 }
-if (underlying.toLowerCase() !== mockUsdc.toLowerCase()) {
-  throw new Error("This nUSDC deployment does not use MockUSDC");
+if (underlying.toLowerCase() !== config.underlying.toLowerCase()) {
+  throw new Error("Configured underlying does not match collateralVault.asset()");
 }
 
-const receiverAssets = parseUnits("1000", 6);
+const underlyingDecimals = await publicClient.readContract({
+  address: config.underlying,
+  abi: erc20Abi,
+  functionName: "decimals",
+});
+const receiverAssets = parseUnits("1000", underlyingDecimals);
 const payerAssets = 0n;
 const quotedVaultShares = await publicClient.readContract({
-  address: nUsdc,
+  address: config.collateralVault,
   abi: vaultAbi,
   functionName: "previewDeposit",
   args: [receiverAssets],
@@ -132,21 +140,21 @@ const minReceiverShares = (quotedPoolShares * (10_000n - 50n)) / 10_000n;
 
 const approvalHash = await walletClient.writeContract({
   account,
-  address: mockUsdc,
+  address: config.underlying,
   abi: erc20Abi,
   functionName: "approve",
-  args: [router, receiverAssets],
+  args: [config.router, receiverAssets],
 });
 await publicClient.waitForTransactionReceipt({ hash: approvalHash });
 
 const updateData: readonly `0x${string}`[] = []; // only when the stored price is usable
 await walletClient.writeContract({
   account,
-  address: router,
+  address: config.router,
   abi: routerAbi,
   functionName: "depositMarket",
   args: [
-    market,
+    config.market,
     receiverAssets,
     payerAssets,
     minReceiverShares,
@@ -172,12 +180,12 @@ Pass `[]` only when the oracle's stored price is usable. For Pyth, the payable r
 
 ## Direct ERC-4626 deposit
 
-Direct pool calls always use **market collateral units**. For an `nUSDC` market, wrap `MockUSDC` into `nUSDC` first, then approve the selected pool to spend `nUSDC`.
+Direct pool calls always use **market collateral units**. For ERC-4626 collateral, deposit `underlying` into `collateralVault` first, then approve the selected pool to spend the resulting vault shares.
 
-After the vault deposit confirms, use the actual `nUSDC` balance received as the pool's `assets` input. Do not reuse the original `MockUSDC` amount: vault underlying units and vault-share units can differ.
+After the vault deposit confirms, use the actual `collateralVault` share balance received as the pool's `assets` input. Do not reuse the original `underlying` amount: underlying units and vault-share units can differ.
 
 The direct call has no router deadline, output floor, oracle payload, or automatic vault wrap. Add those safeguards in your integration.
 
 ## Related
 
-[Redeeming](/developers/redeeming) · [Pools](/developers/pools) · [Settlement](/developers/settlement) · [Live deployments](/resources/addresses)
+[Redeeming](/developers/redeeming) · [Pools](/developers/pools) · [Settlement](/developers/settlement) · [Ethereum deployments](/resources/addresses)

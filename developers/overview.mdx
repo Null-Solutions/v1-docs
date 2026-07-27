@@ -6,10 +6,10 @@ description: "Integrate Null V1 markets, pools, routers, oracles, and read surfa
 
 Null V1 is a **contracts-first** protocol. Integrators discover markets, read state, and deposit or redeem through Solidity interfaces — typically via `viem`, `ethers`, or a wallet SDK. There is no published Null npm SDK and no partner trading API with API keys.
 
-Today the live deployment is **Sepolia**. Ethereum mainnet and Base are not live. Use [Live deployments](/resources/addresses) for canonical addresses.
+These integration guides target **Ethereum mainnet**. Before connecting, copy the published Ethereum chain ID, deployment block, and contract addresses from [Ethereum deployments](/resources/addresses). If that page does not list Ethereum constants yet, treat deployment configuration as unavailable rather than inventing values.
 
 <Note>
-The hosted app may require private-beta approval. That product access is separate from this contracts-first integration guide. This repository documents deployed Sepolia contracts, but does not establish a contract-level whitelist policy.
+Hosted-product access is separate from this contracts-first integration guide. Do not infer a contract-level whitelist policy from product access controls.
 </Note>
 
 <Note>
@@ -40,9 +40,10 @@ A market is uniquely identified by an immutable tuple:
 For market-level metrics, let `R` be Receiver pool assets and `P` be Payer pool assets:
 
 - **Coverage** is `P/R`: backing relative to Receiver assets.
-- **Payer exposure** is `E = R/P`: Receiver assets backed per unit of Payer assets.
+- **Payer instantaneous leverage** is `L = R/P` at that market state: Receiver assets backed per unit of Payer assets.
 
 Handle a zero denominator explicitly. Neither ratio is defined when its denominator is zero.
+`L` is not a funding rate. It is the leverage Payer has at that moment; funding is computed separately by the market's FRM.
 
 ## Architecture
 
@@ -133,7 +134,7 @@ Use `NullV1Router` for fee-less Chainlink updates. Use pre-funded `NullV1Payable
 | --- | --- |
 | Published Null SDK | Use ABIs + `viem` / `ethers` against the contracts |
 | Public partner REST API / webhooks | Reads are onchain (Lens) or your own indexer; the product indexer is not a keyed public API |
-| Mainnet / Base addresses | Sepolia only for now |
+| Ethereum deployment constants | Copy them from [Ethereum deployments](/resources/addresses) once published; do not guess |
 | Order book / MM credentials | Markets are pooled mint/burn, not CLOB |
 
 ## Recommended path

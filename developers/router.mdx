@@ -55,7 +55,7 @@ function createMarket(
 ) external returns (INullV1Market market);
 ```
 
-The router optionally updates the oracle, then calls the supplied factory. It does **not** verify that the factory is a canonical Null deployment. Resolve the factory from [Live deployments](/resources/addresses) and validate untrusted configuration.
+The router optionally updates the oracle, then calls the supplied factory. It does **not** verify that the factory is a canonical Null deployment. Copy the factory from [Ethereum deployments](/resources/addresses) once published and validate untrusted configuration. Do not substitute an address from another network.
 
 The factory requires nonzero dependencies, an enabled FRM, a nonzero initial oracle price, and an unused `(collateral, oracle, frm)` tuple.
 
@@ -127,7 +127,7 @@ deposit: underlying → collateral vault shares → Null pool shares
 redeem:  Null pool shares → collateral vault shares → underlying
 ```
 
-For Sepolia `nUSDC` markets, the underlying is `MockUSDC`. Do not assume those tokens for other collateral or deployments.
+Use `collateralVault` and `underlying` in generic integration code. Resolve both from canonical market configuration and `collateralVault.asset()`; do not assume a particular token pair.
 
 ## Approvals
 

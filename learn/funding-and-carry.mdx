@@ -76,14 +76,14 @@ annual funding transfer = f * R
   Receiver.
 </Note>
 
-The whole Payer pool backs Receiver notional `R`. A Payer holder with position value `p` owns fraction `p / P` of that exposure:
+The whole Payer pool takes the opposite side of Receiver notional `R`. At the current market state, Payer's instantaneous leverage is `L = R / P`. A Payer holder with current position value `p` therefore has:
 
 ```text
-holder exposure notional = p * R / P
-holder funding transfer  = holder exposure notional * f
+holder notional         = p * L = p * R / P
+holder funding transfer = holder notional * f
 ```
 
-`R / P` allocates the exposure and resulting transfer across Payer shares. It does not change the funding rate.
+`L` changes as either pool changes. It determines the holder's current notional; it does not change the funding rate.
 
 ## Simplified worked examples
 
@@ -130,11 +130,11 @@ A Payer holder receives or pays fraction `p / P` of the Payer transfer and separ
 
 ## Payer hedging
 
-Let a market maker own `p` collateral units of a Payer pool whose total assets are `P`. With Receiver assets `R` and oracle price `S` in quote units per base unit, the external long hedge is:
+Let a market maker own `p` collateral units of a Payer pool whose total assets are `P`. With instantaneous leverage `L = R / P` and oracle price `S` in quote units per base unit, the external long hedge is:
 
 ```text
-h = (p / P) * (R / S) base units
-H = hS = pR / P quote notional
+h = pL / S = (p / P) * (R / S) base units
+H = hS = pL = pR / P quote notional
 ```
 
 In this simplified example, if `p = 10`, `P = 200`, `R = 1,000`, and `S = 25`:

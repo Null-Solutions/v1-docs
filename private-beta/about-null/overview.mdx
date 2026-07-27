@@ -1,10 +1,10 @@
 ---
 title: "Private beta overview"
 sidebarTitle: "Overview"
-description: "Understand what you can trade in Null's Sepolia private beta and the risks to review first."
+description: "Understand what you can trade in Null's Ethereum mainnet private beta and the risks to review first."
 ---
 
-Null lets you take either side of an oracle-tracked return without borrowing the tracked asset. In the private beta, approved wallets can mint positions in Sepolia markets using testnet collateral.
+Null lets you take either side of an oracle-tracked return without borrowing the tracked asset. In the private beta, approved wallets can mint positions in Ethereum mainnet markets using supported collateral.
 
 ## Choose your side
 
@@ -13,7 +13,7 @@ Every market has two pooled positions:
 - **Receiver** takes the tracked asset's price return. Receiver generally gains when the oracle price rises and loses when it falls.
 - **Payer** provides the collateral backing Receiver and takes the other side of its price return. Payer generally loses when the oracle price rises and gains when it falls.
 
-Funding moves between the pools based on Payer coverage. When Payer collateral is scarce, Receiver can pay Payer. When it is abundant, funding can reverse. [The primitive](/private-beta/about-null/the-primitive#funding-and-exposure-notional) explains the curve and exposure accounting.
+Funding moves between the pools based on Payer coverage. When Payer collateral is scarce, Receiver can pay Payer. When it is abundant, funding can reverse. [The primitive](/private-beta/about-null/the-primitive#funding-and-payer-leverage) explains the curve and Payer leverage.
 
 <Info>
 Receiver and Payer are ERC-4626 pool shares, not ownership of the tracked asset. Your position value changes with the pool's price PnL, funding, fees, and collateral value.
@@ -24,7 +24,7 @@ Receiver and Payer are ERC-4626 pool shares, not ownership of the tracked asset.
 You can:
 
 - [apply with a wallet](/private-beta/getting-started/null-private-beta) and complete the participation agreement;
-- [fund that wallet](/private-beta/getting-started/fund-your-account) with Sepolia testnet assets;
+- [fund that wallet](/private-beta/getting-started/fund-your-account) with the market's supported collateral and ETH for gas;
 - [mint or burn a position](/private-beta/trading/placing-a-position) in a Receiver or Payer pool;
 - [operate a hedged Payer position](/private-beta/market-make/overview); and
 - [review your portfolio](/private-beta/portfolios/portfolio-overview).
@@ -34,7 +34,7 @@ You can:
 One-click managed strategies and a points economy are not currently available. Market making is self-operated.
 
 <Warning>
-The private beta runs on Sepolia with testnet assets that have no cash value. Positions can still lose some or all of their testnet value through price moves, funding, fees, collateral behavior, oracle behavior, liquidity, or contract failures.
+Positions can lose some or all of their value through price moves, funding, fees, collateral behavior, oracle behavior, liquidity, or contract failures. Verify supported collateral in the app and its contract address on the canonical [addresses page](/resources/addresses) before transacting.
 </Warning>
 
 Start with [The primitive](/private-beta/about-null/the-primitive), then [apply for the private beta](/private-beta/getting-started/null-private-beta).

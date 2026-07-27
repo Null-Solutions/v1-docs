@@ -45,25 +45,19 @@ Call `factory.createMarket` directly only when the oracle already has a readable
 
 ## Create with viem
 
-The example uses the live Sepolia factory, nUSDC collateral, and enabled FRM. Supply an existing oracle address and the matching live router from [Live deployments](/resources/addresses). Fetch `updateData` as described in [Oracles](/markets/oracles). The example intentionally does not hardcode a market or oracle address.
+On Ethereum mainnet, resolve every dependency from a verified deployment source before signing. The example takes the factory, matching router, collateral, oracle, enabled FRM, chain, and configured clients as required inputs; it does not assume that any particular deployment or collateral exists. Fetch `updateData` as described in [Oracles](/markets/oracles).
 
 ```ts
 import {
-  createPublicClient,
-  createWalletClient,
-  custom,
   getAddress,
-  http,
   parseAbi,
   zeroAddress,
   type Address,
+  type Chain,
   type Hex,
+  type PublicClient,
+  type WalletClient,
 } from "viem";
-import { sepolia } from "viem/chains";
-
-const factory = "0xc4d61E729225E8fA6612969fA705a36a8446B6CF";
-const collateral = "0x77508321f1EF8C707Cd5869557365468BCeD0613"; // nUSDC
-const frm = "0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014";
 
 const routerAbi = parseAbi([
   "function createMarket(address factory, address collateral, address oracle, address frm, bytes[] updateData) returns (address market)",
@@ -80,21 +74,34 @@ const marketAbi = parseAbi([
   "function payerPool() view returns (address)",
 ]);
 
-const publicClient = createPublicClient({ chain: sepolia, transport: http() });
-const walletClient = createWalletClient({
-  chain: sepolia,
-  transport: custom(window.ethereum),
-});
+interface CreateNullMarketConfig {
+  factory: Address;
+  router: Address;
+  collateral: Address;
+  oracle: Address;
+  frm: Address;
+  chain: Chain;
+  publicClient: PublicClient;
+  walletClient: WalletClient;
+  updateData: Hex[];
+}
 
 export async function createNullMarket({
+  factory,
   router,
+  collateral,
   oracle,
+  frm,
+  chain,
+  publicClient,
+  walletClient,
   updateData,
-}: {
-  router: Address;
-  oracle: Address;
-  updateData: Hex[];
-}) {
+}: CreateNullMarketConfig) {
+  if (chain.id !== 1) throw new Error("Expected Ethereum mainnet");
+  if (publicClient.chain?.id !== chain.id || walletClient.chain?.id !== chain.id) {
+    throw new Error("Clients must use the requested chain");
+  }
+
   const [account] = await walletClient.getAddresses();
   if (!account) throw new Error("Connect a wallet");
 
@@ -209,4 +216,4 @@ After the receipt succeeds, read `getMarket(collateral, oracle, frm)` from the s
 
 The dependency addresses on a live market cannot change. Enabling another FRM only permits new tuples that use it; it does not replace the FRM on an existing market.
 
-See [Factory](/contracts/factory) · [Oracles](/markets/oracles) · [Live deployments](/resources/addresses).
+See [Factory](/contracts/factory) · [Oracles](/markets/oracles) · [Ethereum deployments](/resources/addresses).

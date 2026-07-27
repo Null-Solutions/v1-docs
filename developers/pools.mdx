@@ -34,7 +34,7 @@ function totalAssets() public view returns (uint256);
 
 `totalAssets()` returns the selected pool's amount from the market's last settled state. It is denominated in **market collateral units** and does not settle the market.
 
-The pool's ERC-4626 `asset()` is always `market.collateral()`. If that collateral is itself an ERC-4626 vault such as `nUSDC`, pool assets are vault shares, not the vault's underlying.
+The pool's ERC-4626 `asset()` is always `market.collateral()`. If that collateral is itself an ERC-4626 vault, pool assets are `collateralVault` shares, not the vault's `underlying`.
 
 Share decimals are `collateral.decimals() + 10`. Conversion math also includes OpenZeppelin's virtual shares. Always read `decimals()` and use ERC-4626 conversion functions instead of assuming a fixed asset-to-share scale.
 
@@ -91,13 +91,11 @@ Router calls when market collateral exposes `asset()`:
 vault underlying ↔ market collateral vault shares ↔ Null pool shares
 ```
 
-For Sepolia `nUSDC` markets, that final pipeline is:
+Use generic names for that final pipeline:
 
 ```text
-MockUSDC ↔ nUSDC ↔ Receiver or Payer pool shares
+underlying ↔ collateralVault shares ↔ Receiver or Payer pool shares
 ```
-
-The `nUSDC` and `MockUSDC` names are deployment-specific.
 
 ## Position value
 

@@ -16,7 +16,7 @@ Use public contract interfaces for reads and writes:
 | Chainlink (fee-less updates) | `NullV1Router`                   |
 | Pyth (native update fee)     | Pre-funded `NullV1PayableRouter` |
 
-Both routers expose the same market-operation signatures. Do not send ETH with user calls. Resolve canonical addresses from [Live deployments](/resources/addresses).
+Both routers expose the same market-operation signatures. Do not send ETH with user calls. Copy canonical addresses from [Ethereum deployments](/resources/addresses) once published; until then, keep them as required typed inputs and do not submit transactions.
 
 ## Product copy
 
@@ -46,18 +46,23 @@ struct SimulateResponse {
 `previewMarket(market)` projects settlement using `oracle.priceView()`. It does not write oracle or market state.
 
 ```ts
-import { formatUnits, parseAbi } from "viem";
+import { formatUnits, parseAbi, type Address } from "viem";
 
-const market = "0x..." as const; // discover from the canonical factory
-const lens = "0x261841f1a2964232995e79ce7466c734cb2b25b7" as const;
+interface FrontendReadConfig {
+  market: Address;
+  lens: Address;
+}
+
+declare const config: FrontendReadConfig;
+
 const lensAbi = parseAbi([
   "function previewMarket(address market) view returns ((uint256 lastUpdate, uint256 receiverPool, uint256 payerPool, uint256 protocolFees, uint256 price) state, uint256 totalAssets, uint256 receiverTotalSupply, uint256 payerTotalSupply, int256 fundingRate, uint256 collateralRate, uint256 collateralSharePrice)",
 ]);
 const response = await publicClient.readContract({
-  address: lens,
+  address: config.lens,
   abi: lensAbi,
   functionName: "previewMarket",
-  args: [market],
+  args: [config.market],
 });
 
 const fundingPercent = Number(formatUnits(response.fundingRate, 18)) * 100;
@@ -71,16 +76,11 @@ Keep values as `bigint` for calculations and round only for display. Lens fields
 funding APR %       = fundingRate / 1e18 × 100
 collateral APR %    = collateralRate / 1e18 × 100
 vault share value   = collateralSharePrice / 1e18 underlying units
-Payer exposure      = projectedReceiverAssets / projectedPayerAssets
+Payer leverage L    = projectedReceiverAssets / projectedPayerAssets
 annual funding flow = fundingRate × projectedReceiverAssets / 1e18
 ```
 
-Handle a zero Payer denominator when displaying exposure allocation. Positive `fundingRate` means Receiver pays Payer; negative means Payer pays Receiver. Apply it to Receiver exposure notional; do not multiply it into another displayed rate. A zero collateral metric can mean unsupported or unavailable because Lens catches failures from those external reads.
-
-<Note>
-  Deployed Sepolia Lens may lag newer collateral-metric helpers in latest
-  source. Check the deployed ABI before relying on newer fields.
-</Note>
+Handle a zero Payer denominator when displaying `L`. `L = R/P` is the leverage Payer has at that projected market state, not a funding rate. Positive `fundingRate` means Receiver pays Payer; negative means Payer pays Receiver. Apply it to Receiver notional; do not multiply it into another displayed rate. A zero collateral metric can mean unsupported or unavailable because Lens catches failures from those external reads. Verify the published Ethereum Lens ABI before relying on optional fields.
 
 ## Detect collateral units
 
@@ -89,11 +89,10 @@ Read `market.collateral()`. If calling `asset()` on that token succeeds, the rou
 ```ts
 import { parseAbi } from "viem";
 
-const market = "0x..." as const; // selected market
 const marketAbi = parseAbi(["function collateral() view returns (address)"]);
 const collateralAbi = parseAbi(["function asset() view returns (address)"]);
 const marketCollateral = await publicClient.readContract({
-  address: market,
+  address: config.market,
   abi: marketAbi,
   functionName: "collateral",
 });
@@ -114,7 +113,7 @@ try {
 
 Mirror this exact rule in approval and quote code. Do not identify vaults from token symbols or a frontend allowlist. If `asset()` succeeds but a later vault method fails, surface the error; the router will not silently switch to plain ERC-20 behavior.
 
-For Sepolia markets whose collateral is `nUSDC`, `tokenToPull` is `MockUSDC`. Verify both addresses before showing those names.
+For ERC-4626 collateral, call the returned token `underlying` and the market collateral `collateralVault` in generic code. Use user-facing token labels only after reading and verifying their metadata.
 
 ## Quote and submit Mint
 

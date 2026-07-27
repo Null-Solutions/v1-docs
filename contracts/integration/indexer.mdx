@@ -8,7 +8,7 @@ Build integrations from public onchain interfaces. Discover markets from the fac
 
 ## Discover markets
 
-Start at the canonical factory deployment block listed under [Live deployments](/resources/addresses). On Sepolia, that block is `11321037`.
+Start at the canonical factory deployment block listed under [Ethereum deployments](/resources/addresses) once published. Do not guess a start block or reuse one from another network.
 
 ```solidity
 event CreateMarket(
@@ -28,17 +28,25 @@ Persist all six `CreateMarket` fields. A market's identity is the exact `(collat
 Subscribe to both pool addresses immediately so early share transfers are not missed. Do not hardcode per-market pools.
 
 ```ts
-import { parseAbiItem } from "viem";
+import { parseAbiItem, type Address } from "viem";
 
-const factory = "0xc4d61E729225E8fA6612969fA705a36a8446B6CF" as const;
+interface IndexerConfig {
+  chainId: 1;
+  factory: Address;
+  factoryStartBlock: bigint;
+}
+
+// Populate from canonical published Ethereum deployment data.
+declare const config: IndexerConfig;
+
 const createMarketEvent = parseAbiItem(
   "event CreateMarket(address indexed collateral, address indexed oracle, address indexed frm, address market, address receiverPool, address payerPool)",
 );
 
 const logs = await publicClient.getLogs({
-  address: factory,
+  address: config.factory,
   event: createMarketEvent,
-  fromBlock: 11_321_037n,
+  fromBlock: config.factoryStartBlock,
   toBlock: "latest",
 });
 
@@ -156,7 +164,7 @@ If `collateral.asset()` succeeds, the router treats collateral as ERC-4626:
 underlying ↔ market collateral vault shares ↔ Null pool shares
 ```
 
-On Sepolia `nUSDC` markets, the underlying is `MockUSDC`. Verify the addresses before applying those labels. Do not assume all markets use that pair.
+Use `collateralVault` and `underlying` as generic schema roles. Resolve the underlying with `collateral.asset()` and store verified token metadata separately from contract identity.
 
 ## Reliability checklist
 

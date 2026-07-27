@@ -17,13 +17,11 @@ Read `market.collateral()`, then probe the collateral token's `asset()` function
 | `asset()` reverts or is unavailable | Market collateral                      |
 | `asset()` succeeds                  | Vault underlying returned by `asset()` |
 
-The router uses the same detection rule. On Sepolia, redeeming a pool from an `nUSDC` market follows:
+The router uses the same detection rule. For generic ERC-4626 collateral, redemption follows:
 
 ```text
-Receiver or Payer pool shares → nUSDC vault shares → MockUSDC underlying
+Receiver or Payer pool shares → collateralVault shares → underlying
 ```
-
-Use `nUSDC` and `MockUSDC` names only after verifying those addresses for the selected deployment.
 
 ## Quote the complete unit pipeline
 
@@ -55,17 +53,21 @@ function applySlippageFloor(quotedOutput: bigint): bigint {
 
 `pool.previewRedeem` includes the exit fee but reads the last settled state. `redeemMarket` settles before burning shares, so the result can change before execution. Use `NullV1Lens.previewMarket` for a settlement projection and keep the router minimum.
 
-## Sepolia nUSDC example
+## ERC-4626 collateral example
 
-This example redeems a caller's full Receiver balance from an existing `nUSDC` market. It assumes configured `publicClient`, `walletClient`, and `account` objects.
+This example redeems a caller's full Receiver balance from a published market whose collateral is an ERC-4626 vault. It assumes configured `publicClient`, `walletClient`, and `account` objects. Populate every address from canonical Ethereum deployment and market data once available; do not use placeholders in a transaction.
 
 ```ts
-import { parseAbi } from "viem";
+import { parseAbi, type Address } from "viem";
 
-const market = "0x..." as const; // discover from the canonical factory
-const router = "0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03" as const;
-const nUsdc = "0x77508321f1EF8C707Cd5869557365468BCeD0613" as const;
-const mockUsdc = "0x5A316865F2C9c261aD1B254C46788b6356d2F135" as const;
+interface RedeemConfig {
+  market: Address;
+  router: Address;
+  collateralVault: Address;
+  underlying: Address;
+}
+
+declare const config: RedeemConfig;
 
 const marketAbi = parseAbi([
   "function collateral() view returns (address)",
@@ -87,27 +89,27 @@ const routerAbi = parseAbi([
 
 const [collateral, receiverPool, underlying] = await Promise.all([
   publicClient.readContract({
-    address: market,
+    address: config.market,
     abi: marketAbi,
     functionName: "collateral",
   }),
   publicClient.readContract({
-    address: market,
+    address: config.market,
     abi: marketAbi,
     functionName: "receiverPool",
   }),
   publicClient.readContract({
-    address: nUsdc,
+    address: config.collateralVault,
     abi: vaultAbi,
     functionName: "asset",
   }),
 ]);
 
-if (collateral.toLowerCase() !== nUsdc.toLowerCase()) {
-  throw new Error("This example requires nUSDC market collateral");
+if (collateral.toLowerCase() !== config.collateralVault.toLowerCase()) {
+  throw new Error("Configured collateral vault does not match the market");
 }
-if (underlying.toLowerCase() !== mockUsdc.toLowerCase()) {
-  throw new Error("This nUSDC deployment does not use MockUSDC");
+if (underlying.toLowerCase() !== config.underlying.toLowerCase()) {
+  throw new Error("Configured underlying does not match collateralVault.asset()");
 }
 
 const receiverShares = await publicClient.readContract({
@@ -124,7 +126,7 @@ const quotedVaultShares = await publicClient.readContract({
   args: [receiverShares],
 });
 const quotedUnderlying = await publicClient.readContract({
-  address: nUsdc,
+  address: config.collateralVault,
   abi: vaultAbi,
   functionName: "previewRedeem",
   args: [quotedVaultShares],
@@ -136,18 +138,18 @@ const approvalHash = await walletClient.writeContract({
   address: receiverPool,
   abi: poolAbi,
   functionName: "approve",
-  args: [router, receiverShares],
+  args: [config.router, receiverShares],
 });
 await publicClient.waitForTransactionReceipt({ hash: approvalHash });
 
 const updateData: readonly `0x${string}`[] = []; // only when the stored price is usable
 await walletClient.writeContract({
   account,
-  address: router,
+  address: config.router,
   abi: routerAbi,
   functionName: "redeemMarket",
   args: [
-    market,
+    config.market,
     receiverShares,
     0n,
     minReceiverAssets,
@@ -175,7 +177,7 @@ Pass `[]` only when the stored price is usable. Use `NullV1Router` for Chainlink
 
 ## Direct ERC-4626 exit
 
-Direct pool exits return **market collateral**. For an `nUSDC` market, they return `nUSDC`, not `MockUSDC`. Redeem the `nUSDC` separately if you need its underlying.
+Direct pool exits return **market collateral**. For ERC-4626 collateral, they return `collateralVault` shares, not `underlying`. Redeem those vault shares separately if you need the underlying token.
 
 ```ts
 await walletClient.writeContract({

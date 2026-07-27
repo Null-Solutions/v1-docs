@@ -4,7 +4,7 @@ sidebarTitle: "Smart Contracts"
 description: "Understand where your collateral sits, which market rules are fixed, and which risks remain."
 ---
 
-Null's private beta runs through smart contracts on Sepolia. Before you mint a position, you can verify the market's collateral, oracle, funding-rate model, pools, fees, balances, and transactions onchain.
+Null's private beta will use smart contracts on Ethereum mainnet. Before you mint a position, you can verify the market's collateral, oracle, funding-rate model, pools, fees, balances, and transactions onchain.
 
 The contracts define the accounting rules. They do not make the system risk-free. Contract bugs, oracle behavior, collateral failures, thin pools, and adverse price or funding moves can still reduce your position value.
 
@@ -38,7 +38,7 @@ When you burn, the market settles first, the pool burns your shares, and the mar
 (collateral, oracle, funding-rate model)
 ```
 
-Market creation is permissionless, but the factory must have enabled the selected funding-rate model. Use the canonical Sepolia factory listed in [Live deployments](/resources/addresses) when verifying a market.
+Market creation is permissionless, but the factory must have enabled the selected funding-rate model. Use the canonical factory listed on the [addresses page](/resources/addresses) when verifying a market.
 
 ### Market
 
@@ -88,10 +88,10 @@ These permissions do not include replacing an existing market's dependencies, li
 
 ## What the contracts do not provide
 
-Null's core contracts do not provide a user margin account, borrowing, an order book, automated hedging, or an individual-account liquidation engine. The Payer pool backs Receiver exposure one-for-one at the notional level, and each Payer share owns a pro-rata allocation of that exposure. Loss is reflected in Payer share value rather than a liquidation.
+Null's core contracts do not provide a user margin account, borrowing, an order book, automated hedging, or an individual-account liquidation engine. Payer's instantaneous leverage is `L = R / P` and changes with the pool balances. Loss is reflected in Payer share value rather than an individual liquidation.
 
 <Warning>
 Onchain visibility lets you inspect the rules and state. It does not guarantee correct code, a correct oracle, safe collateral, sufficient liquidity, or a profitable trade.
 </Warning>
 
-Review the canonical [Sepolia addresses](/resources/addresses), [risk factors](/learn/risks-and-parameters), and exact [Factory](/contracts/factory), [Market](/contracts/market), and [Pool](/contracts/pool) interfaces.
+Review the canonical [Ethereum mainnet addresses](/resources/addresses), [risk factors](/learn/risks-and-parameters), and exact [Factory](/contracts/factory), [Market](/contracts/market), and [Pool](/contracts/pool) interfaces.

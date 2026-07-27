@@ -1,63 +1,38 @@
 ---
-title: "Live deployments"
-sidebarTitle: "Live deployments"
-description: "Canonical Null V1 addresses, chain status, start blocks, and integration constants."
+title: "Ethereum deployments"
+sidebarTitle: "Deployments"
+description: "Canonical Null V1 Ethereum mainnet addresses and integration constants."
 ---
 
-Canonical live Null V1 addresses. Hardcode shared infrastructure per chain; discover per-market pools from the factory or events.
+Null V1 targets **Ethereum mainnet**. Canonical contract addresses and the factory deployment block will be published here after deployment verification.
 
 ## Status
 
 | Network | Chain ID | Status | Explorer |
 | --- | ---: | --- | --- |
-| Sepolia | `11155111` | Live testnet | [Sepolia Etherscan](https://sepolia.etherscan.io) |
-| Ethereum Mainnet | `1` | Not live | [Etherscan](https://etherscan.io) |
-| Base | `8453` | Not live | [BaseScan](https://basescan.org) |
+| Ethereum mainnet | `1` | Deployment addresses pending | [Etherscan](https://etherscan.io) |
 
-## Sepolia contracts
+## Canonical contracts
 
-| Contract | Address | Notes |
-| --- | --- | --- |
-| `NullV1Factory` | [`0xc4d61E729225E8fA6612969fA705a36a8446B6CF`](https://sepolia.etherscan.io/address/0xc4d61E729225E8fA6612969fA705a36a8446B6CF) | Market registry and factory |
-| `NullV1Router` | [`0x2ab2C1CcF7a1b843F73CD82d48fA60d3FB18FA7f`](https://sepolia.etherscan.io/address/0x2ab2C1CcF7a1b843F73CD82d48fA60d3FB18FA7f) | Fee-less router (Chainlink) |
-| `NullV1PayableRouter` | [`0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03`](https://sepolia.etherscan.io/address/0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03) | Pre-funded router (Pyth) |
-| `NullV1ImbalanceFundingRateModel` | [`0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014`](https://sepolia.etherscan.io/address/0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014) | Enabled FRM for current markets |
-| `NullV1Lens` | [`0x261841f1A2964232995E79Ce7466C734cb2b25B7`](https://sepolia.etherscan.io/address/0x261841f1A2964232995E79Ce7466C734cb2b25B7) | Read-only previews |
-| `NullV1Multicall` | [`0x779D7243CB816c5AdC08d11d49C0222B8F36F3Dc`](https://sepolia.etherscan.io/address/0x779D7243CB816c5AdC08d11d49C0222B8F36F3Dc) | Batch previews |
-| `nUSDC` collateral | [`0x77508321f1EF8C707Cd5869557365468BCeD0613`](https://sepolia.etherscan.io/address/0x77508321f1EF8C707Cd5869557365468BCeD0613) | Testnet ERC-4626 vault-share collateral |
-| `MockUSDC` | [`0x5A316865F2C9c261aD1B254C46788b6356d2F135`](https://sepolia.etherscan.io/address/0x5A316865F2C9c261aD1B254C46788b6356d2F135) | Six-decimal testnet underlying of nUSDC |
+This page will publish verified values for:
 
-## Indexer source
+- `NullV1Factory`;
+- `NullV1Router`;
+- `NullV1PayableRouter`;
+- enabled funding-rate models;
+- `NullV1Lens`;
+- `NullV1Multicall`;
+- supported collateral and oracle contracts; and
+- the factory deployment block for indexer backfills.
 
-Index the Sepolia factory from [block `11321037`](https://sepolia.etherscan.io/block/11321037). Markets come from `CreateMarket`; each market deploys its own Receiver and Payer pools—read those from events, the market, Lens, or your indexer. Do not hardcode pool addresses unless you intentionally pin one market.
+<Warning>
+Do not deploy an integration with guessed, copied, or unverified addresses. Wait for the Ethereum mainnet table on this page and verify every address on Etherscan.
+</Warning>
 
-<Note>
-Deployed Sepolia Lens exposes core `previewState` / `simulateState` / `previewMarket` / `simulateMarket`. Confirm the deployed ABI before using newer collateral-metric helpers from latest source.
-</Note>
+## Integration rules
 
-## Integration constants
+Hardcode verified shared infrastructure for Ethereum mainnet only after it is published here. Discover markets from `CreateMarket` or `factory.getMarket(collateral, oracle, frm)`.
 
-```ts
-export const NULL_V1_SEPOLIA = {
-  chainId: 11155111,
-  startBlock: 11321037,
-  factory: "0xc4d61E729225E8fA6612969fA705a36a8446B6CF",
-  router: "0x2ab2C1CcF7a1b843F73CD82d48fA60d3FB18FA7f",
-  payableRouter: "0x78C1e4b5b8cbcec9aBDC2a6F353a2e91746B4e03",
-  frm: "0x9b0DA6f0b9f9010eE1B87353a03b5C83be42D014",
-  lens: "0x261841f1A2964232995E79Ce7466C734cb2b25B7",
-  multicall: "0x779D7243CB816c5AdC08d11d49C0222B8F36F3Dc",
-  collateral: {
-    nUsdc: "0x77508321f1EF8C707Cd5869557365468BCeD0613",
-    mockUsdc: "0x5A316865F2C9c261aD1B254C46788b6356d2F135",
-  },
-} as const;
-```
-
-## What to hardcode
-
-Hardcode factory, both routers, enabled FRM, Lens, and Multicall per chain.
-
-Do not hardcode market pool addresses unless pinning a specific market. Discover pools from Factory, Market, Lens, or indexer data.
+Do not derive or preselect Receiver and Payer pool addresses. Read them from the market, Factory event, Lens, or your own indexer.
 
 Next: [Quickstart](/developers/quickstart) · [Router](/developers/router) · [Indexer](/contracts/integration/indexer)
