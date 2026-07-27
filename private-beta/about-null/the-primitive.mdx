@@ -1,0 +1,48 @@
+---
+title: "The Primitive"
+sidebarTitle: "The Primitive"
+description: "Understand the pooled, fully collateralized total-return-swap primitive behind Null."
+---
+
+Null is a pooled, fully collateralized total-return-swap primitive. It creates onchain exposure to the return of an oracle-tracked asset without borrowing, liquidations, or a bilateral counterparty.
+
+## Two sides
+
+Every market has two collateral pools:
+
+- **Receiver** takes the tracked asset's price return.
+- **Payer** supplies the reserve collateral backing Receiver gains and takes the opposite price exposure.
+
+Users deposit collateral into one side and receive fungible ERC-4626 pool shares. A share represents a proportional claim on that pool rather than a position with a private entry price.
+
+## Immutable market rules
+
+Each market is defined by three contracts:
+
+```text
+(collateral, oracle, funding-rate model)
+```
+
+The collateral token, oracle, and funding-rate model are fixed when the market is created. The oracle supplies the reference price, while the funding-rate model adjusts payments between Receiver and Payer according to pool coverage.
+
+## How settlement works
+
+Before a position changes, the market:
+
+1. validates the latest oracle price;
+2. reconciles the collateral held by the pools;
+3. accrues collateral fees and signed funding;
+4. calculates price profit and loss; and
+5. settles the net transfer between Receiver and Payer.
+
+All gains come from collateral already held by the market. Settlement cannot create debt or an undercollateralized claim, and its transfer is bounded to preserve the protocol's minimum-pool floor.
+
+## What this means for users
+
+Receiver and Payer are pooled positions, not leveraged order-book trades. Their value can change with price returns, funding, collateral performance, fees, liquidity, and the state of both pools.
+
+<Warning>
+Full collateralization limits the primitive to assets already held by the market. It does not remove oracle, smart-contract, liquidity, collateral, or market risk.
+</Warning>
+
+For the exact mechanics, see the [protocol overview](/learn/overview).

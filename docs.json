@@ -5,7 +5,7 @@
   "colors": {
     "primary": "#2d2c2c",
     "light": "#2d2c2c",
-    "dark": "#d4dce7"
+    "dark": "#ffffff"
   },
   "logo": {
     "light": "/images/Logo.svg",
@@ -71,7 +71,8 @@
           {
             "group": "About Null",
             "pages": [
-              "private-beta/about-null/overview"
+              "private-beta/about-null/overview",
+              "private-beta/about-null/the-primitive"
             ]
           },
           {
