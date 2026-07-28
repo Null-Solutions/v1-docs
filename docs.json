@@ -64,11 +64,15 @@
     },
     {
       "source": "/private-beta/status-and-points",
-      "destination": "/private-beta/status-and-points/referrals"
+      "destination": "/private-beta/status-and-points/points-and-referrals"
     },
     {
       "source": "/private-beta/referrals",
-      "destination": "/private-beta/status-and-points/referrals"
+      "destination": "/private-beta/status-and-points/points-and-referrals"
+    },
+    {
+      "source": "/private-beta/status-and-points/referrals",
+      "destination": "/private-beta/status-and-points/points-and-referrals"
     },
     {
       "source": "/private-beta/support",
@@ -144,7 +148,7 @@
     },
     {
       "source": "/private-beta/status-and-points/how-to-earn-points",
-      "destination": "/private-beta/status-and-points/referrals"
+      "destination": "/private-beta/status-and-points/points-and-referrals"
     },
     {
       "source": "/security/risks",
@@ -194,9 +198,9 @@
             ]
           },
           {
-            "group": "Referrals",
+            "group": "Points and referrals",
             "pages": [
-              "private-beta/status-and-points/referrals"
+              "private-beta/status-and-points/points-and-referrals"
             ]
           },
           {
