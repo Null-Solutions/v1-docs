@@ -156,9 +156,9 @@
     }
   ],
   "navigation": {
-    "dropdowns": [
+    "tabs": [
       {
-        "dropdown": "Private Beta",
+        "tab": "Null Docs",
         "groups": [
           {
             "group": "About Null",
@@ -202,19 +202,11 @@
             "pages": [
               "private-beta/status-and-points/points-and-referrals"
             ]
-          },
-          {
-            "group": "Support",
-            "pages": [
-              "private-beta/support/trading",
-              "private-beta/support/audits",
-              "private-beta/support/brand-kit"
-            ]
           }
         ]
       },
       {
-        "dropdown": "Developers",
+        "tab": "Builder Tools",
         "groups": [
           {
             "group": "Get started",
@@ -283,6 +275,19 @@
               "contracts/oracles/overview",
               "contracts/oracles/pyth",
               "contracts/oracles/chainlink"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Support",
+        "groups": [
+          {
+            "group": "Support",
+            "pages": [
+              "private-beta/support/trading",
+              "private-beta/support/audits",
+              "private-beta/support/brand-kit"
             ]
           }
         ]
