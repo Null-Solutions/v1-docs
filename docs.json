@@ -56,7 +56,11 @@
     },
     {
       "source": "/private-beta/strategies/null-strategies",
-      "destination": "/private-beta/market-make/farm-the-basis"
+      "destination": "/private-beta/market-make/overview"
+    },
+    {
+      "source": "/private-beta/market-make/farm-the-basis",
+      "destination": "/private-beta/market-make/overview"
     },
     {
       "source": "/private-beta/support/market-making",
@@ -158,7 +162,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Null Docs",
+        "tab": "Private Beta",
         "groups": [
           {
             "group": "About Null",
@@ -181,20 +185,14 @@
               "private-beta/trading/markets",
               "private-beta/trading/position-types",
               "private-beta/trading/placing-a-position",
-              "private-beta/trading/fees"
+              "private-beta/trading/fees",
+              "private-beta/market-make/overview"
             ]
           },
           {
             "group": "Portfolios",
             "pages": [
               "private-beta/portfolios/portfolio-overview"
-            ]
-          },
-          {
-            "group": "Market making",
-            "pages": [
-              "private-beta/market-make/overview",
-              "private-beta/market-make/farm-the-basis"
             ]
           },
           {
@@ -206,7 +204,7 @@
         ]
       },
       {
-        "tab": "Builder Tools",
+        "tab": "Developers",
         "groups": [
           {
             "group": "Get started",
