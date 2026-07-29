@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-label="Funding rate versus payer coverage">
+  <title>Funding rate vs payer coverage</title>
+  
+  <line x1="16" x2="568" y1="20.00" y2="20.00" stroke="#9ca3af" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="576" y="24.00" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">+100%</text>
+  <line x1="16" x2="568" y1="101.33" y2="101.33" stroke="#9ca3af" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="576" y="105.33" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">+50%</text>
+  <line x1="16" x2="568" y1="182.67" y2="182.67" stroke="#9ca3af" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="576" y="186.67" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">0%</text>
+  <line x1="16" x2="568" y1="264.00" y2="264.00" stroke="#9ca3af" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="576" y="268.00" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">-50%</text>
+  <line x1="16" x2="568" y1="182.67" y2="182.67" stroke="#9ca3af" stroke-opacity="0.7" stroke-width="1" stroke-dasharray="5 4"/>
+  <line x1="200.00" x2="200.00" y1="20" y2="264" stroke="#9ca3af" stroke-opacity="0.7" stroke-width="1" stroke-dasharray="5 4"/>
+  <path d="M16.00,20.00 L24.63,34.57 L33.25,47.89 L41.88,60.11 L50.50,71.37 L59.13,81.77 L67.75,91.41 L76.38,100.38 L85.00,108.73 L93.63,116.53 L102.25,123.83 L110.88,130.68 L119.50,137.12 L128.13,143.18 L136.75,148.91 L145.38,154.31 L154.00,159.43 L162.63,164.28 L171.25,168.88 L179.88,173.26 L188.50,177.42 L197.13,181.39 L205.75,185.17 L214.38,188.78 L223.00,192.24 L231.63,195.54 L240.25,198.70 L248.88,201.74 L257.50,204.65 L266.13,207.44 L274.75,210.13 L283.38,212.71 L292.00,215.20 L300.63,217.60 L309.25,219.90 L317.88,222.13 L326.50,224.28 L335.13,226.35 L343.75,228.36 L352.38,230.30 L361.00,232.17 L369.63,233.99 L378.25,235.75 L386.88,237.45 L395.50,239.10 L404.13,240.70 L412.75,242.26 L421.38,243.77 L430.00,245.23 L438.63,246.65 L447.25,248.04 L455.88,249.38 L464.50,250.69 L473.13,251.96 L481.75,253.20 L490.38,254.41 L499.00,255.59 L507.63,256.73 L516.25,257.85 L524.88,258.94 L533.50,260.00 L542.13,261.04 L550.75,262.05 L559.38,263.04 L568.00,264.00" fill="none" stroke="#2e8afb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="16.00" y="284" text-anchor="start" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">0%</text>
+  <text x="200.00" y="284" text-anchor="middle" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">50% target</text>
+  <text x="568.00" y="284" text-anchor="end" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">150%</text>
+  <text x="292" y="308" text-anchor="middle" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif">Payer coverage (P ÷ R)</text>
+  <text x="630" y="142" text-anchor="middle" fill="#6b7280" font-size="12" font-family="Inter, system-ui, sans-serif" transform="rotate(90 630 142)">Funding rate (APR)</text>
+</svg>
