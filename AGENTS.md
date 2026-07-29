@@ -5,7 +5,7 @@
 - Mintlify docs site for Null V1
 - Pages are MDX with YAML frontmatter
 - Configuration lives in `docs.json`
-- Two nav dropdowns: **Private Beta** (product/app) and **Developers** (protocol/contracts)
+- Three nav tabs: **Private Beta** (product/app), **Developers** (protocol/contracts), and **Support**
 
 ## Terminology
 
@@ -29,7 +29,8 @@
 
 ## Content boundaries
 
-- Developers dropdown: protocol mechanics, integration, market setup, deployments, contract reference
-- Private Beta dropdown: app UX, access, portfolios, points (note when features are unavailable)
+- Developers tab: protocol mechanics, integration, market setup, deployments, contract reference
+- Private Beta tab: app UX, access, trading, market making, and points (note when features are unavailable)
+- Support tab: troubleshooting, audit status, and brand assets
 - Do not invent SDK packages, API keys, webhooks, order books, or mainnet addresses
 - Empty legacy stubs under `resources/` (faq, whitepapers, etc.) are not part of the Developers nav — prefer deleting or filling over linking

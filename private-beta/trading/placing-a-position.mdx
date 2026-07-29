@@ -6,6 +6,8 @@ description: "Mint or burn a Receiver or Payer position in a Null market."
 
 Null's trading page uses **Mint** and **Burn** for Receiver and Payer pool positions.
 
+Before submitting, review the selected market's [fees](/private-beta/trading/fees). Live values come from the current preview, not the illustrative examples in the docs.
+
 ## Mint a position
 
 <Steps>
@@ -33,7 +35,7 @@ Null's trading page uses **Mint** and **Burn** for Receiver and Payer pool posit
 
 <Steps>
   <Step title="Open your position">
-    Open the market from **Minted** in your portfolio or select the same market from `/markets`. Connect the wallet that holds the pool shares.
+    Open the same market from `/markets`. Connect the wallet that holds the pool shares.
   </Step>
   <Step title="Select the side and Burn">
     Choose the Receiver or Payer pool that holds your shares, then select **Burn**.
@@ -72,6 +74,8 @@ Treat estimated output and position value as estimates. Review the final wallet 
 | Transaction deadline expired | Refresh and submit a new transaction. |
 | Insufficient network funds | Add enough native network token to pay gas or any required oracle update fee. |
 | Wallet request rejected | Start the action again and approve each required request. |
+
+For additional recovery steps and the information to include when requesting help, see [Trading support](/private-beta/support/trading).
 
 <Warning>
 Null does not currently present an order book, limit orders, stop orders, or a configurable leverage control. Do not assume those behaviors apply.

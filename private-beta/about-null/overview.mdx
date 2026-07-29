@@ -13,7 +13,7 @@ Every market has two pooled positions:
 - **Receiver** takes the tracked asset's price return. Receiver generally gains when the oracle price rises and loses when it falls.
 - **Payer** provides the collateral backing Receiver and takes the other side of its price return. Payer generally loses when the oracle price rises and gains when it falls.
 
-Funding moves between the pools based on Payer coverage. When Payer collateral is scarce, Receiver can pay Payer. When it is abundant, funding can reverse. [The primitive](/private-beta/about-null/the-primitive#funding-and-payer-leverage) explains the curve and Payer leverage.
+Funding moves between the pools based on Payer coverage. When Payer collateral is scarce, Receiver can pay Payer. When it is abundant, funding can reverse. [The primitive](/private-beta/about-null/the-primitive#funding-and-coverage) explains the curve and Payer leverage.
 
 <Info>
 Receiver and Payer are ERC-4626 pool shares, not ownership of the tracked asset. Your position value changes with the pool's price PnL, funding, fees, and collateral value.
@@ -26,8 +26,7 @@ You can:
 - [apply with a wallet](/private-beta/getting-started/null-private-beta) and complete the participation agreement;
 - [fund that wallet](/private-beta/getting-started/fund-your-account) with the market's supported collateral and ETH for gas;
 - [mint or burn a position](/private-beta/trading/placing-a-position) in a Receiver or Payer pool;
-- [operate a hedged Payer position](/private-beta/market-make/overview);
-- [review your portfolio](/private-beta/portfolios/portfolio-overview); and
+- [operate a hedged Payer position](/private-beta/market-make/overview); and
 - preview [NullPoints and referrals](/private-beta/status-and-points/points-and-referrals).
 
 ## Not available
@@ -38,4 +37,4 @@ One-click managed strategies are not currently available. The NullPoints and ref
 Positions can lose some or all of their value through price moves, funding, fees, collateral behavior, oracle behavior, liquidity, or contract failures. Verify supported collateral in the app and its contract address on the canonical [addresses page](/resources/addresses) before transacting.
 </Warning>
 
-Start with [The primitive](/private-beta/about-null/the-primitive), then [apply for the private beta](/private-beta/getting-started/null-private-beta).
+Start with [The primitive](/private-beta/about-null/the-primitive), [apply for the private beta](/private-beta/getting-started/null-private-beta), and review [Before you trade](/private-beta/getting-started/before-you-trade). When approved, follow the trading path from [Markets](/private-beta/trading/markets) through [Position types](/private-beta/trading/position-types), [Placing a position](/private-beta/trading/placing-a-position), and [Fees](/private-beta/trading/fees).

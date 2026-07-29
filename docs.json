@@ -44,7 +44,11 @@
     },
     {
       "source": "/private-beta/portfolio",
-      "destination": "/private-beta/portfolios/portfolio-overview"
+      "destination": "/private-beta/about-null/overview"
+    },
+    {
+      "source": "/private-beta/portfolios/portfolio-overview",
+      "destination": "/private-beta/about-null/overview"
     },
     {
       "source": "/private-beta/strategies",
@@ -148,7 +152,7 @@
     },
     {
       "source": "/private-beta/status-and-points/home-dashboard",
-      "destination": "/private-beta/portfolios/portfolio-overview"
+      "destination": "/private-beta/about-null/overview"
     },
     {
       "source": "/private-beta/status-and-points/how-to-earn-points",
@@ -176,7 +180,8 @@
             "group": "Getting Started",
             "pages": [
               "private-beta/getting-started/null-private-beta",
-              "private-beta/getting-started/fund-your-account"
+              "private-beta/getting-started/fund-your-account",
+              "private-beta/getting-started/before-you-trade"
             ]
           },
           {
@@ -187,12 +192,6 @@
               "private-beta/trading/placing-a-position",
               "private-beta/trading/fees",
               "private-beta/market-make/overview"
-            ]
-          },
-          {
-            "group": "Portfolios",
-            "pages": [
-              "private-beta/portfolios/portfolio-overview"
             ]
           },
           {
