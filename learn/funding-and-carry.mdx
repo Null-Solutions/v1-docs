@@ -47,13 +47,12 @@ This form makes the market behavior explicit:
 
 For the standard deployment, `c = 0.5` and `mu = 1`:
 
-```mermaid
-xychart-beta
-    title "Standard funding curve"
-    x-axis "Payer coverage P/R (%)" [1, 5, 10, 20, 50, 75, 100, 200]
-    y-axis "Funding rate f (%)" -100 --> 100
-    line [96.1, 81.8, 66.7, 42.9, 0, -20, -33.3, -60]
-```
+<Frame>
+  <img
+    src="/images/funding-rate-vs-coverage.svg"
+    alt="Funding rate versus Payer coverage: positive below the 50% target, zero at target, and negative above it"
+  />
+</Frame>
 
 `c` moves the zero crossing horizontally. `mu` scales the curve vertically without changing the target. The curve becomes flatter as coverage rises:
 
@@ -61,7 +60,7 @@ xychart-beta
 df/dq = -2 * mu * c / (c + q)^2
 ```
 
-The chart starts at 1% coverage because the contract has a one-sided-market exception: if `P = 0` or `R = 0`, it returns `f = 0` and settlement applies no funding or price PnL.
+The curve shows the formula's limiting value as coverage approaches zero. The contract has a one-sided-market exception: if `P = 0` or `R = 0`, it returns `f = 0` and settlement applies no funding or price PnL.
 
 ## Funding notional and transfer
 
