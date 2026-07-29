@@ -18,16 +18,19 @@ sidebar-group-header {
 
 eyebrow,
 .eyebrow {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
+  display: block !important;
   width: fit-content;
-  padding: 0.375rem 0.875rem;
-  border-radius: 9999px;
-  background: rgb(45 44 44 / 8%);
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
   color: #2d2c2c !important;
   line-height: 1.25;
   white-space: nowrap;
+  margin-bottom: 1.25rem;
+}
+
+#page-title {
+  margin-top: 0;
 }
 
 #sidebar-content li[data-active] > a {
@@ -36,8 +39,82 @@ eyebrow,
   color: #2d2c2c !important;
 }
 
-.dark :is(eyebrow, .eyebrow),
+.dark :is(eyebrow, .eyebrow) {
+  background: transparent !important;
+  color: rgb(255 255 255 / 70%) !important;
+}
+
 .dark #sidebar-content li[data-active] > a {
   background: rgb(255 255 255 / 10%);
   color: #ffffff !important;
+}
+
+/* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
+@media (min-width: 1024px) {
+  #navbar div.h-12.items-center.min-w-0 {
+    height: auto !important;
+    min-height: 3rem;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0 !important;
+  }
+
+  #navbar nav[aria-label="Main"] {
+    order: 10;
+    flex: 1 0 100%;
+    width: 100%;
+    justify-content: flex-start !important;
+    display: flex !important;
+    padding: 0 !important;
+    margin: 0;
+    border-top: none;
+  }
+
+  #navbar nav[aria-label="Main"] ul {
+    gap: 1.25rem;
+  }
+
+  /* Keep sidebar below the taller navbar (padding + logo row + tabs row) */
+  #sidebar-content {
+    top: calc(6.5rem + var(--banner-height, 0px)) !important;
+    height: calc(100vh - 6.5rem - var(--banner-height, 0px)) !important;
+  }
+}
+
+/* Underline tabs, not pills */
+#navbar nav[aria-label="Main"] a.link {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  height: auto !important;
+  padding: 0.65rem 0 !important;
+  color: rgb(107 114 128) !important;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+#navbar nav[aria-label="Main"] a.link:hover {
+  background: transparent !important;
+  color: #2d2c2c !important;
+}
+
+#navbar nav[aria-label="Main"] a[aria-current] {
+  background: transparent !important;
+  color: #2d2c2c !important;
+  border-bottom-color: #2d2c2c;
+}
+
+.dark #navbar nav[aria-label="Main"] a.link {
+  color: rgb(156 163 175) !important;
+}
+
+.dark #navbar nav[aria-label="Main"] a.link:hover {
+  color: #ffffff !important;
+}
+
+.dark #navbar nav[aria-label="Main"] a[aria-current] {
+  color: #ffffff !important;
+  border-bottom-color: #ffffff;
 }
