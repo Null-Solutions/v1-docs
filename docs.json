@@ -199,6 +199,12 @@
             "pages": [
               "private-beta/status-and-points/points-and-referrals"
             ]
+          },
+          {
+            "group": "Legal",
+            "pages": [
+              "private-beta/legal/private-beta-notices"
+            ]
           }
         ]
       },
