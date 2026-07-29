@@ -12,6 +12,10 @@ Null V1 targets **Ethereum mainnet**. Canonical contract addresses and the facto
 | --- | ---: | --- | --- |
 | Ethereum mainnet | `1` | Deployment addresses pending | [Etherscan](https://etherscan.io) |
 
+<Warning>
+The Ethereum mainnet address book is not populated in the app or this repository yet. Sepolia deployments are not valid substitutes. The builder quickstart is blocked until the verified mainnet table and factory start block appear here.
+</Warning>
+
 ## Canonical contracts
 
 This page will publish verified values for:
@@ -28,6 +32,24 @@ This page will publish verified values for:
 <Warning>
 Do not deploy an integration with guessed, copied, or unverified addresses. Wait for the Ethereum mainnet table on this page and verify every address on Etherscan.
 </Warning>
+
+## Publication gate
+
+The mainnet table is ready to publish only after all of the following agree:
+
+1. the deployed chain ID is `1`;
+2. the app's mainnet protocol address book contains the same infrastructure addresses;
+3. the indexer's mainnet configuration contains the same factory and start block;
+4. each contract is verified on Etherscan with the expected implementation; and
+5. a known market resolves from `factory.getMarket(collateral, oracle, frm)`.
+
+Until then, this page intentionally contains no transaction-ready constants.
+
+## ABI and artifact source
+
+For production, use the ABI shown by Etherscan for each verified address linked from the published table. Match the verified contract name and compiler metadata before generating types.
+
+The examples in these docs use minimal inline ABIs so readers can understand individual calls. They are not a canonical ABI package. Null V1 does not currently publish an npm SDK or ABI package.
 
 ## Integration rules
 

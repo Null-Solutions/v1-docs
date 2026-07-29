@@ -109,6 +109,85 @@ upper bound = h * (1 + tol)
 
 Only rebalance when the external position leaves that band. The reference implementation defaults to a `0.5%` tolerance and also holds corrections that are below the venue's minimum order size.
 
+## Evaluate expected carry
+
+Hedging reduces directional price exposure, but it does not make the position profitable. Estimate the carry from both legs before opening the trade.
+
+Let:
+
+- `p` be your current Payer position value;
+- `L = R / P` be Payer's instantaneous leverage;
+- `H = pL` be the external hedge notional;
+- `f` be Null's signed funding APR, where positive means Receiver pays Payer;
+- `f_ext` be external funding, where positive means the external long pays; and
+- `y` be the collateral yield rate.
+
+```text
+Null funding       =  H * f
+Collateral yield   =  p * y
+External funding   = -H * f_ext
+
+Net carry          =  p * [y + L * (f - f_ext)]
+```
+
+Null and external funding apply to the same exposure notional `H`. Collateral yield applies to the Payer position value `p`.
+
+### Carry example
+
+Assume:
+
+```text
+Payer position p         = $100
+Instantaneous leverage L = 5
+Null funding f           = 1.5%
+External long funding    = 1%
+Collateral yield y       = 5%
+```
+
+The hedge notional is `$500`. Projected annual carry is:
+
+```text
+Null funding       = $500 * 1.5% =  $7.50
+Collateral yield   = $100 * 5%   =  $5.00
+External funding   = $500 * 1%   = -$5.00
+Net carry                            $7.50
+```
+
+If external funding rises to `3%`, projected annual net carry becomes `-$2.50`. Higher leverage magnifies a negative funding spread just as readily as a positive one.
+
+### Screen the opportunity
+
+Subtract entry and exit fees, expected rebalancing costs, slippage, gas, external margin opportunity cost, and a conservative basis-loss allowance from projected carry.
+
+Review:
+
+- current and historical Null funding;
+- current and predicted external funding;
+- Receiver/Payer coverage and how quickly it is changing;
+- collateral yield quality and withdrawal behavior;
+- oracle and external-market trading hours;
+- Payer liquidity and venue depth; and
+- the external equity needed to maintain a conservative liquidation buffer.
+
+Do not open solely because one funding snapshot looks attractive. Either funding rate can change sign.
+
+## Understand basis PnL
+
+The Null leg settles against its oracle, while the external long is marked and filled at the venue price. Those prices can diverge. Fees, slippage, partial fills, downtime, and oracle-versus-venue drift can leave the two legs mismatched.
+
+```text
+Null PnL = current Payer value - opening value - deposits and withdrawals
+
+Hedge PnL = change in unrealized PnL
+          + realized PnL
+          + external funding
+          - venue fees
+
+Net PnL = Null PnL + Hedge PnL
+```
+
+A position can have attractive projected carry and still lose money through basis, execution, funding reversal, collateral behavior, or liquidation of the external hedge.
+
 ## Operating lifecycle
 
 <Steps>
