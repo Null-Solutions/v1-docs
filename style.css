@@ -51,9 +51,9 @@ eyebrow,
 
 /*
  * Soft blue wash behind the nav logo (dark mode).
- * One continuous radial on #background-color (matches the app), plus a
- * frosted topnav so the glow reads through evenly without scrolled text
- * bleeding through a fully transparent bar.
+ * Continuous radial on #background-color; topnav stays transparent so the
+ * glow reads through, with a heavy backdrop blur so scrolled text is not
+ * readable underneath.
  */
 .dark #background-color {
   background-image: radial-gradient(
@@ -67,9 +67,10 @@ eyebrow,
 }
 
 .dark #navbar {
-  background-color: rgba(0, 0, 0, 0.55) !important;
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: blur(64px) saturate(1.15);
+  -webkit-backdrop-filter: blur(64px) saturate(1.15);
   box-shadow: none !important;
   border-bottom-color: transparent !important;
 }
