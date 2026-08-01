@@ -49,6 +49,22 @@ eyebrow,
   color: #ffffff !important;
 }
 
+/*
+ * Soft blue wash behind the nav logo (dark mode).
+ * Painted on Mintlify's own #background-color layer — no body::before,
+ * z-index stacking, display-p3, or color-mix (those broke the site).
+ */
+.dark #background-color {
+  background-image: radial-gradient(
+    ellipse 1100px 900px at 88px 56px,
+    rgba(46, 95, 168, 0.26),
+    rgba(26, 63, 120, 0.12) 48%,
+    transparent 82%
+  );
+  background-repeat: no-repeat;
+  background-position: top left;
+}
+
 /* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
 @media (min-width: 1024px) {
   #navbar div.h-12.items-center.min-w-0 {
