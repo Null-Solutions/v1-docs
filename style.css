@@ -49,6 +49,54 @@ eyebrow,
   color: #ffffff !important;
 }
 
+/*
+ * Soft dark-blue wash centered on the Null logo — matches v1-ui LayoutWrapper.
+ * Layered above the page background and below nav / sidebar / content.
+ */
+.dark body::before,
+html[data-theme='dark'] body::before {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  z-index: 1;
+  width: 2400px;
+  height: 1800px;
+  /* Approx logo center: navbar left pad + half of wordmark */
+  left: max(2.75rem, calc(1.25rem + 40px));
+  top: 1.75rem;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse 70% 65% at 50% 50%,
+    color(display-p3 0.12 0.28 0.62 / 0.26) 0%,
+    color(display-p3 0.08 0.18 0.42 / 0.12) 48%,
+    transparent 82%
+  );
+  filter: blur(130px);
+}
+
+.dark #navbar,
+.dark #sidebar-content,
+.dark #body-content,
+.dark #content-area,
+.dark #mobile-nav,
+html[data-theme='dark'] #navbar,
+html[data-theme='dark'] #sidebar-content,
+html[data-theme='dark'] #body-content,
+html[data-theme='dark'] #content-area,
+html[data-theme='dark'] #mobile-nav {
+  position: relative;
+  z-index: 2;
+}
+
+/* Let a little of the wash read through the chrome without losing contrast. */
+.dark #navbar,
+html[data-theme='dark'] #navbar {
+  background-color: color-mix(in srgb, Canvas 78%, transparent) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 /* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
 @media (min-width: 1024px) {
   #navbar div.h-12.items-center.min-w-0 {
