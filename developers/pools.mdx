@@ -71,6 +71,10 @@ The previews use the last settled state. Funding, price PnL, collateral fees, ba
 
 Fees leave the Receiver/Payer system into market `protocolFees`. See [Fees](/developers/fees).
 
+<Warning>
+`maxDeposit` and `maxMint` always return `type(uint256).max` — never use them to size inputs. `maxWithdraw` is net of the exit fee but reads the last settled state, so a full exit via `withdraw(maxWithdraw(owner))` can revert once execution settles the market. Exit fully with `redeem(balanceOf(owner))` instead. See [Max functions](/contracts/pool#max-functions).
+</Warning>
+
 ## Unit pipelines
 
 Direct pool calls:

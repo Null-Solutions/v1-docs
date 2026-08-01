@@ -82,4 +82,19 @@ These functions include entry or exit fees and use the market's **last settled s
 Use `NullV1Lens.previewMarket` for a settlement-accurate state projection, then enforce `minReceiverShares`, `minPayerShares`, `minReceiverAssets`, or `minPayerAssets` through the appropriate router.
 </Warning>
 
+## Max functions
+
+```solidity
+function maxDeposit(address) public view returns (uint256);  // type(uint256).max
+function maxMint(address) public view returns (uint256);     // type(uint256).max
+function maxWithdraw(address owner) public view returns (uint256);
+function maxRedeem(address owner) public view returns (uint256);
+```
+
+Pools inherit the OpenZeppelin v5 defaults without overrides:
+
+- `maxDeposit` and `maxMint` always return `type(uint256).max`. They do not reflect wallet balances, market state, or any protocol cap — do not use them to size deposit inputs.
+- `maxRedeem(owner)` returns `balanceOf(owner)`.
+- `maxWithdraw(owner)` returns `previewRedeem(balanceOf(owner))`, so it is net of the exit fee. Like every view, it is a snapshot of the last settled state; after execution settles the market, `withdraw(maxWithdraw(owner))` can require more shares than the owner holds and revert. Prefer `redeem` with the full share balance for a full exit.
+
 Pools emit the standard ERC-20 `Transfer` and ERC-4626 `Deposit` and `Withdraw` events.
