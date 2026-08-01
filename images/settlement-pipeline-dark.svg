@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 104" role="img" aria-label="Settlement pipeline: read the oracle price, reconcile balance, charge the collateral fee, query the FRM funding rate, net funding with price PnL, cap and transfer, then store the price and timestamp">
+  <title>Settlement pipeline</title>
+
+  <g font-family="Inter, system-ui, -apple-system, sans-serif">
+    <!-- Step 1 -->
+    <rect x="12" y="24" width="88" height="56" rx="10" fill="#141416" stroke="#29323b"/>
+    <text x="56" y="44" text-anchor="middle" fill="#b8d9fa" font-size="11" font-weight="600">1</text>
+    <text x="56" y="60" text-anchor="middle" fill="#d4dce7" font-size="9.5">Read oracle</text>
+    <text x="56" y="72" text-anchor="middle" fill="#d4dce7" font-size="9.5">price</text>
+    <line x1="100" y1="52" x2="112" y2="52" stroke="#787c86" stroke-width="1.25"/>
+    <polygon points="120,52 112,48 112,56" fill="#787c86"/>
+
+    <!-- Step 2 -->
+    <rect x="120" y="24" width="88" height="56" rx="10" fill="#141416" stroke="#29323b"/>
+    <text x="164" y="44" text-anchor="middle" fill="#b8d9fa" font-size="11" font-weight="600">2</text>
+    <text x="164" y="60" text-anchor="middle" fill="#d4dce7" font-size="9.5">Reconcile</text>
+    <text x="164" y="72" text-anchor="middle" fill="#d4dce7" font-size="9.5">balance</text>
+    <line x1="208" y1="52" x2="220" y2="52" stroke="#787c86" stroke-width="1.25"/>
+    <polygon points="228,52 220,48 220,56" fill="#787c86"/>
+
+    <!-- Step 3 -->
+    <rect x="228" y="24" width="88" height="56" rx="10" fill="#141416" stroke="#29323b"/>
+    <text x="272" y="44" text-anchor="middle" fill="#b8d9fa" font-size="11" font-weight="600">3</text>
+    <text x="272" y="60" text-anchor="middle" fill="#d4dce7" font-size="9.5">Charge</text>
+    <text x="272" y="72" text-anchor="middle" fill="#d4dce7" font-size="9.5">collateral fee</text>
+    <line x1="316" y1="52" x2="328" y2="52" stroke="#787c86" stroke-width="1.25"/>
+    <polygon points="336,52 328,48 328,56" fill="#787c86"/>
+
+    <!-- Step 4 -->
+    <rect x="336" y="24" width="88" height="56" rx="10" fill="#141416" stroke="#29323b"/>
+    <text x="380" y="44" text-anchor="middle" fill="#b8d9fa" font-size="11" font-weight="600">4</text>
+    <text x="380" y="60" text-anchor="middle" fill="#d4dce7" font-size="9.5">Query FRM</text>
+    <text x="380" y="72" text-anchor="middle" fill="#d4dce7" font-size="9.5">funding rate</text>
+    <line x1="424" y1="52" x2="436" y2="52" stroke="#787c86" stroke-width="1.25"/>
+    <polygon points="444,52 436,48 436,56" fill="#787c86"/>
+
+    <!-- Step 5 -->
+    <rect x="444" y="24" width="88" height="56" rx="10" fill="#141416" stroke="#29323b"/>
+    <text x="488" y="44" text-anchor="middle" fill="#b8d9fa" font-size="11" font-weight="600">5</text>
+    <text x="488" y="60" text-anchor="middle" fill="#d4dce7" font-size="9.5">Net funding</text>
+    <text x="488" y="72" text-anchor="middle" fill="#d4dce7" font-size="9.5">+ price PnL</text>
+    <line x1="532" y1="52" x2="544" y2="52" stroke="#787c86" stroke-width="1.25"/>
+    <polygon points="552,52 544,48 544,56" fill="#787c86"/>
+
+    <!-- Step 6 -->
+    <rect x="552" y="24" width="88" height="56" rx="10" fill="#141416" stroke="#29323b"/>
+    <text x="596" y="44" text-anchor="middle" fill="#b8d9fa" font-size="11" font-weight="600">6</text>
+    <text x="596" y="60" text-anchor="middle" fill="#d4dce7" font-size="9.5">Cap and</text>
+    <text x="596" y="72" text-anchor="middle" fill="#d4dce7" font-size="9.5">transfer</text>
+    <line x1="640" y1="52" x2="652" y2="52" stroke="#787c86" stroke-width="1.25"/>
+    <polygon points="660,52 652,48 652,56" fill="#787c86"/>
+
+    <!-- Step 7 -->
+    <rect x="660" y="24" width="88" height="56" rx="10" fill="#141416" stroke="#29323b"/>
+    <text x="704" y="44" text-anchor="middle" fill="#b8d9fa" font-size="11" font-weight="600">7</text>
+    <text x="704" y="60" text-anchor="middle" fill="#d4dce7" font-size="9.5">Store price</text>
+    <text x="704" y="72" text-anchor="middle" fill="#d4dce7" font-size="9.5">+ timestamp</text>
+  </g>
+</svg>

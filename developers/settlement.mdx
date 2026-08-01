@@ -10,6 +10,19 @@ Every `deposit`, `mint`, `withdraw`, and `redeem` settles the market **before** 
 
 ## Execution order
 
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/settlement-pipeline-light.svg"
+    alt="Settlement pipeline: read the oracle price, reconcile balance, charge the collateral fee, query the FRM funding rate, net funding with price PnL, cap and transfer, then store the price and timestamp"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/settlement-pipeline-dark.svg"
+    alt="Settlement pipeline: read the oracle price, reconcile balance, charge the collateral fee, query the FRM funding rate, net funding with price PnL, cap and transfer, then store the price and timestamp"
+  />
+</Frame>
+
 1. Read the oracle price; reject zero.
 2. Reconcile the market's external collateral balance.
 3. Charge the annualized collateral fee.
