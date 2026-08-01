@@ -21,6 +21,20 @@
   "icons": {
     "library": "lucide"
   },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude", "cursor"]
+  },
+  "search": {
+    "prompt": "Search Null V1 docs..."
+  },
+  "seo": {
+    "indexing": "navigable"
+  },
+  "errors": {
+    "404": {
+      "redirect": true
+    }
+  },
   "redirects": [
     {
       "source": "/",

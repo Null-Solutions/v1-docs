@@ -27,6 +27,13 @@
 - Code formatting for file names, commands, paths, and code references
 - Prefer `viem` snippets in developer guides; Solidity for contract surfaces
 
+## Diagrams
+
+- Diagrams are hand-authored SVGs in `images/`, not ASCII art or Mermaid
+- Ship every diagram as a light/dark pair (`*-light.svg` / `*-dark.svg`) and embed with `<Frame>` plus `className="block dark:hidden"` / `hidden dark:block`
+- Match the app design tokens: Inter text; light mode ink `#2d2c2c`, secondary `#6e6e6e`, borders `#dee6ee`, guides `#afb4bc`, accent `#2e8afa`; dark mode ink `#d4dce7`, secondary `#a0a0a0`, borders `#29323b`, guides `#787c86`, accent `#b8d9fa`, surfaces `#141416`
+- Boxes use `rx="10"`–`rx="12"`; solid accent lines for writes, dashed gray lines for reads; include `role="img"`, `aria-label`, and `<title>`
+
 ## Content boundaries
 
 - Developers tab: protocol mechanics, integration, market setup, deployments, contract reference

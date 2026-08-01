@@ -1,6 +1,6 @@
 ---
 title: "The primitive"
-sidebarTitle: "The Primitive"
+sidebarTitle: "The primitive"
 description: "Null is a two-pool system: Receiver and Payer share one market's collateral and settle against an oracle price."
 ---
 
@@ -11,16 +11,18 @@ Null is a **two-pool system**. Every market has exactly two pools that face each
 
 Both pools deposit the same collateral token into one market. The market holds the collateral and moves value between the pools when it settles. The protocol does not lend the tracked asset, open margin accounts, or liquidate individual users.
 
-```text
-                    ┌─────────────────┐
-   collateral ──▶   │     Market      │   ◀── collateral
-                    │  (holds funds)  │
-                    └────────┬────────┘
-               ┌─────────────┴─────────────┐
-               ▼                           ▼
-        Receiver pool                 Payer pool
-        (ERC-4626 shares)             (ERC-4626 shares)
-```
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/two-pool-market-light.svg"
+    alt="A Null market holds all collateral and settles value between its Receiver and Payer pools"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/two-pool-market-dark.svg"
+    alt="A Null market holds all collateral and settles value between its Receiver and Payer pools"
+  />
+</Frame>
 
 ## How the two pools work together
 
@@ -149,8 +151,14 @@ f = mu * (c - q) / (c + q)
 
 <Frame>
   <img
-    src="/images/funding-rate-vs-coverage.svg"
-    alt="Funding rate versus payer coverage: positive below the 50% target, zero at target, negative above it"
+    className="block dark:hidden"
+    src="/images/funding-rate-vs-coverage-light.svg"
+    alt="Funding rate versus Payer coverage: positive below the 50% target, zero at target, negative above it"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/funding-rate-vs-coverage-dark.svg"
+    alt="Funding rate versus Payer coverage: positive below the 50% target, zero at target, negative above it"
   />
 </Frame>
 

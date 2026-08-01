@@ -1,6 +1,6 @@
 ---
 title: "Smart contracts"
-sidebarTitle: "Smart Contracts"
+sidebarTitle: "Smart contracts"
 description: "A high-level map of Null's contract structure: factory, market, pools, and helpers."
 ---
 
@@ -8,14 +8,18 @@ Null's private beta runs on Ethereum mainnet smart contracts. This page is a str
 
 ## Structure
 
-```text
-Factory ──creates──▶ Market
-                       ├── Receiver Pool (ERC-4626)
-                       └── Payer Pool (ERC-4626)
-
-Router ──user──▶ pools (+ optional oracle update)
-Lens / Multicall ──read──▶ market, pools, and previews
-```
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/architecture-light.svg"
+    alt="Null contract structure: the factory creates markets, each market owns Receiver and Payer ERC-4626 pools, routers write to both pools, and Lens with Multicall read the market"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/architecture-dark.svg"
+    alt="Null contract structure: the factory creates markets, each market owns Receiver and Payer ERC-4626 pools, routers write to both pools, and Lens with Multicall read the market"
+  />
+</Frame>
 
 A market is uniquely identified by an immutable tuple:
 

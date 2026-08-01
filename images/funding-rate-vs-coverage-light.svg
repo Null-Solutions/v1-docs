@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 340" role="img" aria-label="Funding rate versus Payer coverage: positive below the 50% target, zero at target, negative above it">
+  <title>Funding rate vs Payer coverage</title>
+  <text x="48" y="18" fill="#6e6e6e" font-size="12" font-weight="500" font-family="Inter, system-ui, -apple-system, sans-serif">Funding rate (APR)</text>
+
+  <!-- horizontal gridlines -->
+  <line x1="48" x2="600" y1="36" y2="36" stroke="#dee6ee" stroke-width="1"/>
+  <line x1="48" x2="600" y1="117.33" y2="117.33" stroke="#dee6ee" stroke-width="1"/>
+  <line x1="48" x2="600" y1="280" y2="280" stroke="#dee6ee" stroke-width="1"/>
+
+  <!-- y-axis labels -->
+  <text x="40" y="40" text-anchor="end" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">+100%</text>
+  <text x="40" y="121.33" text-anchor="end" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">+50%</text>
+  <text x="40" y="202.67" text-anchor="end" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">0%</text>
+  <text x="40" y="284" text-anchor="end" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">&#8722;50%</text>
+
+  <!-- zero line and target guide -->
+  <line x1="48" x2="600" y1="198.67" y2="198.67" stroke="#afb4bc" stroke-width="1" stroke-dasharray="5 4"/>
+  <line x1="232" x2="232" y1="36" y2="280" stroke="#afb4bc" stroke-width="1" stroke-dasharray="5 4"/>
+
+  <!-- funding curve -->
+  <path d="M48.00,36.00 L57.20,51.49 L66.40,65.58 L75.60,78.44 L84.80,90.22 L94.00,101.07 L103.20,111.08 L112.40,120.35 L121.60,128.95 L130.80,136.97 L140.00,144.45 L149.20,151.44 L158.40,158.00 L167.60,164.16 L176.80,169.96 L186.00,175.43 L195.20,180.60 L204.40,185.48 L213.60,190.11 L222.80,194.50 L232.00,198.67 L241.20,202.64 L250.40,206.42 L259.60,210.02 L268.80,213.46 L278.00,216.74 L287.20,219.89 L296.40,222.90 L305.60,225.78 L314.80,228.55 L324.00,231.20 L333.20,233.76 L342.40,236.21 L351.60,238.57 L360.80,240.84 L370.00,243.03 L379.20,245.15 L388.40,247.19 L397.60,249.15 L406.80,251.06 L416.00,252.89 L425.20,254.67 L434.40,256.39 L443.60,258.06 L452.80,259.67 L462.00,261.24 L471.20,262.75 L480.40,264.22 L489.60,265.65 L498.80,267.04 L508.00,268.39 L517.20,269.69 L526.40,270.97 L535.60,272.21 L544.80,273.41 L554.00,274.58 L563.20,275.72 L572.40,276.84 L581.60,277.92 L590.80,278.98 L600.00,280.00" fill="none" stroke="#2e8afa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- zero-crossing marker at target coverage -->
+  <circle cx="232" cy="198.67" r="4.5" fill="#2e8afa" stroke="#ffffff" stroke-width="2"/>
+
+  <!-- x-axis labels -->
+  <text x="48" y="302" text-anchor="start" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">0%</text>
+  <text x="232" y="302" text-anchor="middle" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">50% target</text>
+  <text x="600" y="302" text-anchor="end" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">150%</text>
+  <text x="324" y="328" text-anchor="middle" fill="#6e6e6e" font-size="12" font-weight="500" font-family="Inter, system-ui, -apple-system, sans-serif">Payer coverage (P &#247; R)</text>
+</svg>

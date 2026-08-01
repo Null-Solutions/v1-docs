@@ -62,14 +62,18 @@ Handle a zero denominator explicitly. Neither ratio is defined when its denomina
   </Card>
 </CardGroup>
 
-```text
-Factory ──create──▶ Market
-                      ├── Receiver Pool (ERC-4626)
-                      └── Payer Pool (ERC-4626)
-
-Router ──writes──▶ Pools (+ optional oracle update)
-Lens   ──reads───▶ Market / pools / FRM / collateral metrics
-```
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/architecture-light.svg"
+    alt="Null V1 architecture: the factory creates markets, each market owns Receiver and Payer ERC-4626 pools, routers write to both pools, and Lens with Multicall read the market"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/architecture-dark.svg"
+    alt="Null V1 architecture: the factory creates markets, each market owns Receiver and Payer ERC-4626 pools, routers write to both pools, and Lens with Multicall read the market"
+  />
+</Frame>
 
 Most integrations need three rules:
 
