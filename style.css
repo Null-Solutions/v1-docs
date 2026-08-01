@@ -51,10 +51,11 @@ eyebrow,
 
 /*
  * Soft blue wash behind the nav logo (dark mode).
- * Painted on Mintlify's own #background-color layer — no body::before,
- * z-index stacking, display-p3, or color-mix (those broke the site).
+ * On #background-color for the page, and again on #navbar with an opaque
+ * base so scrolled content cannot bleed through the sticky bar.
  */
-.dark #background-color {
+.dark #background-color,
+.dark #navbar {
   background-image: radial-gradient(
     ellipse 1100px 900px at 88px 56px,
     rgba(46, 95, 168, 0.26),
@@ -65,13 +66,12 @@ eyebrow,
   background-position: top left;
 }
 
-/* Mintlify-supported #navbar hook — opaque chrome was covering the wash. */
 .dark #navbar {
-  background: transparent !important;
-  background-color: transparent !important;
+  background-color: #000000 !important;
   box-shadow: none !important;
 }
 
+/* Keep inner chrome clear so the navbar wash shows through to the logo. */
 .dark #navbar > div {
   background: transparent !important;
   background-color: transparent !important;
