@@ -65,6 +65,18 @@ eyebrow,
   background-position: top left;
 }
 
+/* Mintlify-supported #navbar hook — opaque chrome was covering the wash. */
+.dark #navbar {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.dark #navbar > div {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
 /* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
 @media (min-width: 1024px) {
   #navbar div.h-12.items-center.min-w-0 {
