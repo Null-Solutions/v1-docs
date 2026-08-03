@@ -49,6 +49,114 @@ eyebrow,
   color: #ffffff !important;
 }
 
+.dark #sidebar-content li > a:hover {
+  background: rgb(255 255 255 / 7%);
+  color: #ffffff !important;
+}
+
+/*
+ * Mirror the app's motion language: quick tactile navigation and a soft
+ * blur-reveal whenever Mintlify mounts the next page.
+ */
+:root {
+  --null-motion-fast: 180ms;
+  --null-motion-standard: 280ms;
+  --null-motion-content: 400ms;
+  --null-ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
+  --null-ease-content: cubic-bezier(0.23, 0.88, 0.26, 0.92);
+  --null-ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+#sidebar-content li > a,
+#navbar nav[aria-label="Main"] a.link {
+  transition:
+    background-color var(--null-motion-fast) var(--null-ease-standard),
+    border-color var(--null-motion-fast) var(--null-ease-standard),
+    color var(--null-motion-fast) var(--null-ease-standard),
+    transform var(--null-motion-fast) var(--null-ease-standard);
+}
+
+#sidebar-content li[data-active] > a {
+  animation: null-active-page var(--null-motion-standard) var(--null-ease-spring) both;
+}
+
+#navbar nav[aria-label="Main"] a[aria-current] {
+  animation: null-active-tab var(--null-motion-standard) var(--null-ease-standard) both;
+}
+
+#header,
+#content,
+#pagination {
+  animation: null-page-reveal var(--null-motion-content) var(--null-ease-content) both;
+}
+
+#content {
+  animation-delay: 35ms;
+}
+
+#pagination {
+  animation-delay: 70ms;
+}
+
+@media (hover: hover) {
+  #sidebar-content li:not([data-active]) > a:hover {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes null-page-reveal {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes null-active-page {
+  from {
+    opacity: 0.72;
+    transform: translateX(-3px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes null-active-tab {
+  from {
+    border-bottom-color: transparent;
+    opacity: 0.72;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sidebar-content li > a,
+  #navbar nav[aria-label="Main"] a.link {
+    transition-duration: 0ms !important;
+  }
+
+  #sidebar-content li[data-active] > a,
+  #navbar nav[aria-label="Main"] a[aria-current],
+  #header,
+  #content,
+  #pagination {
+    animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
+  }
+}
+
 /*
  * Soft blue wash behind the nav logo (dark mode).
  * Continuous radial on #background-color; topnav stays transparent so the
