@@ -190,6 +190,12 @@ eyebrow,
 
 /* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
 @media (min-width: 1024px) {
+  #body-content {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+  }
+
   #navbar div.h-12.items-center.min-w-0 {
     height: auto !important;
     min-height: 3rem;
@@ -217,8 +223,16 @@ eyebrow,
 
   /* Keep sidebar below the taller navbar (padding + logo row + tabs row) */
   #sidebar-content {
+    left: max(0px, calc((100vw - 1280px) / 2)) !important;
     top: calc(6.5rem + var(--banner-height, 0px)) !important;
     height: calc(100vh - 6.5rem - var(--banner-height, 0px)) !important;
+  }
+
+  #content-area {
+    margin-left: max(
+      0px,
+      calc(min(50vw, 640px) - 348px - 14rem)
+    ) !important;
   }
 }
 
