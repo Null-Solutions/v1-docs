@@ -33,15 +33,59 @@ eyebrow,
   margin-top: 0;
 }
 
+.dark :is(eyebrow, .eyebrow) {
+  background: transparent !important;
+  color: rgb(255 255 255 / 70%) !important;
+}
+
+/*
+ * Functional motion mirrors v1-ui/src/lib/motion.ts:
+ * micro for controls, surface for overlays, content for page changes.
+ */
+:root {
+  --null-motion-instant: 50ms;
+  --null-motion-normal: 100ms;
+  --null-motion-micro: 150ms;
+  --null-motion-fast: 180ms;
+  --null-motion-standard: 280ms;
+  --null-motion-content-fast: 140ms;
+  --null-ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
+  --null-ease-content: cubic-bezier(0.23, 0.88, 0.26, 0.92);
+  --null-ease-material: cubic-bezier(0.4, 0, 0.2, 1);
+  --null-focus-color: #2e8afa;
+}
+
+@supports (color: color(display-p3 0.22 0.8 1)) {
+  :root {
+    --null-focus-color: color(display-p3 0.22 0.8 1);
+  }
+}
+
+#sidebar-content li > a,
+#navbar nav[aria-label="Main"] a.link {
+  transition:
+    background-color var(--null-motion-instant) var(--null-ease-standard),
+    border-color var(--null-motion-standard) var(--null-ease-standard),
+    color var(--null-motion-instant) var(--null-ease-standard),
+    transform var(--null-motion-micro) var(--null-ease-standard);
+}
+
 #sidebar-content li[data-active] > a {
   border-radius: 0.625rem;
   background: rgb(45 44 44 / 8%);
   color: #2d2c2c !important;
 }
 
-.dark :is(eyebrow, .eyebrow) {
-  background: transparent !important;
-  color: rgb(255 255 255 / 70%) !important;
+#sidebar-content li:not([data-active]) > a:hover {
+  background: transparent;
+  color: #2d2c2c !important;
+}
+
+#header,
+#content,
+#pagination {
+  animation: null-content-reveal var(--null-motion-content-fast)
+    var(--null-ease-content) both;
 }
 
 .dark #sidebar-content li[data-active] > a {
@@ -49,111 +93,171 @@ eyebrow,
   color: #ffffff !important;
 }
 
-.dark #sidebar-content li > a:hover {
-  background: rgb(255 255 255 / 7%);
+.dark #sidebar-content li:not([data-active]) > a:hover {
+  background: transparent;
   color: #ffffff !important;
 }
 
-/*
- * Mirror the app's motion language: quick tactile navigation and a soft
- * blur-reveal whenever Mintlify mounts the next page.
- */
-:root {
-  --null-motion-fast: 180ms;
-  --null-motion-standard: 280ms;
-  --null-motion-content: 400ms;
-  --null-ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
-  --null-ease-content: cubic-bezier(0.23, 0.88, 0.26, 0.92);
-  --null-ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
-}
-
-#sidebar-content li > a,
-#navbar nav[aria-label="Main"] a.link {
+:is(
+  #search-bar-entry,
+  #search-bar-entry-mobile,
+  #theme-preference-menu-trigger,
+  #page-context-menu-button,
+  button[aria-label="More actions"],
+  button[aria-label^="Copy the contents"],
+  button[aria-label^="Expand image"],
+  #pagination a,
+  a.card
+) {
   transition:
-    background-color var(--null-motion-fast) var(--null-ease-standard),
-    border-color var(--null-motion-fast) var(--null-ease-standard),
-    color var(--null-motion-fast) var(--null-ease-standard),
-    transform var(--null-motion-fast) var(--null-ease-standard);
+    background-color var(--null-motion-instant) var(--null-ease-standard),
+    border-color var(--null-motion-instant) var(--null-ease-standard),
+    box-shadow var(--null-motion-micro) var(--null-ease-standard),
+    color var(--null-motion-instant) var(--null-ease-standard),
+    opacity var(--null-motion-instant) var(--null-ease-standard),
+    transform var(--null-motion-micro) var(--null-ease-standard);
 }
 
-#sidebar-content li[data-active] > a {
-  animation: null-active-page var(--null-motion-standard) var(--null-ease-spring) both;
+:is(
+  #sidebar-content li > a,
+  #navbar nav[aria-label="Main"] a.link,
+  #navbar a:has(img.nav-logo),
+  #search-bar-entry,
+  #search-bar-entry-mobile,
+  #theme-preference-menu-trigger,
+  #page-context-menu-button,
+  button[aria-label="More actions"],
+  button[aria-label^="Copy the contents"],
+  button[aria-label^="Expand image"],
+  #pagination a,
+  a.card,
+  details.accordion > summary
+):focus-visible {
+  outline: 2px solid var(--null-focus-color) !important;
+  outline-offset: 2px;
 }
 
-#navbar nav[aria-label="Main"] a[aria-current] {
-  animation: null-active-tab var(--null-motion-standard) var(--null-ease-standard) both;
+#sidebar-content li > a:focus-visible {
+  outline-offset: -2px;
 }
 
-#header,
-#content,
-#pagination {
-  animation: null-page-reveal var(--null-motion-content) var(--null-ease-content) both;
+details.accordion > summary {
+  transition:
+    background-color var(--null-motion-instant) var(--null-ease-standard),
+    color var(--null-motion-instant) var(--null-ease-standard);
 }
 
-#content {
-  animation-delay: 35ms;
+details.accordion [data-component-part="accordion-caret-right"] {
+  transition: transform var(--null-motion-normal) var(--null-ease-material);
 }
 
-#pagination {
-  animation-delay: 70ms;
+details.accordion[open] [data-component-part="accordion-caret-right"] {
+  transform: rotate(90deg);
+}
+
+details.accordion[open] > [data-component-part="accordion-content"] {
+  animation: null-surface-reveal var(--null-motion-fast)
+    var(--null-ease-standard) both;
+}
+
+[data-component-part="search-modal"] {
+  transition-duration: var(--null-motion-fast) !important;
+  transition-timing-function: var(--null-ease-standard) !important;
+}
+
+:is([role="tooltip"], [data-component-part$="-menu-content"]) {
+  animation: null-surface-enter var(--null-motion-fast)
+    var(--null-ease-standard) both;
 }
 
 @media (hover: hover) {
   #sidebar-content li:not([data-active]) > a:hover {
     transform: translateX(2px);
   }
+
+  a.card:hover {
+    transform: translateY(-2px);
+  }
 }
 
-@keyframes null-page-reveal {
+:is(
+  #search-bar-entry,
+  #search-bar-entry-mobile,
+  #theme-preference-menu-trigger,
+  #page-context-menu-button,
+  button[aria-label="More actions"],
+  button[aria-label^="Copy the contents"],
+  button[aria-label^="Expand image"],
+  #pagination a,
+  a.card
+):active {
+  transform: scale(0.97);
+}
+
+@keyframes null-content-reveal {
   from {
-    opacity: 0;
+    opacity: 1;
     filter: blur(4px);
-    transform: translateY(4px);
   }
 
   to {
     opacity: 1;
     filter: blur(0);
+  }
+}
+
+@keyframes null-surface-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+
+  to {
+    opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes null-active-page {
+@keyframes null-surface-enter {
   from {
-    opacity: 0.72;
-    transform: translateX(-3px) scale(0.985);
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
   }
 
   to {
     opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-@keyframes null-active-tab {
-  from {
-    border-bottom-color: transparent;
-    opacity: 0.72;
-  }
-
-  to {
-    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #sidebar-content li > a,
-  #navbar nav[aria-label="Main"] a.link {
-    transition-duration: 0ms !important;
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 
-  #sidebar-content li[data-active] > a,
-  #navbar nav[aria-label="Main"] a[aria-current],
   #header,
   #content,
   #pagination {
-    animation-duration: 0ms !important;
-    animation-delay: 0ms !important;
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
+  #sidebar-content li > a,
+  a.card,
+  details.accordion [data-component-part="accordion-caret-right"],
+  details.accordion[open] > [data-component-part="accordion-content"],
+  :is([role="tooltip"], [data-component-part$="-menu-content"]) {
+    animation: none !important;
+    transform: none !important;
   }
 }
 
@@ -194,7 +298,7 @@ eyebrow,
 
 /* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
 @media (min-width: 1024px) {
-  #navbar > div.z-10.relative {
+  #navbar > div:last-child {
     width: 100%;
     max-width: 1280px;
     margin-inline: auto;
@@ -206,7 +310,7 @@ eyebrow,
     margin-inline: auto;
   }
 
-  #navbar div.h-12.items-center.min-w-0 {
+  #navbar div:has(> nav[aria-label="Main"]) {
     height: auto !important;
     min-height: 3rem;
     flex-wrap: wrap;
@@ -239,10 +343,7 @@ eyebrow,
   }
 
   #content-area {
-    margin-left: max(
-      0px,
-      calc(min(50vw, 640px) - 348px - 14rem)
-    ) !important;
+    margin-left: max(0px, calc(min(50vw, 640px) - 348px - 14rem)) !important;
   }
 }
 
