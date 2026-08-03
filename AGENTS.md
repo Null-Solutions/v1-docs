@@ -34,6 +34,15 @@
 - Match the app design tokens: Inter text; light mode ink `#2d2c2c`, secondary `#6e6e6e`, borders `#dee6ee`, guides `#afb4bc`, accent `#2e8afa`; dark mode ink `#d4dce7`, secondary `#a0a0a0`, borders `#29323b`, guides `#787c86`, accent `#b8d9fa`, surfaces `#141416`
 - Boxes use `rx="10"`–`rx="12"`; solid accent lines for writes, dashed gray lines for reads; include `role="img"`, `aria-label`, and `<title>`
 
+## Motion
+
+- Match the functional motion roles in `v1-ui/docs/MOTION.md`: micro for controls, surface for overlays, and content for page changes
+- Keep hover and press feedback between 50–150ms, surfaces between 180–280ms, and route reveals at 140ms
+- Blur is reserved for content reveals and must not be added to buttons, navigation items, or overlays
+- Use the `--null-motion-*` and `--null-ease-*` tokens in `style.css`; do not add raw durations or easing curves unless the platform requires one
+- Every new animation must include a `prefers-reduced-motion` behavior that leaves content visible and controls usable
+- Prefer stable IDs, ARIA attributes, and `data-component-part` selectors over Mintlify-generated utility class chains
+
 ## Content boundaries
 
 - Developers tab: protocol mechanics, integration, market setup, deployments, contract reference
