@@ -188,11 +188,21 @@ eyebrow,
   background-color: transparent !important;
 }
 
+#navbar > div:first-child {
+  border-bottom-width: 0 !important;
+}
+
 /* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
 @media (min-width: 1024px) {
-  #body-content {
+  #navbar > div.z-10.relative {
     width: 100%;
     max-width: 1280px;
+    margin-inline: auto;
+  }
+
+  #content-container {
+    width: 100%;
+    max-width: 1056px;
     margin-inline: auto;
   }
 
