@@ -269,7 +269,7 @@ details.accordion[open] > [data-component-part="accordion-content"] {
  */
 .dark #background-color {
   background-image: radial-gradient(
-    1400px 1100px at 92px 52px,
+    1400px 1100px at max(92px, calc((100vw - 1280px) / 2 + 92px)) 52px,
     rgba(46, 95, 168, 0.34) 0%,
     rgba(26, 63, 120, 0.18) 32%,
     rgba(12, 28, 56, 0.07) 58%,
