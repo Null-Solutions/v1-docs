@@ -9,7 +9,8 @@
   },
   "logo": {
     "light": "/images/Logo.svg",
-    "dark": "/images/LogoDark.svg"
+    "dark": "/images/LogoDark.svg",
+    "href": "https://null.xyz"
   },
   "favicon": "/images/LogoIcon.svg",
   "appearance": {
