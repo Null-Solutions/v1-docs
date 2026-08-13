@@ -1,86 +1,72 @@
 ---
 title: "Private beta overview"
 sidebarTitle: "Overview"
-description: "Mint ERC-20 tokens that track stocks and shares. Payers market-make that inventory for funding."
+description: "Hold stocks and shares as ERC-20 tokens. Payers market-make them and earn funding."
 ---
 
-You mint an **ERC-20 token** that tracks a stock, share, or other listed return. Deposit the market's collateral, and the token lands in your wallet. You do not buy or borrow the real asset.
+Null lets you hold stocks and shares as **ERC-20 tokens** in your wallet.
 
-**Payers market-make those tokens.** They put up the backing so Receivers can exist, take the other side of the price, and earn funding for doing so.
+You deposit collateral, mint, and get a token that tracks the stock. You do not buy the real share. You do not borrow it.
 
-A market can reference a stock, share, cryptoasset, index, or another return an oracle can report. Collateral can be yield-bearing, so that yield can keep accruing in the pool while the position is open.
+Someone has to back those tokens. That is the **Payer**. Payers market-make the inventory and earn **funding** for doing it.
 
-## Choose how you participate
+## Two sides
 
-Every market has two sides: **Receiver** and **Payer**.
+Every market has a Receiver side and a Payer side.
 
-### Hold the token
+### Receiver: hold the stock token
 
-Choose **Receiver** to get the ERC-20 that tracks the stock or share. It generally gains when the accepted oracle price rises and loses when it falls.
+Mint **Receiver** if you want the token.
 
-That is meant to feel closer to holding the asset than running a margin account:
-
-- you mint a token, you do not borrow the stock;
-- you do not choose leverage; and
-- the protocol does not liquidate individual Receiver accounts.
-
-Pick a market, check its collateral and oracle, mint the Receiver token, and burn it when you want your collateral back.
+- You get an ERC-20 that tracks the stock or share.
+- If the price goes up, the token is worth more. If it goes down, it is worth less.
+- There is no leverage setting and no liquidation of your Receiver account.
+- Burn the token when you want your collateral back.
 
 <Info>
-  This is synthetic exposure, not ownership of the listed stock or share. You
-  do not get voting rights, dividends, or custody of the real asset unless the
-  market's oracle return already includes them. Receiver can lose most or all
-  of its value through adverse price moves, funding, collateral behavior,
-  oracle behavior, liquidity, or contract failures.
+  This is not the real stock. You do not get voting rights or dividends unless
+  the market's price already includes them. You can still lose money.
 </Info>
 
-### Market-make it for funding
+### Payer: market-make it for funding
 
-Choose **Payer** to market-make the Receiver token. You supply the collateral that backs those tokens and take the opposite price transfer: you generally lose when the tracked price rises and gain when it falls.
+Mint **Payer** if you want to back those tokens and earn funding.
 
-The reason to do that is funding. When Receiver demand needs more backing, Payers earn funding for providing it. A market maker can hedge the short by holding an external long in the stock or a close equivalent, and aim to keep:
+Receivers need someone on the other side. You put up collateral to back their tokens. You lose when the stock goes up and gain when it goes down.
 
-- funding paid by Receiver when Payer backing is scarce;
-- yield on the deposited collateral; and
-- any difference between Null funding and the cost of the external hedge.
+You get paid **funding** for providing that backing, especially when there is not enough of it. Many Payers also buy the real stock elsewhere so the price risk cancels out. What is left is funding, plus any yield on the collateral, minus the cost of the hedge.
 
-Funding can reverse, collateral yield can change, and the hedge can underperform. Market making is self-operated during the private beta. Null does not currently provide a one-click managed strategy.
+Funding can flip sign. The hedge can cost more than it returns. In the private beta you run this yourself. Null does not offer a one-click strategy.
 
 ## How the app works
 
 <Steps>
   <Step title="Browse markets">
-    Compare the tracked stock or share, oracle, supported collateral, pool sizes, Payer
-    coverage, current funding, and fees.
+    Pick a stock or share. Check the price, collateral, pool sizes, funding, and fees.
   </Step>
   <Step title="Choose Receiver or Payer">
-    Select Receiver to mint the ERC-20 token. Select Payer to market-make it for
-    funding.
+    Receiver: hold the token. Payer: market-make it for funding.
   </Step>
-  <Step title="Mint with collateral">
-    Deposit the market's supported collateral. Receiver mints the ERC-20 that
-    tracks the stock or share. Payer mints the ERC-20 that backs it.
+  <Step title="Mint">
+    Deposit collateral. Receiver gets the stock token. Payer gets the backing token.
   </Step>
-  <Step title="Monitor the position">
-    Track price PnL, funding, collateral performance, pool coverage, and the
-    value represented by each token. Market makers must also monitor and
-    rebalance their external hedge.
+  <Step title="Watch the position">
+    Price, funding, and collateral can all move the value. Payers also watch their hedge.
   </Step>
   <Step title="Burn to exit">
-    Burn your tokens to redeem your proportional claim on the collateral
-    then available in that pool.
+    Burn the token to get collateral back from that pool.
   </Step>
 </Steps>
 
 ## What you own
 
-You control the wallet that holds your Receiver or Payer ERC-20 tokens. While a position is open, its collateral sits in the market's smart contracts. A Receiver token tracks the listed return. It is not the listed stock or share itself.
+The ERC-20 sits in your wallet. The collateral sits in the market contracts.
 
-Token value can change through price PnL, funding, fees, collateral performance, and settlement. If the collateral is yield-bearing, its yield contributes to pool value but is not fixed or guaranteed.
+A Receiver token tracks the stock. It is not the stock. Its value can change with price, funding, fees, and the collateral itself.
 
 ## Private beta access
 
-The private beta is invitation-only on Ethereum mainnet. It is a time-limited technical test, not a permanent product, public launch, or roadmap commitment. Null may change, restrict, suspend, or end access at any time.
+The private beta is invitation-only on Ethereum mainnet. It is a short technical test. It is not a launch, and it may end at any time.
 
 Approved participants can:
 
@@ -91,10 +77,8 @@ Approved participants can:
 - view [Points and referrals](/private-beta/status-and-points/points-and-referrals).
 
 <Warning>
-  Positions can lose some or all of their value through price moves, funding,
-  fees, collateral behavior, oracle behavior, liquidity, or contract failures.
-  Verify supported collateral in the app and its contract address on the
-  canonical [addresses page](/resources/addresses) before transacting.
+  You can lose some or all of the assets you put in. Check the collateral in
+  the app against the [addresses page](/resources/addresses) before you transact.
 </Warning>
 
-Continue with [The primitive](/private-beta/about-null/the-primitive), compare [Position types](/private-beta/trading/position-types), or learn how to [market make](/private-beta/market-make/overview). Before participating, review [Risks](/private-beta/getting-started/before-you-trade) and the [Private beta notices](/private-beta/legal/private-beta-notices).
+Next: [The primitive](/private-beta/about-null/the-primitive), [Position types](/private-beta/trading/position-types), or [market making](/private-beta/market-make/overview). Read [Risks](/private-beta/getting-started/before-you-trade) and the [Private beta notices](/private-beta/legal/private-beta-notices) first.
