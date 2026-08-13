@@ -12,9 +12,9 @@ A market is uniquely identified by three immutable dependencies:
 (collateral, oracle, frm)
 ```
 
-- `collateral` — ERC-20 deposited into both pools
-- `oracle` — tracked asset price (`1e36` scale)
-- `frm` — funding-rate model
+- `collateral`: ERC-20 deposited into both pools
+- `oracle`: tracked asset price (`1e36` scale)
+- `frm`: funding-rate model
 
 The market redistributes collateral it already holds between the two pools. It does not lend, create debt, liquidate users, or mint an undercollateralized claim.
 
@@ -80,8 +80,8 @@ receiverPool + payerPool + protocolFees == collateral.balanceOf(market)
 
 ## Next
 
-- [Funding and carry](/learn/funding-and-carry) — signed funding curve and Payer hedge
-- [Settlement](/developers/settlement) — exact pipeline
-- [Fees](/developers/fees) — entry, exit, collateral fee
-- [Risks and parameters](/learn/risks-and-parameters) — solvency, oracle, parameters
-- [Developer overview](/developers/overview) — build against the contracts
+- [Funding and carry](/learn/funding-and-carry): signed funding curve and Payer hedge
+- [Settlement](/developers/settlement): exact pipeline
+- [Fees](/developers/fees): entry, exit, collateral fee
+- [Risks and parameters](/learn/risks-and-parameters): solvency, oracle, parameters
+- [Developer overview](/developers/overview): build against the contracts

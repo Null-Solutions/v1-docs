@@ -22,7 +22,7 @@ Use it for fee-less updatable oracles such as the Null V1 Chainlink implementati
 
 `NullV1PayableRouter` is for native-fee oracles such as Pyth. It has an owner and a payable `receive()` function. Pre-fund the router with ETH; when `updateData` is nonempty it calls `getUpdateFee(updateData)` and forwards exactly that amount to `update`.
 
-User calls are not payable—the fee comes from the router's existing balance.
+User calls are not payable. The fee comes from the router's existing balance.
 
 ```solidity
 constructor(address newOwner);

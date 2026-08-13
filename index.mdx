@@ -6,7 +6,7 @@ description: "Fully collateralized synthetic markets with immutable rules and po
 
 Null V1 is an onchain market primitive: fully collateralized synthetic exposure to an oracle-tracked asset, with immutable market rules and no broker in the middle.
 
-A market is fixed at creation by three immutable dependencies — the collateral token, the price oracle, and the funding-rate model (FRM) — written as `(collateral, oracle, frm)`. Receivers deposit collateral for ERC-4626 shares that track the reference return. Payers supply the backing pool and take the opposite price risk. Funding is signed and flows according to Payer coverage relative to the FRM target.
+A market is fixed at creation by three immutable dependencies: the collateral token, the price oracle, and the funding-rate model (FRM), written as `(collateral, oracle, frm)`. Receivers deposit collateral for ERC-4626 shares that track the reference return. Payers supply the backing pool and take the opposite price risk. Funding is signed and flows according to Payer coverage relative to the FRM target.
 
 Every gain is paid from collateral already inside the market. Null redistributes value between pools; it cannot create debt, liquidate users, or mint an undercollateralized claim.
 

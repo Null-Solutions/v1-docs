@@ -1,43 +1,90 @@
 ---
 title: "Fees"
 sidebarTitle: "Fees"
-description: "Entry, exit, and annualized collateral fees — caps, fee-on-total vs fee-on-raw, and how previews account for them."
+description: "Entry and exit fees on settleable-R notional, plus the disabled collateral fee."
 ---
 
-Null V1 supports three fee types. All values are basis points (1 bp = 0.01%). Every market starts with all three values set to zero. The factory owner can set market-specific values with `setFees(entryFee, exitFee, collateralFee)`, subject to immutable **500 bps (5%)** caps.
+Null V1 has three fee types. All values are basis points (1 bp = 0.01%). Markets start at `DEFAULT_ENTRY_FEE` / `DEFAULT_EXIT_FEE` (25 bps each) and `DEFAULT_COLLATERAL_FEE` (0). The factory owner can change them with `setFees(entryFee, exitFee, collateralFee)`.
 
-| Fee | Max | When | Accrues to |
+| Fee | Cap | When | Accrues to |
 | --- | --- | --- | --- |
-| Entry | 500 bps | `deposit` / `mint` | `protocolFees` |
-| Exit | 500 bps | `redeem` / `withdraw` | `protocolFees` |
-| Collateral | 500 bps annualized | Each settlement, on pool balances over time | `protocolFees` |
+| Entry | 250 bps | `deposit` / `mint`, on settleable-R notional | Opposite pool, or `protocolFees` if the factory was deployed with `allowProtocolFees` |
+| Exit | 250 bps | `redeem` / `withdraw`, same notional | Opposite pool, or `protocolFees` if `allowProtocolFees` |
+| Collateral | 0 (disabled) | Would accrue on pool balances during settlement | `protocolFees` |
 
-`setFees` settles using the old values before storing the new values. Read the market's current values instead of assuming a deployment default. Fees accrue to `protocolFees` and can be swept only to the factory owner via `sweepFees()`.
+`setFees` settles using the old values before storing the new values. There is no lower bound: the owner can set entry or exit to 0. Read the market's current values instead of assuming the defaults.
+
+Entry and exit exist to price the oracle-latency option, not to raise revenue. That is why they default to the other pool: the side that writes the option is the one compensated for it. `allowProtocolFees` is fixed in the market implementation at factory deployment and redirects those fees to the protocol instead.
+
+## Notional
+
+Both pools use the same fee base: your ownership share of the settleable Receiver balance that price PnL and funding settle on.
+
+```text
+notional = assets × settleableR / ownAssets
+```
+
+`settleableR = max(R − MIN_POOL_ASSETS, 0)`. `ownAssets` is the pool you are entering or leaving. Deposits bump that denominator (and Receiver deposits also bump `R`) so the new capital is not treated as 100% of an empty pool.
+
+| Side | `ownAssets` | What the fee tracks |
+| --- | --- | --- |
+| Receiver | R after a deposit, or R on exit | `(assets / R) × settleableR`. When R is well above the floor this is about `assets`. |
+| Payer | P after a deposit, or P on exit | `assets × settleableR / P`. Scales with leverage `R/P`. |
+
+If settleable R is 0, notional is 0 on both sides and the fee is 0. Deposit notional is also 0 while settleable P is 0, so first entry is free until both sides can settle. Exits still charge so the latency option stays priced.
+
+At high Payer `R/P`, the fee can meet or exceed the principal. `deposit` / `redeem` cap the fee at `assets` (a redeem can return 0). `mint` / `withdraw` revert with `FeeExceedsAssets`.
+
+### Receiver example
+
+A Receiver deposits 1,000 collateral into a pool that is already large relative to `MIN_POOL_ASSETS`. Notional is about 1,000. At 25 bps:
+
+```text
+estimated entry fee ≈ 1,000 × 25 / 10,025
+                    ≈ 2.49 collateral units
+```
+
+### Payer example
+
+A Payer deposits 1,000 collateral when settleable R is 10,000 and P will be 2,000 after the deposit. Leverage is 5×, so notional is 5,000:
+
+```text
+notional              = 1,000 × 10,000 / 2,000 = 5,000
+estimated entry fee  ≈ 5,000 × 25 / 10,025
+                     ≈ 12.47 collateral units
+```
+
+The posted rate is still 25 bps. The Payer pays it on a larger notional.
 
 ## Exact fee helpers
 
-For raw integer asset amount `A`, fee basis points `b`, and `BPS = 10_000`, the contracts use:
+For notional `N`, principal `A`, fee basis points `b`, and `BPS = 10_000`, the contracts use:
 
 ```text
-feeOnTotal(A, b) = ceil(A × b / (BPS + b))
-feeOnRaw(A, b)   = ceil(A × b / BPS)
+feeOnTotal(N, b) = ceil(N × b / (BPS + b))
 ```
 
-`feeOnTotal` extracts a fee from an amount that already includes the fee. `feeOnRaw` adds a fee on top of an amount before fees. Both round the fee up to the next raw collateral unit.
+```text
+feeOnRawNotional(N, A, b) = 0  if N = 0 or b = 0
+                          = revert FeeExceedsAssets  if N × b ≥ A × (BPS + b)
+                          = ceil(N × A × b / (A × (BPS + b) − N × b))  otherwise
+```
+
+`feeOnTotal` takes the fee out of an amount that already includes it. `feeOnRawNotional` is the inverse: it sizes the extra amount to pay so that `gross = A + fee`. Both round the fee up to the next raw collateral unit.
 
 ## Entry fee
 
-On `deposit(A)`, the fee is included in the assets paid:
+On `deposit(A)`, the fee comes out of the assets paid:
 
 ```text
-entry fee        = feeOnTotal(A, entryFee)
-assets for shares = A - entry fee
+entry fee         = min(A, feeOnTotal(notional(A, depositing), entryFee))
+assets for shares = A − entry fee
 ```
 
-On `mint(shares)`, ERC-4626 conversion first calculates the raw assets `A` needed for those shares, then adds:
+On `mint(shares)`, ERC-4626 conversion first quotes the raw assets `A` for those shares, then adds:
 
 ```text
-entry fee  = feeOnRaw(A, entryFee)
+entry fee   = feeOnRawNotional(notional(A, depositing), A, entryFee)
 assets paid = A + entry fee
 ```
 
@@ -51,17 +98,17 @@ const entryFeeBps = await publicClient.readContract({
 
 ## Exit fee
 
-On `redeem(shares)`, ERC-4626 conversion first calculates gross assets `A`, then deducts:
+On `redeem(shares)`, ERC-4626 conversion first quotes gross assets `A`, then deducts:
 
 ```text
-exit fee      = feeOnTotal(A, exitFee)
-assets to user = A - exit fee
+exit fee       = min(A, feeOnTotal(notional(A, exiting), exitFee))
+assets to user = A − exit fee
 ```
 
-On `withdraw(A)`, `A` is the net amount requested by the user. The market debits the pool by:
+On `withdraw(A)`, `A` is the net amount requested. The market debits the pool by:
 
 ```text
-exit fee       = feeOnRaw(A, exitFee)
+exit fee        = feeOnRawNotional(notional(A, exiting), A, exitFee)
 pool debit      = A + exit fee
 assets to user  = A
 ```
@@ -74,15 +121,27 @@ const exitFeeBps = await publicClient.readContract({
 });
 ```
 
+## Where the fee lands
+
+The market routes a nonzero entry or exit fee as follows:
+
+1. If `allowProtocolFees` is true, credit `protocolFees`.
+2. Else if the other pool holds at most `MIN_POOL_ASSETS`, waive the fee back into the sender's own pool. A pool at the floor cannot settle, so it is not paid for writing the option.
+3. Else credit the other pool.
+
+`allowProtocolFees` is a public immutable on the market implementation. It is not on `INullV1Market`. Every clone from a given factory reports the same value.
+
+`sweepFees()` settles the market and transfers accrued `protocolFees` to the factory owner. The owner cannot withdraw pool principal as an admin balance. `protocolFees` can still be nonzero when `allowProtocolFees` is false: donations received while both pools are empty are reserved there.
+
 ## Collateral fee
 
-The collateral fee is annualized on each prepared pool balance during settlement. It is not a cut of measured yield.
+The collateral fee is annualized on each prepared pool balance during settlement. It is not a cut of measured yield. `MAX_COLLATERAL_FEE` is 0, so the computation is a no-op unless that cap is raised in a later deployment.
 
 ```text
 pool fee = floor(floor(pool balance × collateralFee / 10,000) × elapsed / 365 days)
 ```
 
-Each pool's fee is capped at that pool's balance. The fee accrues into `protocolFees` and is excluded from Receiver/Payer settlement until swept. If time has not advanced or `collateralFee` is zero, no collateral fee accrues. See [Settlement](/developers/settlement).
+Each pool's fee is capped at that pool's balance and added to `protocolFees`. If time has not advanced or `collateralFee` is zero, nothing accrues. See [Settlement](/developers/settlement).
 
 ```ts
 const collateralFeeBps = await publicClient.readContract({
@@ -104,7 +163,7 @@ const [entryFee, exitFee, collateralFee] = await Promise.all([
 
 ## Previews already include fees
 
-Do not apply a second manual fee on top of any ERC-4626 preview. `previewDeposit`, `previewMint`, `previewWithdraw`, and `previewRedeem` already apply the corresponding formula.
+Do not apply a second manual fee on top of any ERC-4626 preview. `previewDeposit`, `previewMint`, `previewWithdraw`, and `previewRedeem` already apply the corresponding formula, including notional.
 
 Direct pool previews still use the last settled state, while execution settles first. For settlement-aware quotes, use `NullV1Lens.previewMarket` and apply the projected pool state to your integration. Router ERC-4626 amounts are in vault underlying rather than collateral shares.
 

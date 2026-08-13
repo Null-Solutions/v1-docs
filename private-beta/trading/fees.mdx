@@ -4,58 +4,65 @@ sidebarTitle: "Fees"
 description: "Understand the fees shown when minting or burning a Null position."
 ---
 
-Null markets can charge three protocol fees:
+Null markets can charge three protocol fees. Entry and exit are charged on **notional**, not on collateral alone. Both sides use the same notional: your share of settleable Receiver assets.
 
 <Info>
-During the private beta, the entry fee, exit fee, and annualized collateral fee are all **0%**. You still pay Ethereum gas and any separate wallet, transfer, onramp, or off-ramp costs.
+Check the live transaction preview for the selected market. Collateral fee is disabled. Entry and exit, when set, usually go to the other pool rather than to Null.
 </Info>
 
 | Fee | When it applies | Where to check |
 | --- | --- | --- |
 | **Entry fee** | When you **Mint** pool shares | Trading summary and **Advanced details** |
 | **Exit fee** | When you **Burn** pool shares | Trading summary and **Advanced details** |
-| **Collateral fee** | Over time on both pool balances when the market settles | Market details |
+| **Collateral fee** | Disabled. Would accrue over time on both pool balances at settlement | Market details |
 
 Fee settings can differ by market. Always use the values shown in the current transaction preview.
 
-## Hypothetical mint example
+## Notional, not collateral
 
-Assume a market shows a **0.50% entry fee** and you enter **1,000 units** of collateral. These are example values, not current market settings.
-
-For a collateral amount that includes the fee:
+The posted rate is basis points on notional:
 
 ```text
-estimated entry fee ≈ 1,000 × 0.50 / 100.50
-                    ≈ 4.98 collateral units
-
-collateral used to mint shares ≈ 995.02 units
+notional = your assets × settleable Receiver assets / your pool's assets
 ```
+
+- **Receiver.** When the Receiver pool is well above the minimum floor, notional is about the collateral you mint or burn. A 0.25% rate on 1,000 units is about 2.49 units.
+- **Payer.** Notional scales with leverage `R/P`. At 5×, the same 1,000 units of collateral have about 5,000 of notional, so the same 0.25% rate costs about 12.47 units.
+
+If Receiver is at the floor, or you are minting while Payer cannot settle, entry notional is 0 and there is no entry fee. Burns can still charge an exit fee.
+
+## Hypothetical mint example
+
+Assume a market shows a **0.25% entry fee** and you mint **1,000 units** of collateral as Receiver. These are example values, not current market settings.
+
+```text
+estimated notional   ≈ 1,000
+estimated entry fee  ≈ 1,000 × 0.25 / 100.25
+                     ≈ 2.49 collateral units
+
+collateral used to mint shares ≈ 997.51 units
+```
+
+On Payer, replace 1,000 with your notional (`assets × R / P`) before applying the same rate.
 
 The pool-share output also depends on the pool's share conversion after settlement. Use the app's estimated output instead of calculating shares from the fee alone.
 
 ## Hypothetical burn example
 
-Assume a market shows a **0.30% exit fee** and the shares have a gross redemption value of **1,000 collateral units**. These are example values.
+Assume a market shows a **0.25% exit fee** and a Receiver position has a gross redemption value of **1,000 collateral units**. These are example values.
 
 ```text
-estimated exit fee ≈ 1,000 × 0.30 / 100.30
-                   ≈ 2.99 collateral units
+estimated exit fee ≈ 1,000 × 0.25 / 100.25
+                   ≈ 2.49 collateral units
 
-estimated collateral returned ≈ 997.01 units
+estimated collateral returned ≈ 997.51 units
 ```
 
-The confirmed output can change because the market settles before burning the shares.
+The confirmed output can change because the market settles before burning the shares. At high Payer leverage, the exit fee can consume the full redemption.
 
-## Hypothetical collateral-fee example
+## Collateral fee
 
-Assume a market shows a **1.00% annualized collateral fee**. If a pool held a constant 1,000 collateral units for 30 days, a simplified estimate would be:
-
-```text
-estimated fee ≈ 1,000 × 1.00% × 30 / 365
-              ≈ 0.82 collateral units
-```
-
-Actual accrual uses elapsed time and the pool balance at settlement. The collateral fee is charged on pool assets. It is not only a fee on collateral yield.
+The annualized collateral fee is disabled. If it were enabled, it would accrue on pool assets over time at settlement. It is not a fee on collateral yield.
 
 Wallet, network, onramp, off-ramp, or provider costs are separate from the market's protocol fees.
 

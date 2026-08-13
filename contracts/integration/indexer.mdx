@@ -132,7 +132,7 @@ multicall.previewAll(lens, markets);
 multicall.simulateAll(lens, markets, externalPrices);
 ```
 
-Response order matches input order. A reverted per-market call yields an all-zero `SimulateResponse` — treat as unavailable, not empty. `simulateAll` reverts with `LengthMismatch` if array lengths differ.
+Response order matches input order. A reverted per-market call yields an all-zero `SimulateResponse`. Treat that as unavailable, not empty. `simulateAll` reverts with `LengthMismatch` if array lengths differ.
 
 Lens responses are current block snapshots, not historical records. They do not update oracle storage or market state. Store events for history and refresh projections at the cadence your application needs.
 

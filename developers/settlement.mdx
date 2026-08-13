@@ -4,7 +4,7 @@ sidebarTitle: "Settlement"
 description: "Exact Null V1 market update order: oracle, reconciliation, collateral fee, funding, price PnL, circuit breaker, and solvency bounds."
 ---
 
-Every `deposit`, `mint`, `withdraw`, and `redeem` settles the market **before** changing pool shares or assets. Fee updates and fee sweeps also settle first. Settlement is interaction-driven — there is no public permissionless `poke`.
+Every `deposit`, `mint`, `withdraw`, and `redeem` settles the market **before** changing pool shares or assets. Fee updates and fee sweeps also settle first. Settlement is interaction-driven. There is no public permissionless `poke`.
 
 `NullV1Market` prepares state, queries the immutable FRM, and delegates settlement math to `SettlementLib`.
 
@@ -64,7 +64,7 @@ After reconciliation, each pool is charged independently:
 pool fee = pool balance * collateralFee / 10,000 * elapsed / 365 days
 ```
 
-Each charge is capped at that pool's balance and added to `protocolFees`. It is a fee on assets over time, not a share of measured yield. See [Fees](/developers/fees).
+Each charge is capped at that pool's balance and added to `protocolFees`. It is a fee on assets over time, not a share of measured yield. `MAX_COLLATERAL_FEE` is 0, so nothing accrues in the current deployment. See [Fees](/developers/fees).
 
 ## Funding
 
@@ -198,7 +198,7 @@ Pool actions continue only after this state is stored. Indexers should treat `Up
 
 ## Integration implications
 
-- Previews go stale because execution updates first — always add slippage.
+- Previews go stale because execution updates first. Always add slippage.
 - FRM reads and Lens simulations must use post-reconciliation, post-fee state (Lens does this for you).
 - Empty or one-sided markets skip funding and price PnL.
 - Circuit breaker skips price PnL only, not funding or anchor advancement.

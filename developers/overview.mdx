@@ -4,7 +4,7 @@ sidebarTitle: "Overview"
 description: "Integrate Null V1 markets, pools, routers, oracles, and read surfaces."
 ---
 
-Null V1 is a **contracts-first** protocol. Integrators discover markets, read state, and deposit or redeem through Solidity interfaces — typically via `viem`, `ethers`, or a wallet SDK. There is no published Null npm SDK and no partner trading API with API keys.
+Null V1 is a **contracts-first** protocol. Integrators discover markets, read state, and deposit or redeem through Solidity interfaces, typically via `viem`, `ethers`, or a wallet SDK. There is no published Null npm SDK and no partner trading API with API keys.
 
 These integration guides target **Ethereum mainnet**. Before connecting, copy the published Ethereum chain ID, deployment block, and contract addresses from [Ethereum deployments](/resources/addresses). If that page does not list Ethereum constants yet, treat deployment configuration as unavailable rather than inventing values.
 
@@ -33,9 +33,9 @@ A market is uniquely identified by an immutable tuple:
 (collateral, oracle, frm)
 ```
 
-- `collateral` — ERC-20 held by the market (may itself be an ERC-4626 vault share)
-- `oracle` — price source, always scaled to `1e36`
-- `frm` — funding-rate model (must be factory-enabled)
+- `collateral`: ERC-20 held by the market (may itself be an ERC-4626 vault share)
+- `oracle`: price source, always scaled to `1e36`
+- `frm`: funding-rate model (must be factory-enabled)
 
 For market-level metrics, let `R` be Receiver pool assets and `P` be Payer pool assets:
 

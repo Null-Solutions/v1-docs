@@ -53,26 +53,26 @@ Execution uses the post-settlement pool value. A prior pool preview can differ m
 
 ## Preview and fee formulas
 
-| Function                  | Fee pattern  |
-| ------------------------- | ------------ |
-| `previewDeposit(assets)`  | Fee-on-total |
-| `previewMint(shares)`     | Fee-on-raw   |
-| `previewWithdraw(assets)` | Fee-on-raw   |
-| `previewRedeem(shares)`   | Fee-on-total |
+| Function                  | Fee pattern |
+| ------------------------- | ----------- |
+| `previewDeposit(assets)`  | `feeOnTotal(notional)` taken out of principal |
+| `previewMint(shares)`     | `feeOnRawNotional` added on top |
+| `previewWithdraw(assets)` | `feeOnRawNotional` added on top |
+| `previewRedeem(shares)`   | `feeOnTotal(notional)` taken out of principal |
 
-In practical terms:
+Notional is `assets × settleableR / ownAssets` for both pools. In practical terms:
 
 - `deposit`: the supplied assets include the entry fee; only the net amount mints shares.
-- `mint`: the caller pays the raw asset quote plus the entry fee.
-- `withdraw`: the pool deducts the requested assets plus the exit fee.
-- `redeem`: the exit fee is deducted from the gross asset quote.
+- `mint`: the caller pays the raw asset quote plus the entry fee, and reverts if that fee would be 100% or more of principal.
+- `withdraw`: the pool deducts the requested assets plus the exit fee, with the same revert.
+- `redeem`: the exit fee is deducted from the gross asset quote, and can consume the full redemption.
 
 The previews use the last settled state. Funding, price PnL, collateral fees, balance reconciliation, or other transactions can move the execution rate. Use `NullV1Lens.previewMarket` for a settlement projection and a router minimum for execution protection.
 
-Fees leave the Receiver/Payer system into market `protocolFees`. See [Fees](/developers/fees).
+Fees credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/developers/fees).
 
 <Warning>
-`maxDeposit` and `maxMint` always return `type(uint256).max` — never use them to size inputs. `maxWithdraw` is net of the exit fee but reads the last settled state, so a full exit via `withdraw(maxWithdraw(owner))` can revert once execution settles the market. Exit fully with `redeem(balanceOf(owner))` instead. See [Max functions](/contracts/pool#max-functions).
+`maxDeposit` and `maxMint` always return `type(uint256).max`. Never use them to size inputs. `maxWithdraw` is net of the exit fee but reads the last settled state, so a full exit via `withdraw(maxWithdraw(owner))` can revert once execution settles the market. Exit fully with `redeem(balanceOf(owner))` instead. See [Max functions](/contracts/pool#max-functions).
 </Warning>
 
 ## Unit pipelines

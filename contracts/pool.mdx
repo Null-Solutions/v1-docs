@@ -65,7 +65,7 @@ function redeem(
 
 Before conversion, each entry point locks the market's reentrancy guard and calls `market.updateState()`. Deposits transfer collateral directly from the caller to the market; withdrawals are paid by the market. If the caller redeems or withdraws another owner's shares, the owner must approve the caller.
 
-Entry fees are included in the `assets` paid by depositors and excluded from assets converted into shares. Exit fees are charged in addition to withdrawn assets or deducted from redeemed assets. Both accrue to `state.protocolFees`.
+Entry and exit fees are sized on settleable-R notional (`assets × settleableR / ownAssets`), not on collateral alone. Entry fees are included in the `assets` paid by depositors and excluded from assets converted into shares. Exit fees are charged in addition to withdrawn assets or deducted from redeemed assets. They credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/developers/fees).
 
 ## Previews
 
@@ -93,7 +93,7 @@ function maxRedeem(address owner) public view returns (uint256);
 
 Pools inherit the OpenZeppelin v5 defaults without overrides:
 
-- `maxDeposit` and `maxMint` always return `type(uint256).max`. They do not reflect wallet balances, market state, or any protocol cap — do not use them to size deposit inputs.
+- `maxDeposit` and `maxMint` always return `type(uint256).max`. They do not reflect wallet balances, market state, or any protocol cap. Do not use them to size deposit inputs.
 - `maxRedeem(owner)` returns `balanceOf(owner)`.
 - `maxWithdraw(owner)` returns `previewRedeem(balanceOf(owner))`, so it is net of the exit fee. Like every view, it is a snapshot of the last settled state; after execution settles the market, `withdraw(maxWithdraw(owner))` can require more shares than the owner holds and revert. Prefer `redeem` with the full share balance for a full exit.
 

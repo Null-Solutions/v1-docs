@@ -39,7 +39,7 @@ Collateral can lose value independently of the tracked asset. Yield-bearing coll
 
 Smart-contract bugs can cause loss. Existing markets fix their collateral, oracle, funding-rate model, and pool addresses, but immutability does not guarantee correct code.
 
-The factory owner can enable funding-rate models for future markets, set fees within contract caps, and collect reserved protocol fees. The owner cannot replace an existing market's dependencies or withdraw pool-allocated collateral as an admin balance.
+The factory owner can enable funding-rate models for future markets, set fees within contract caps, and collect reserved protocol fees. Entry and exit usually credit the other pool. The owner cannot replace an existing market's dependencies or withdraw pool-allocated collateral as an admin balance.
 
 Null V1 has not completed a published third-party audit. Read the current [audit status](/private-beta/support/audits) and the full [risks and parameters](/learn/risks-and-parameters).
 

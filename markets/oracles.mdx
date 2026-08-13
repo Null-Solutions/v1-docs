@@ -1,7 +1,7 @@
 ---
 title: "Oracles"
 sidebarTitle: "Oracles"
-description: "Pyth, Chainlink V3, and Chainlink V11 pull oracles — price scale, update routing, freshness, and the 10-day escape."
+description: "Pyth, Chainlink V3, and Chainlink V11 pull oracles: price scale, update routing, freshness, and the 10-day escape."
 ---
 
 Oracles supply the normalized price used when a market settles. Supported implementations are all **pull-based**:
@@ -48,7 +48,7 @@ router.depositMarket(
 );
 ```
 
-Callers never attach `msg.value` for Pyth — the payable router pays from its balance.
+Callers never attach `msg.value` for Pyth. The payable router pays from its balance.
 
 ### Empty `updateData`
 
@@ -71,7 +71,7 @@ Normal freshness threshold: **60 seconds**.
 | More than 60 seconds old but less than 10 days old | Reverts with `StalePrice()` |
 | At least 10 days old | Returns the last stored positive price |
 
-The escape lives in each oracle's `price()`—it is not a separate redemption mode and does not refresh the stored price. Update acceptance is narrower: Pyth and Chainlink V3 reject future updates, while Chainlink V11 accepts reports up to 60 seconds ahead. The escape does not make an old update payload acceptable.
+The escape lives in each oracle's `price()`. It is not a separate redemption mode and does not refresh the stored price. Update acceptance is narrower: Pyth and Chainlink V3 reject future updates, while Chainlink V11 accepts reports up to 60 seconds ahead. The escape does not make an old update payload acceptable.
 
 <Warning>
 The 10-day path restores liveness after prolonged outage. Treat the market as degraded and account for stale-price risk.

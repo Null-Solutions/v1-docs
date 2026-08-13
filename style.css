@@ -296,7 +296,7 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   border-bottom-width: 0 !important;
 }
 
-/* Stack tabs under the logo (second navbar row) — CSS only, no DOM moves */
+/* Stack tabs under the logo (second navbar row). CSS only, no DOM moves */
 @media (min-width: 1024px) {
   #navbar > div:last-child {
     width: 100%;

@@ -42,10 +42,10 @@ Burn output reflects the pool's value after settlement. It can differ from an ea
 
 Null's router protects private-beta transactions with deadlines and minimum outputs. Documented contract errors include:
 
-- `TransactionTooOld` — the transaction executed after its deadline. Refresh the quote and submit a new transaction.
-- `SlippageReceiverShares` or `SlippagePayerShares` — a mint would return fewer shares than the submitted minimum.
-- `SlippageReceiverAssets` or `SlippagePayerAssets` — a burn would return fewer assets than the submitted minimum.
-- `StalePrice` — the oracle price is outside its ordinary freshness window.
+- `TransactionTooOld`: the transaction executed after its deadline. Refresh the quote and submit a new transaction.
+- `SlippageReceiverShares` or `SlippagePayerShares`: a mint would return fewer shares than the submitted minimum.
+- `SlippageReceiverAssets` or `SlippagePayerAssets`: a burn would return fewer assets than the submitted minimum.
+- `StalePrice`: the oracle price is outside its ordinary freshness window.
 
 Refresh the market state before retrying. Do not keep resubmitting a slippage or stale-price failure without obtaining a current preview.
 
