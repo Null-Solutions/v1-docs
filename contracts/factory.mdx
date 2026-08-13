@@ -6,6 +6,8 @@ description: "Deploy and discover Null V1 markets by collateral, oracle, and fun
 
 `NullV1Factory` deploys one market for each unique `(collateral, oracle, frm)` tuple. It is also the canonical registry of deployed markets and approved funding-rate models (FRMs).
 
+The constructor takes `allowProtocolFees` and bakes that flag into the market implementation every clone uses. When false, entry and exit fees credit the opposite pool. When true, they credit `protocolFees`. See [Fees](/developers/fees).
+
 ## Market key
 
 ```solidity

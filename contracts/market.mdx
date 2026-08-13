@@ -37,7 +37,7 @@ function exitFee() external view returns (uint16);
 function collateralFee() external view returns (uint16);
 ```
 
-Fees are basis points. Entry, exit, and annualized collateral fees are each capped at `500` (5%).
+Fees are basis points. Entry and exit default to 25 bps and are capped at `250` (2.5%). They are charged on settleable-R notional. The collateral fee is capped at `0`. Where entry and exit land depends on the factory's `allowProtocolFees` flag: the opposite pool, or `protocolFees`. See [Fees](/developers/fees).
 
 ## Settlement
 

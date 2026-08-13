@@ -39,11 +39,11 @@ f(q) = mu * (c - q) / (c + q)
 
 This form makes the market behavior explicit:
 
-- **Below target (`q < c`)** — Payer backing is scarce, so `f` is positive and Receiver pays Payer.
-- **At target (`q = c`)** — the numerator is zero, so no funding moves.
-- **Above target (`q > c`)** — Payer backing is abundant, so `f` is negative and Payer pays Receiver.
-- **Near zero coverage** — the curve approaches `+mu` as `q` approaches zero from above.
-- **Very high coverage** — the curve approaches `-mu` as `q` grows.
+- **Below target (`q < c`)**: Payer backing is scarce, so `f` is positive and Receiver pays Payer.
+- **At target (`q = c`)**: the numerator is zero, so no funding moves.
+- **Above target (`q > c`)**: Payer backing is abundant, so `f` is negative and Payer pays Receiver.
+- **Near zero coverage**: the curve approaches `+mu` as `q` approaches zero from above.
+- **Very high coverage**: the curve approaches `-mu` as `q` grows.
 
 For the standard deployment, `c = 0.5` and `mu = 1`:
 

@@ -47,7 +47,7 @@ Use these pages as source context when asking an assistant to reason about or ge
 
 ## Guardrails for generated code
 
-- Discover markets by `(collateral, oracle, frm)` — do not invent pool addresses
+- Discover markets by `(collateral, oracle, frm)`. Do not invent pool addresses
 - Read pool addresses from the market or `CreateMarket`
 - Keep the ratios distinct: coverage is `P/R`; `L = R/P` is the leverage Payer has at that market state, not a funding rate
 - Handle zero denominators explicitly; do not report either ratio as finite when its denominator is zero

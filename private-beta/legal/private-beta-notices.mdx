@@ -51,9 +51,9 @@ You connect and control your own wallet. You decide whether to submit each trans
 
 Transactions interact with smart contracts. Once confirmed onchain, they may be irreversible.
 
-## No protocol fees to Null
+## Protocol fees
 
-The private-beta entry fee, exit fee, and annualized collateral fee are set to **0%**. Null does not receive transaction compensation from private-beta protocol activity.
+Entry and exit fees, when set, are charged on notional and usually credit the other pool. They are not paid to Null unless the factory was deployed with protocol-fee routing. The annualized collateral fee is disabled.
 
 You remain responsible for Ethereum gas and any wallet, transfer, onramp, off-ramp, collateral, oracle, venue, hedging, tax, or third-party costs. Funding transfers between Receiver and Payer are part of protocol settlement; they are not fees paid to Null.
 
@@ -69,16 +69,16 @@ See [Points and referrals](/private-beta/status-and-points/points-and-referrals)
 
 Private-beta participation involves significant risk, including:
 
-- **position risk** — Receiver and Payer values can fall substantially;
-- **Payer leverage** — lower coverage increases Payer's percentage exposure;
-- **funding risk** — funding is variable and can reverse;
-- **smart-contract risk** — bugs or unintended behavior can cause loss;
-- **oracle risk** — incorrect, stale, unavailable, or divergent prices can affect or block settlement;
-- **collateral risk** — collateral or an underlying vault can lose value or become difficult to redeem;
-- **liquidity risk** — entry, exit, transfer, or hedging liquidity may be unavailable;
-- **execution risk** — settlement, slippage, deadlines, gas, failed transactions, and other flows can change outcomes;
-- **external-venue risk** — a hedge can incur funding, basis, margin, liquidation, custody, or operational losses; and
-- **regulatory and tax risk** — treatment can vary by participant and jurisdiction and may change.
+- **position risk:** Receiver and Payer values can fall substantially;
+- **Payer leverage:** lower coverage increases Payer's percentage exposure;
+- **funding risk:** funding is variable and can reverse;
+- **smart-contract risk:** bugs or unintended behavior can cause loss;
+- **oracle risk:** incorrect, stale, unavailable, or divergent prices can affect or block settlement;
+- **collateral risk:** collateral or an underlying vault can lose value or become difficult to redeem;
+- **liquidity risk:** entry, exit, transfer, or hedging liquidity may be unavailable;
+- **execution risk:** settlement, slippage, deadlines, gas, failed transactions, and other flows can change outcomes;
+- **external-venue risk:** a hedge can incur funding, basis, margin, liquidation, custody, or operational losses; and
+- **regulatory and tax risk:** treatment can vary by participant and jurisdiction and may change.
 
 Null V1 has not completed a published third-party audit. Immutability and onchain visibility do not guarantee correct code or safe outcomes.
 

@@ -44,15 +44,15 @@ Both pools are cloned at init and emitted in `CreateMarket`.
 
 ## Mutable fees
 
-Factory owner can set three fees, each capped at 500 bps:
+Factory owner can set three fees. Entry and exit default to 25 bps and are capped at 250 bps. The collateral fee is disabled.
 
 | Accessor | Charged on | Maximum |
 | --- | --- | ---: |
-| `entryFee()` | `deposit` / `mint` | 500 bps (5%) |
-| `exitFee()` | `withdraw` / `redeem` | 500 bps (5%) |
-| `collateralFee()` | Pool assets, annualized during settlement | 500 bps (5% APR) |
+| `entryFee()` | `deposit` / `mint`, on settleable-R notional | 250 bps (2.5%) |
+| `exitFee()` | `withdraw` / `redeem`, same notional | 250 bps (2.5%) |
+| `collateralFee()` | Pool assets, annualized during settlement | 0 (disabled) |
 
-Fees accrue in `protocolFees`. `sweepFees()` settles first, then pays the factory owner. Details: [Fees](/developers/fees).
+Entry and exit credit the opposite pool unless the factory was deployed with `allowProtocolFees`. `sweepFees()` settles first, then pays the factory owner any `protocolFees`. Details: [Fees](/developers/fees).
 
 ## Standard imbalance FRM
 
