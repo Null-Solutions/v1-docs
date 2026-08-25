@@ -261,37 +261,6 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   }
 }
 
-/*
- * Soft blue wash behind the nav logo (dark mode).
- * Continuous radial on #background-color; topnav stays transparent so the
- * glow reads through, with a heavy backdrop blur so scrolled text is not
- * readable underneath.
- */
-.dark #background-color {
-  background-image: radial-gradient(
-    1400px 1100px at max(92px, calc((100vw - 1280px) / 2 + 92px)) 52px,
-    rgba(46, 95, 168, 0.34) 0%,
-    rgba(26, 63, 120, 0.18) 32%,
-    rgba(12, 28, 56, 0.07) 58%,
-    transparent 76%
-  );
-  background-repeat: no-repeat;
-}
-
-.dark #navbar {
-  background: transparent !important;
-  background-color: transparent !important;
-  backdrop-filter: blur(64px) saturate(1.15);
-  -webkit-backdrop-filter: blur(64px) saturate(1.15);
-  box-shadow: none !important;
-  border-bottom-color: transparent !important;
-}
-
-.dark #navbar > div {
-  background: transparent !important;
-  background-color: transparent !important;
-}
-
 #navbar > div:first-child {
   border-bottom-width: 0 !important;
 }
