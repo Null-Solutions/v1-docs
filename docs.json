@@ -248,7 +248,8 @@
               "developers/settlement",
               "developers/fees",
               "learn/risks-and-parameters",
-              "security/circuit-breaker"
+              "security/circuit-breaker",
+              "private-beta/support/audits"
             ]
           },
           {

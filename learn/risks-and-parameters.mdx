@@ -64,7 +64,7 @@ If either pool is empty, settlement applies neither funding nor price PnL. It st
 
 ## Smart-contract and integration risk
 
-Core accounting spans the Factory, Market, Pool, and `SettlementLib`; routers and Lens are periphery. Controls include duplicate-market prevention, market callbacks restricted to its pools, router deadlines and slippage checks, and reentrancy guards. These controls and any audit do not guarantee that the contracts are bug-free.
+Core accounting spans the Factory, Market, Pool, and `SettlementLib`; routers and Lens are periphery. Controls include duplicate-market prevention, market callbacks restricted to its pools, router deadlines and slippage checks, and reentrancy guards. [Nethermind Security reviewed](/private-beta/support/audits) the core and listed periphery. These controls and that review do not guarantee that the contracts are bug-free.
 
 Direct ERC-4626 previews use the last settled state and can diverge from execution because the market settles first. Use settlement-aware Lens projections where possible, enforce slippage and deadlines, and verify contract addresses.
 
