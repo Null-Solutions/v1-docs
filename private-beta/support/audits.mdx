@@ -8,8 +8,8 @@ description: "Nethermind Security reviewed Null V1. Read the published report an
 
 Nethermind Security completed a security review of the Null V1 contracts (engagement NM-1028). The final report is dated 25 August 2026.
 
-<Card title="Download the final report" icon="file-text" href="/audits/NM_1028_null_solutions_FINAL.pdf">
-  NM-1028 Null Solutions Security Review (PDF). Also published in the [contracts repository](https://github.com/Null-Solutions/v1-contracts/blob/main/audits/NM_1028_null_solutions_FINAL.pdf).
+<Card title="Download the final report" icon="file-text" href="https://github.com/NethermindEth/PublicAuditReports/blob/main/NM-1028_Null_Solutions.pdf">
+  NM-1028 Null Solutions Security Review (PDF), published in Nethermind's public audit reports repository on GitHub.
 </Card>
 
 The review covered 1,220 lines of Solidity in the core and listed periphery: factory, market, pools, settlement, router, imbalance funding-rate model, and Chainlink oracle. Nethermind used manual review and automated analysis.
@@ -37,20 +37,6 @@ Nethermind rated the documentation assessment and the test-suite assessment as H
 | 3 | Low | Deposit was cheaper than mint, so a portion of fees was missed | Fixed |
 | 4 | Info | Reentrancy-guard implementations were inconsistent across contracts | Fixed |
 | 5 | Info | No extra control if a whitelisted account is compromised | Fixed |
-
-## Report details
-
-| Field | Value |
-| --- | --- |
-| Auditor | [Nethermind Security](https://www.nethermind.io/) |
-| Engagement | NM-1028 |
-| Audit type | Security review |
-| Initial report | 18 August 2026 |
-| Final report | 25 August 2026 |
-| Initial commit | [`98887f0`](https://github.com/Null-Solutions/v1-contracts/commit/98887f071f98eae6ca6d506ac2207639933c2564) |
-| Final commit | [`1f0562a`](https://github.com/Null-Solutions/v1-contracts/commit/1f0562af87774bc0fb2304222192f8fd2958eb57) (`NM-AUDIT-2026-08-25-FINAL`) |
-
-Lens, Multicall, mocks, and later code changes are outside this report's scope. Compare deployed bytecode to the final commit before relying on the review.
 
 ## What an audit does not guarantee
 
