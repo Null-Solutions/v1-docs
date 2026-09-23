@@ -8,32 +8,34 @@ Null V1 is deployed on **Ethereum mainnet**. Copy addresses only from this page 
 
 ## Shared infrastructure
 
-| Component | Contract | Address | Implementation |
-| --- | --- | --- | --- |
-| Router | `NullV1Router` | [`0x085D78Fd7Ffa668a33bEeeD3d931A5EBdbcFe16c`](https://etherscan.io/address/0x085D78Fd7Ffa668a33bEeeD3d931A5EBdbcFe16c) | - |
-| Factory | `NullV1Factory` | [`0x80b9ee8342c9FcD4F79cAaCce0F7c5C3b94A0080`](https://etherscan.io/address/0x80b9ee8342c9FcD4F79cAaCce0F7c5C3b94A0080) | - |
+| Contract | Address |
+| --- | --- |
+| `NullV1Router` | [`0x085D78Fd7Ffa668a33bEeeD3d931A5EBdbcFe16c`](https://etherscan.io/address/0x085D78Fd7Ffa668a33bEeeD3d931A5EBdbcFe16c) |
+| `NullV1Factory` | [`0x80b9ee8342c9FcD4F79cAaCce0F7c5C3b94A0080`](https://etherscan.io/address/0x80b9ee8342c9FcD4F79cAaCce0F7c5C3b94A0080) |
 
 ## S&P 500 market
 
-| Component | Contract | Address (or proxy) | Implementation |
-| --- | --- | --- | --- |
-| Chainlink oracle | `NullV1ChainlinkOracleV11` | [`0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7`](https://etherscan.io/address/0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7) | [`0x77ED2aDD021CD73099f5dF7b1298B0450A8dD087`](https://etherscan.io/address/0x77ED2aDD021CD73099f5dF7b1298B0450A8dD087) |
-| Market | `NullV1Market` | [`0x9CD3eacb4745263B0eCD796bd72eF2752Dc70b24`](https://etherscan.io/address/0x9CD3eacb4745263B0eCD796bd72eF2752Dc70b24) | [`0xf7baA6ED245BC31F54B233457C2c79739b7dc186`](https://etherscan.io/address/0xf7baA6ED245BC31F54B233457C2c79739b7dc186) |
-| Receiver pool (`rSPY`) | `NullV1Pool` | [`0x6533F0BaCa244839AebAe6e534B73dE75eC726BF`](https://etherscan.io/address/0x6533F0BaCa244839AebAe6e534B73dE75eC726BF) | [`0xB17066D698A54a9ba2033Ffb2a5061Cc9644c464`](https://etherscan.io/address/0xB17066D698A54a9ba2033Ffb2a5061Cc9644c464) |
-| Payer pool (`pSPY`) | `NullV1Pool` | [`0x1c7Ce003dCCDd769581034394f680964aa94D123`](https://etherscan.io/address/0x1c7Ce003dCCDd769581034394f680964aa94D123) | [`0xB17066D698A54a9ba2033Ffb2a5061Cc9644c464`](https://etherscan.io/address/0xB17066D698A54a9ba2033Ffb2a5061Cc9644c464) |
+The oracle, market, and both pools are minimal proxies (EIP-1167 clones). Send calls to the proxy address. Use the verified ABI of the implementation contract to decode them.
 
-The oracle, market, and both pools are minimal proxies (EIP-1167 clones). Send calls to the proxy address. 
-Use the verified ABI of the implementation contract to decode them.
+| Contract | Address |
+| --- | --- |
+| `NullV1ChainlinkOracleV11` (proxy) | [`0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7`](https://etherscan.io/address/0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7) |
+| `NullV1ChainlinkOracleV11` (implementation) | [`0x77ED2aDD021CD73099f5dF7b1298B0450A8dD087`](https://etherscan.io/address/0x77ED2aDD021CD73099f5dF7b1298B0450A8dD087) |
+| `NullV1Market` (proxy) | [`0x9CD3eacb4745263B0eCD796bd72eF2752Dc70b24`](https://etherscan.io/address/0x9CD3eacb4745263B0eCD796bd72eF2752Dc70b24) |
+| `NullV1Market` (implementation) | [`0xf7baA6ED245BC31F54B233457C2c79739b7dc186`](https://etherscan.io/address/0xf7baA6ED245BC31F54B233457C2c79739b7dc186) |
+| `NullV1Pool` Receiver `rSPY` (proxy) | [`0x6533F0BaCa244839AebAe6e534B73dE75eC726BF`](https://etherscan.io/address/0x6533F0BaCa244839AebAe6e534B73dE75eC726BF) |
+| `NullV1Pool` Payer `pSPY` (proxy) | [`0x1c7Ce003dCCDd769581034394f680964aa94D123`](https://etherscan.io/address/0x1c7Ce003dCCDd769581034394f680964aa94D123) |
+| `NullV1Pool` (implementation, shared by both pools) | [`0xB17066D698A54a9ba2033Ffb2a5061Cc9644c464`](https://etherscan.io/address/0xB17066D698A54a9ba2033Ffb2a5061Cc9644c464) |
 
 ### Market identity
 
 The market resolves from `factory.getMarket(collateral, oracle, frm)` with these values:
 
-| Dependency | Contract | Address |
-| --- | --- | --- |
-| Collateral | Steakhouse Prime USDC (`steakUSDC`, ERC-4626 vault over USDC) | [`0xbeef088055857739C12CD3765F20b7679Def0f51`](https://etherscan.io/address/0xbeef088055857739C12CD3765F20b7679Def0f51) |
-| Oracle | `NullV1ChainlinkOracleV11` | [`0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7`](https://etherscan.io/address/0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7) |
-| Funding-rate model | Enabled FRM | [`0x2eb3468fb9ca9A1227e0Bc96B984aee9FEEBc245`](https://etherscan.io/address/0x2eb3468fb9ca9A1227e0Bc96B984aee9FEEBc245) |
+| Dependency | Address |
+| --- | --- |
+| Collateral: `steakUSDC` (Steakhouse Prime USDC, ERC-4626 vault over USDC) | [`0xbeef088055857739C12CD3765F20b7679Def0f51`](https://etherscan.io/address/0xbeef088055857739C12CD3765F20b7679Def0f51) |
+| Oracle: `NullV1ChainlinkOracleV11` | [`0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7`](https://etherscan.io/address/0x385419E55b621d0cafbe4ecB87aC16Abe530Eab7) |
+| Funding-rate model: enabled FRM | [`0x2eb3468fb9ca9A1227e0Bc96B984aee9FEEBc245`](https://etherscan.io/address/0x2eb3468fb9ca9A1227e0Bc96B984aee9FEEBc245) |
 
 The oracle is a Chainlink Data Streams V11 oracle. Fetch the signed report for the feed that matches the current 
 market status as described in [Oracles](/markets/oracles), and route updates through `NullV1Router`.
