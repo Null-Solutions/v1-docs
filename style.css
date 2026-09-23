@@ -351,3 +351,14 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   color: #ffffff !important;
   border-bottom-color: #ffffff;
 }
+
+/* Address tables: keep hex addresses on one line and scroll the table instead of wrapping. */
+#content-area table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+
+#content-area table code {
+  white-space: nowrap;
+}
