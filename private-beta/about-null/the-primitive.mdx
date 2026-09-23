@@ -121,17 +121,17 @@ Minting or burning by others changes pool size and your percentage. Your share o
 
 ### Funding at different coverage
 
-Using the standard model (`c = 0.5`, `mu = 1`) and `R = 1,000`. Values are annualized before time prorating:
+Using the standard model (`c = 1`, `mu = 1`) and `R = 1,000`. Values are annualized before time prorating:
 
 | Payer `P` | Coverage | Funding APR `f` | Annual transfer | Direction |
 | --------: | -------: | --------------: | --------------: | --------- |
-|       100 |      10% |          +66.7% |             667 | Receiver → Payer |
-|       500 |      50% |              0% |               0 | None |
-|     1,000 |     100% |          -33.3% |             333 | Payer → Receiver |
+|       200 |      20% |          +66.7% |             667 | Receiver → Payer |
+|     1,000 |     100% |              0% |               0 | None |
+|     2,000 |     200% |          -33.3% |             333 | Payer → Receiver |
 
-At `P = 100`, a Payer holder with `p = 25` (25% of the pool) has notional `p * L = 25 * 10 = 250`, so their annualized funding receipt is about `250 * 66.7% ≈ 167` before settlement caps and elapsed-time prorating.
+At `P = 200`, a Payer holder with `p = 50` (25% of the pool) has notional `p * L = 50 * 5 = 250`, so their annualized funding receipt is about `250 * 66.7% ≈ 167` before settlement caps and elapsed-time prorating.
 
-Funding can reverse as coverage moves through the 50% target. It is not guaranteed yield.
+Funding can reverse as coverage moves through the 100% target. It is not guaranteed yield.
 
 ## Funding and coverage
 
@@ -147,22 +147,22 @@ Define Payer coverage as `q = P / R`. The standard model calculates:
 f = mu * (c - q) / (c + q)
 ```
 
-`c` is the target coverage and `mu` controls the curve's maximum magnitude. The standard deployment uses `c = 0.5` and `mu = 1`:
+`c` is the target coverage and `mu` controls the curve's maximum magnitude. The standard deployment uses `c = 1` and `mu = 1`:
 
 <Frame>
   <img
     className="block dark:hidden"
     src="/images/funding-rate-vs-coverage-light.svg"
-    alt="Funding rate versus Payer coverage: positive below the 50% target, zero at target, negative above it"
+    alt="Funding rate versus Payer coverage: positive below the 100% target, zero at target, negative above it"
   />
   <img
     className="hidden dark:block"
     src="/images/funding-rate-vs-coverage-dark.svg"
-    alt="Funding rate versus Payer coverage: positive below the 50% target, zero at target, negative above it"
+    alt="Funding rate versus Payer coverage: positive below the 100% target, zero at target, negative above it"
   />
 </Frame>
 
-Funding is positive below 50% coverage, zero at 50%, and negative above 50%. The curve is annualized and bounded by `-mu` and `+mu`. If either pool is empty, funding and price PnL are both zero.
+Funding is positive below 100% coverage, zero at 100%, and negative above 100%. The curve is annualized and bounded by `-mu` and `+mu`. If either pool is empty, funding and price PnL are both zero.
 
 If `f` is the signed market funding APR, it applies to Receiver notional:
 

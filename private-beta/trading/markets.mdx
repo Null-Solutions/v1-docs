@@ -41,7 +41,7 @@ Payer coverage = Payer pool assets / Receiver pool assets
 
 A large total market can still have low Payer coverage. Payer's instantaneous leverage is `L = R / P`. Lower coverage means higher leverage, so the same transfer can represent a larger percentage change in Payer share value.
 
-Funding also responds to coverage. For the standard funding-rate model, funding is zero at the model's target coverage, not necessarily when both pools are equal. Check the current signed funding rate and the market's funding-rate model before choosing a side.
+Funding also responds to coverage. For the standard funding-rate model, funding is zero at 100% Payer coverage (`P = R`). Another enabled model can use a different target. Check the current signed funding rate and the market's funding-rate model before choosing a side.
 
 <Warning>
 A visible market is not always available for a transaction. **Closed** markets cannot be traded. **No payer funds** means two-sided price exposure cannot operate until the Payer pool has assets. Missing or invalid oracle data can also block a transaction.

@@ -8,7 +8,7 @@ Null V1 is fully collateralized, but every position can lose value. Full collate
 
 ## Directional and reserve risk
 
-Receiver gains from an ordinary settled price increase and loses from a decrease. Signed funding can add to or offset that return. With the standard script parameters, Receiver pays funding when Payer coverage is below `P = 0.5R` and receives it above that target.
+Receiver gains from an ordinary settled price increase and loses from a decrease. Signed funding can add to or offset that return. With the standard script parameters, Receiver pays funding when Payer coverage is below `P = R` and receives it above that target.
 
 Payer takes the opposite price transfer at instantaneous leverage `L = R / P`. When the Payer pool is small relative to Receiver, leverage is higher and sustained price increases can consume a larger fraction of its assets. Moves inside the circuit-breaker threshold settle in full. Thin Payer coverage also caps how much Receiver can collect from an increase.
 
@@ -92,7 +92,7 @@ For the standard imbalance FRM:
 f = mu * (cR - P) / (cR + P)
 ```
 
-`c` controls the zero-funding coverage target, while `mu` controls sensitivity and bounds `|f|`. The standard deployment script uses `c = 0.5` and `mu = 1`, but these values belong to that FRM deployment, not to the market contract or every possible FRM. Selecting another enabled FRM can change the parameters or funding behavior.
+`c` controls the zero-funding coverage target, while `mu` controls sensitivity and bounds `|f|`. The standard deployment script uses `c = 1` and `mu = 1`, but these values belong to that FRM deployment, not to the market contract or every possible FRM. Selecting another enabled FRM can change the parameters or funding behavior.
 
 ## Evaluation checklist
 

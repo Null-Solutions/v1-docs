@@ -85,7 +85,7 @@ The FRM sees post-reconciliation, post-collateral-fee state. It returns a signed
 - negative: Payer pays Receiver;
 - zero: no funding transfer.
 
-For the standard imbalance FRM using the deployment script's `c = 0.5` and `mu = 1` parameters:
+For the standard imbalance FRM using the deployment script's `c = 1` and `mu = 1` parameters:
 
 ```text
 f = mu * (cR - P) / (cR + P)
@@ -144,18 +144,18 @@ Assume 6-decimal collateral, no balance reconciliation change, no collateral fee
 
 ```text
 Receiver R = 1,200 collateral units
-Payer    P =   300 collateral units
+Payer    P =   600 collateral units
 old price  = 100 × 1e36
 new price  = 102 × 1e36
 elapsed    = 36.5 days = 10% of 365 days
-c = 0.5, mu = 1
+c = 1, mu = 1
 ```
 
 The standard imbalance FRM returns positive one-third funding:
 
 ```text
-f = (0.5 × 1,200 - 300) / (0.5 × 1,200 + 300)
-  = 300 / 900
+f = (1 × 1,200 - 600) / (1 × 1,200 + 600)
+  = 600 / 1,800
   = +1/3
 
 funding = 1,200 × 1/3 × 10% = 40
@@ -176,7 +176,7 @@ net into Receiver = +24 - 40 = -16
 final flow         = 16 Receiver → Payer
 
 Receiver: 1,200 → 1,184
-Payer:      300 →   316
+Payer:      600 →   616
 ```
 
 For 6-decimal collateral, `MIN_POOL_ASSETS = 1e6` raw units equals one collateral unit. The Receiver debit cap is therefore `1,200 - 1 = 1,199`, so the `16` transfer settles in full. Solidity performs each fixed-point operation in raw integer units and applies the contract's rounding; this example is labeled simplified to show order, sign, netting, and the cap.

@@ -1,0 +1,90 @@
+---
+title: "FAQ"
+sidebarTitle: "FAQ"
+description: "Answers to common questions about Null, yield, positions, risk, and the private beta."
+---
+
+## What Null is
+
+<AccordionGroup>
+  <Accordion title="What is Null?">
+    Null lets you hold price exposure to any asset with a price feed while your collateral keeps earning DeFi yield. It is synthetic spot, built for holding, not trading.
+  </Accordion>
+  <Accordion title="How is this different from a perps DEX?">
+    Perps are built for trading with leverage. Null is built for holding exposure. Positions are pooled and fully collateralized. There is no account leverage to configure, no margin calls, no order book, and no stop orders. If you want 10x for a week, use a perp. If you want to hold an asset and earn yield while you do, use Null.
+  </Accordion>
+  <Accordion title="How does it work?">
+    Two pools face one price feed. Receivers deposit collateral and get the asset's price exposure. Payers take the other side and earn a funding rate for it. The protocol redistributes collateral yield and funding between the two pools. See [The primitive](/private-beta/about-null/the-primitive).
+  </Accordion>
+  <Accordion title="What do I actually hold?">
+    An ERC-4626 vault share carrying your exposure plus the yield. It is a standard token, so it can be used across DeFi, for example as collateral. See [Position types](/private-beta/trading/position-types).
+  </Accordion>
+  <Accordion title="Do I own the underlying asset?">
+    No. Null gives you synthetic exposure. Your position tracks the reference price through collateralized pools, but the referenced asset itself is not held for you. See [The primitive](/private-beta/about-null/the-primitive).
+  </Accordion>
+  <Accordion title="How is this different from tokenized assets (RWAs)?">
+    Tokenized securities are issued by an issuer that holds the underlying. Null has no issuer and holds no underlying. Your position is a wallet-held claim on an onchain pool that tracks the price. The dependencies are contracts, oracles, and pools, rather than an issuer.
+  </Accordion>
+  <Accordion title="What is the bigger picture?">
+    Any asset with a reliable price feed can become a holdable, yield-bearing position in a wallet. Because positions are standard tokens, other protocols can build on them. Null is a primitive, not just an app. The beta starts with one market to prove the mechanism.
+  </Accordion>
+</AccordionGroup>
+
+## Yield and funding
+
+<AccordionGroup>
+  <Accordion title="Where does the yield come from?">
+    Your collateral earns its native DeFi yield while it backs your position. Your net return is that yield, minus funding, plus the asset's price movement. See [Funding and carry](/learn/funding-and-carry).
+  </Accordion>
+  <Accordion title="Do I pay funding?">
+    Usually, yes. A signed funding rate flows between the pools. When positive, Receivers pay Payers. When negative, Payers pay Receivers. Collateral yield offsets funding, and net carry can be positive or negative depending on where the rate clears. See [Funding and carry](/learn/funding-and-carry).
+  </Accordion>
+  <Accordion title="Why would anyone take the other side?">
+    Funding is the Payer's income when the rate is positive. Payers are typically professional desks that earn it while hedging their exposure elsewhere: a market-neutral strategy built on an external hedge. See [Market making](/private-beta/market-make/overview).
+  </Accordion>
+</AccordionGroup>
+
+## Using Null
+
+<AccordionGroup>
+  <Accordion title="Is there slippage on large deposits?">
+    No order book is crossed. Minting moves the funding rate, not the price, and your exposure tracks the oracle. The market settles before your transaction converts, so confirmed output can differ slightly from the preview. See [Placing a position](/private-beta/trading/placing-a-position).
+  </Accordion>
+  <Accordion title="How do I exit?">
+    Burn your position and receive collateral at the settled oracle price. As with minting, the market settles first, so the confirmed output can differ from the preview. See [Placing a position](/private-beta/trading/placing-a-position).
+  </Accordion>
+  <Accordion title="What is live right now?">
+    S&P 500 exposure (State Street S&P 500 reference), collateralized with USDC in the Steakhouse USDC vault, on Ethereum mainnet. Anything with a reliable price feed can be added over time. See [Markets](/private-beta/trading/markets).
+  </Accordion>
+  <Accordion title="What are the fees?">
+    Markets can charge an entry fee when you mint and an exit fee when you burn, set per market and charged on notional. An annualized collateral fee exists but is disabled. Entry and exit fees usually go to the other pool rather than to Null. Check the live transaction preview for the selected market's rates. See [Trading fees](/private-beta/trading/fees).
+  </Accordion>
+  <Accordion title="Do I need to complete KYC?">
+    No. There is no identity-document verification. Connect your own wallet, or sign in with a third-party login like Google and a wallet is set up for you. During the private beta, access is still gated. See [Apply for beta](/private-beta/getting-started/null-private-beta).
+  </Accordion>
+</AccordionGroup>
+
+## Risk
+
+<AccordionGroup>
+  <Accordion title="Can I be liquidated?">
+    Your position cannot be liquidated. There is no leverage or margin on the Receiver side. Risk sits at the pool level instead. See [What are the risks?](/private-beta/getting-started/before-you-trade).
+  </Accordion>
+  <Accordion title="What are the risks?">
+    Position risk (both sides can lose substantially), smart contract risk, oracle risk, collateral and vault risk, tracking error, and pool solvency. In extreme moves the paying side can be depleted, which affects payouts. Read the risk pages before depositing. See [Risks](/private-beta/getting-started/before-you-trade).
+  </Accordion>
+  <Accordion title="Has Null been audited?">
+    Yes. Nethermind Security completed a review of the Null V1 contracts (final report August 2026): five findings, all fixed, none critical or high. An audit does not guarantee safety. Read the risk pages alongside it. See [Audits](/private-beta/support/audits).
+  </Accordion>
+</AccordionGroup>
+
+## Beta
+
+<AccordionGroup>
+  <Accordion title="How do I join the beta?">
+    Apply in the app: sign in, add your name and email, sign the Beta Participation Agreement, and wait for your wallet to be approved onchain. The beta is invitation-only, time-limited, and not offered in the UK. See [Apply for beta](/private-beta/getting-started/null-private-beta).
+  </Accordion>
+  <Accordion title="What are Points?">
+    Non-transferable accounting entries that measure beta participation and referrals. They are not money, yield, or a promise of any token, allocation, or payout. See [Points and referrals](/private-beta/status-and-points/points-and-referrals).
+  </Accordion>
+</AccordionGroup>

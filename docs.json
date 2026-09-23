@@ -220,6 +220,12 @@
             "pages": [
               "private-beta/legal/private-beta-notices"
             ]
+          },
+          {
+            "group": "FAQ",
+            "pages": [
+              "private-beta/faq"
+            ]
           }
         ]
       },
