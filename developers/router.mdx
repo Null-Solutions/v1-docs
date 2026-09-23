@@ -55,7 +55,7 @@ function createMarket(
 ) external returns (INullV1Market market);
 ```
 
-The router optionally updates the oracle, then calls the supplied factory. It does **not** verify that the factory is a canonical Null deployment. Copy the factory from [Ethereum deployments](/resources/addresses) once published and validate untrusted configuration. Do not substitute an address from another network.
+The router optionally updates the oracle, then calls the supplied factory. It does **not** verify that the factory is a canonical Null deployment. Copy the factory from [Ethereum deployments](/resources/addresses) and validate untrusted configuration. Do not substitute an address from another network.
 
 The factory requires nonzero dependencies, an enabled FRM, a nonzero initial oracle price, and an unused `(collateral, oracle, frm)` tuple.
 

@@ -6,7 +6,7 @@ description: "Configure an Ethereum integration, discover a market, preview shar
 
 This guide targets Ethereum mainnet and shows an ERC-4626 collateral flow using the generic names `collateralVault` and `underlying`.
 
-Do not run the examples until [Ethereum deployments](/resources/addresses) publishes canonical deployment data. Never substitute addresses, deployment blocks, collateral, markets, or oracles from another network.
+Take every address and deployment block from [Ethereum deployments](/resources/addresses). Never substitute addresses, deployment blocks, collateral, markets, or oracles from another network.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ This page uses minimal inline ABIs because no ABI package is assumed. For produc
 
 ## 1. Build typed configuration
 
-Copy published values from [Ethereum deployments](/resources/addresses) once available. Keep infrastructure and selected-market data typed and explicit:
+Copy published values from [Ethereum deployments](/resources/addresses). Keep infrastructure and selected-market data typed and explicit:
 
 ```ts
 import type { Address } from "viem";
@@ -53,7 +53,7 @@ const config = {
 } satisfies IntegrationConfig;
 ```
 
-These are required inputs, not suggested constants. If any field is unavailable, stop configuration and wait for canonical publication.
+These are required inputs, not suggested constants. If any field is unavailable, stop configuration.
 
 ## 2. Create clients and minimal ABIs
 

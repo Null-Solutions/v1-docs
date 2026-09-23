@@ -55,7 +55,7 @@ function applySlippageFloor(quotedOutput: bigint): bigint {
 
 ## ERC-4626 collateral example
 
-This example redeems a caller's full Receiver balance from a published market whose collateral is an ERC-4626 vault. It assumes configured `publicClient`, `walletClient`, and `account` objects. Populate every address from canonical Ethereum deployment and market data once available; do not use placeholders in a transaction.
+This example redeems a caller's full Receiver balance from a published market whose collateral is an ERC-4626 vault. It assumes configured `publicClient`, `walletClient`, and `account` objects. Populate every address from [Ethereum deployments](/resources/addresses); do not use placeholders in a transaction.
 
 ```ts
 import { parseAbi, type Address } from "viem";
