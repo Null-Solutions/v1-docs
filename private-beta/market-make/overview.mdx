@@ -1,7 +1,7 @@
 ---
 title: "Market making"
 sidebarTitle: "Market making"
-description: "Learn how to supply Payer liquidity, hedge its price exposure, and operate a delta-neutral Null position."
+description: "Learn how to provide Payer liquidity, hedge its price exposure, and manage a delta-neutral position on Null."
 ---
 
 Market makers supply Payer collateral to back Receiver exposure. Economically, Payer is short the tracked asset on Null: it generally loses when the tracked price rises and gains when it falls. To reduce that directional exposure, a market maker can hold Payer on Null and buy the tracked asset, or a close equivalent, elsewhere.
@@ -19,7 +19,7 @@ A hedged Payer position has two coordinated legs:
 1. **Null Payer:** supplies backing, receives or pays Null funding, and shares in collateral yield.
 2. **External long:** offsets Payer's synthetic short exposure to the tracked asset.
 
-The external venue must list a sufficiently close market. Null's reference hedger currently uses Hyperliquid perpetuals, but the hedge formula is venue-independent.
+The external venue needs a market that closely tracks the same asset. Null's reference hedger currently uses Hyperliquid perpetuals, but the hedge formula is venue-independent.
 
 ## Size the hedge
 
@@ -70,7 +70,7 @@ The market maker holds the Null Payer shares and opens a long of `0.50` tracked-
 
 ## Why price moves do not normally trigger a rebalance
 
-During a full, ordinary price settlement, the oracle price and Receiver assets move together. Your Payer claim changes by the matching opposite transfer. These changes cancel inside the hedge formula, leaving `h` unchanged in the model.
+During a normal price settlement, the oracle price and Receiver assets move together while your Payer position moves in the opposite direction. These changes offset each other in the hedge formula, leaving `h` unchanged.
 
 The hedger should not chase every price move. Recompute from fresh state when flows, funding, or your Payer holdings change the position's actual exposure.
 
@@ -94,7 +94,7 @@ Protocol events simplify that expression:
 
 For a large deposit by other Payers, use the exact target multiplier `P / (P + ΔP)` rather than the small-flow approximation.
 
-Circuit-breaker events, solvency-floor truncation, and stale market state can break the ordinary price-settlement assumptions. The operator should suspend automated resizing and reassess both legs.
+Circuit-breaker events, solvency-floor truncation, and stale market state can break the assumptions used for normal price settlement. In these cases, suspend automated resizing and reassess both legs.
 
 The reference hedger recomputes the target from fresh pool state instead of accumulating estimated deltas.
 
@@ -107,11 +107,11 @@ lower bound = h * (1 - tol)
 upper bound = h * (1 + tol)
 ```
 
-Only rebalance when the external position leaves that band. The reference implementation defaults to a `0.5%` tolerance and also holds corrections that are below the venue's minimum order size.
+Only rebalance when the external position leaves that band. The reference implementation uses a default `0.5%` tolerance and waits when the required adjustment is below the venue's minimum order size.
 
 ## Evaluate expected carry
 
-Hedging reduces directional price exposure, but it does not make the position profitable. Estimate the carry from both legs before opening the trade.
+Hedging can reduce directional price exposure, but it does not guarantee a profitable position. Estimate the carry from both legs before opening the trade.
 
 Let:
 
@@ -157,7 +157,7 @@ If external funding rises to `3%`, projected annual net carry becomes `-$2.50`. 
 
 ### Screen the opportunity
 
-Subtract entry and exit fees, expected rebalancing costs, slippage, gas, external margin opportunity cost, and a conservative basis-loss allowance from projected carry.
+When estimating projected carry, account for entry and exit fees, rebalancing costs, slippage, gas, external margin opportunity cost, and potential basis losses.
 
 Review:
 
@@ -223,4 +223,4 @@ Null's reference hedger is an operator tool, not part of the protocol:
 - it defaults to dry-run mode; and
 - it records venue funding, fills, fees, and PnL from Hyperliquid's ledger rather than estimating them.
 
-The worker never opens or closes the Null Payer position. The operator controls that leg and remains responsible for capital, keys, venue setup, monitoring, and emergency procedures.
+The reference hedger never opens or closes the Null Payer position. The operator controls that leg and remains responsible for capital, keys, venue setup, monitoring, and emergency procedures.

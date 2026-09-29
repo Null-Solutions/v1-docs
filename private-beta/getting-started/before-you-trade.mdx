@@ -4,20 +4,20 @@ sidebarTitle: "Risks"
 description: "Review the main risks of Receiver and Payer positions before using real assets."
 ---
 
-Null's private beta uses Ethereum mainnet assets. Receiver and Payer positions can lose most of their value. Review the market, contracts, and transaction preview before you Mint.
+Null's private beta uses assets on Ethereum mainnet. Receiver and Payer positions can lose most of their value. Review the market, contracts, and transaction preview before you mint.
 
 ## Position risk
 
-- **Receiver** takes the tracked oracle return and can lose when that return falls.
-- **Payer** takes the opposite transfer at instantaneous leverage `L = R / P`. Lower Payer coverage means higher leverage and larger percentage moves in Payer share value.
-- Funding can change sign. A rate shown now is not guaranteed for the life of a position.
+- **Receiver** follows the tracked oracle return, so its position value can fall when the tracked price falls.
+- **Payer** takes the opposite side of the price transfer at current leverage `L = R / P`. Lower Payer coverage means higher leverage and larger percentage changes in Payer share value.
+- Funding can change direction. The rate you see now is not guaranteed for the life of the position.
 
 Read [The primitive](/private-beta/about-null/the-primitive) and [Position types](/private-beta/trading/position-types) before choosing a side.
 
 ## Market and execution risk
 
-- A transaction settles the market before converting collateral and shares, so confirmed output can differ from the preview.
-- Thin pools, other users' flows, fees, and slippage protections can change or block execution.
+- A transaction settles the market before collateral and shares are converted, so the final output can differ from the preview.
+- Thin pools, other users' activity, fees, and slippage protections can change the outcome or prevent execution.
 - Pool shares may be transferable, but that does not guarantee a secondary market or immediate liquidity.
 - Null has no order book, stop orders, or configurable account leverage.
 
@@ -25,24 +25,24 @@ Review [Markets](/private-beta/trading/markets), [Placing a position](/private-b
 
 ## Oracle and circuit-breaker risk
 
-The market settles against its configured oracle, not an external venue's executable price. Missing or stale data can block settlement-dependent actions.
+The market settles using its configured oracle price, not the live executable price on an external venue. Missing or stale data can block settlement-dependent actions.
 
-When an accepted price move exceeds the time-adjusted circuit-breaker threshold, the market skips that update's price PnL and adopts the new price as its baseline. Funding can still settle. This limits a specific transfer; it does not prove the oracle price is correct or compensate skipped PnL.
+If an accepted price move exceeds the time-adjusted circuit-breaker threshold, the market skips the price PnL for that update and uses the new price as its next baseline. Funding can still settle. This limits the size of a specific transfer, but it does not guarantee the oracle price is correct or recover any skipped PnL.
 
 See [Circuit breaker](/security/circuit-breaker) for the exact behavior.
 
 ## Collateral risk
 
-Collateral can lose value independently of the tracked asset. Yield-bearing collateral also introduces vault, withdrawal, and conversion risks. Verify the collateral contract in the app against [Ethereum deployments](/resources/addresses) before transferring assets.
+Collateral can lose value independently of the tracked asset. Yield-bearing collateral also introduces additional risks around the vault, withdrawals, and conversions. Verify the collateral contract in the app against [Ethereum deployments](/resources/addresses) before transferring assets.
 
 ## Contract and administration risk
 
-Smart-contract bugs can cause loss. Existing markets fix their collateral, oracle, funding-rate model, and pool addresses, but immutability does not guarantee correct code.
+Smart-contract bugs can cause losses. Existing markets have fixed collateral, oracle, funding-rate model, and pool addresses, but immutability does not guarantee that the code is correct.
 
-The factory owner can enable funding-rate models for future markets, set fees within contract caps, and collect reserved protocol fees. Entry and exit usually credit the other pool. The owner cannot replace an existing market's dependencies or withdraw pool-allocated collateral as an admin balance.
+The factory owner can enable funding-rate models for future markets, set fees within contract caps, and collect reserved protocol fees. The owner cannot replace an existing market's dependencies or withdraw collateral allocated to the pools.
 
-Nethermind Security reviewed the Null V1 contracts. A completed audit does not prove the protocol is bug-free. Read the [audit status](/private-beta/support/audits) and the full [risks and parameters](/learn/risks-and-parameters).
+Nethermind Security reviewed the Null V1 contracts. An audit reduces risk, but it does not guarantee the protocol is bug-free. Read the [audit status](/private-beta/support/audits) and the full [risks and parameters](/learn/risks-and-parameters).
 
 <Warning>
-Only transact with assets you can afford to lose. Verify the network, market, collateral, oracle, fees, pool balances, and connected wallet before confirming.
+Only transact with assets you can afford to lose. Before confirming, verify the network, market, collateral, oracle, fees, pool balances, and connected wallet.
 </Warning>

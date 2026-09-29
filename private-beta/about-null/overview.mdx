@@ -1,25 +1,25 @@
 ---
 title: "Private beta overview"
 sidebarTitle: "Overview"
-description: "Hold stocks and shares as ERC-20 tokens. Payers market-make them and earn funding."
+description: "Get on-chain price exposure to stocks and shares through ERC-20 tokens. Market makers provide the backing and earn funding."
 ---
 
-Null lets you hold stocks and shares as **ERC-20 tokens** in your wallet.
+Null lets you hold **ERC-20 tokens designed to track the price of stocks and shares** in your wallet.
 
 You deposit collateral, mint, and get a token that tracks the stock. You do not buy the real share. You do not borrow it.
 
-Someone has to back those tokens. That is the **Payer**. Payers market-make the inventory and earn **funding** for doing it.
+On the other side are **Payers**. They provide the backing that makes Receiver positions possible and earn **funding** for doing it.
 
 ## Two sides
 
-Every market has a Receiver side and a Payer side.
+Every Null market has two sides: **Receivers**, who want price exposure, and **Payers**, who provide the backing for it.
 
-### Receiver: hold the stock token
+### Receiver: get price exposure
 
-Mint **Receiver** if you want the token.
+Choose **Receiver** if you want exposure to the asset's price through an ERC-20 token.
 
-- You get an ERC-20 that tracks the stock or share.
-- If the price goes up, the token is worth more. If it goes down, it is worth less.
+- You get an ERC-20 designed to track the price of the underlying stock or share.
+- If the asset's price goes up, the token's value goes up. If it goes down, the token's value goes down.
 - There is no leverage setting and no liquidation of your Receiver account.
 - Burn the token when you want your collateral back.
 
@@ -28,15 +28,15 @@ Mint **Receiver** if you want the token.
   the market's price already includes them. You can still lose money.
 </Info>
 
-### Payer: market-make it for funding
+### Payer: provide backing and earn funding
 
-Mint **Payer** if you want to back those tokens and earn funding.
+Choose **Payer** if you want to provide backing for Receiver tokens and earn funding.
 
-Receivers need someone on the other side. You put up collateral to back their tokens. You lose when the stock goes up and gain when it goes down.
+Receivers need someone on the other side. Payers provide collateral to back the Receiver's tokens. If the stock goes up, Payers lose. If it goes down, they gain.
 
-You get paid **funding** for providing that backing, especially when there is not enough of it. Many Payers also buy the real stock elsewhere so the price risk cancels out. What is left is funding, plus any yield on the collateral, minus the cost of the hedge.
+You get paid **funding** for providing that backing, especially when there is not enough of it. Many Payers also buy the underlying real stock elsewhere to help offset price risk. What remains is funding, plus any yield on the collateral, minus the cost of the hedge.
 
-Funding can flip sign. The hedge can cost more than it returns. In the private beta you run this yourself. Null does not offer a one-click strategy.
+Funding can flip sign. The hedge can cost more than it returns. During the private beta, Payers manage this strategy themselves. Null does not offer a one-click hedging strategy.
 
 ## How the app works
 
@@ -45,7 +45,7 @@ Funding can flip sign. The hedge can cost more than it returns. In the private b
     Pick a stock or share. Check the price, collateral, pool sizes, funding, and fees.
   </Step>
   <Step title="Choose Receiver or Payer">
-    Receiver: hold the token. Payer: market-make it for funding.
+    Receiver: get price exposure. Payer: provide backing and earn funding.
   </Step>
   <Step title="Mint">
     Deposit collateral. Receiver gets the stock token. Payer gets the backing token.
@@ -58,15 +58,15 @@ Funding can flip sign. The hedge can cost more than it returns. In the private b
   </Step>
 </Steps>
 
-## What you own
+## What sits in your wallet
 
 The ERC-20 sits in your wallet. The collateral sits in the market contracts.
 
-A Receiver token tracks the stock. It is not the stock. Its value can change with price, funding, fees, and the collateral itself.
+A Receiver token is designed to track the price of the underlying stock or share. It is not the underlying asset. Its value can also be affected by funding, fees, and the collateral used by the market.
 
 ## Private beta access
 
-The private beta is invitation-only on Ethereum mainnet. It is a short technical test. It is not a launch, and it may end at any time.
+The private beta is invitation-only and runs on Ethereum mainnet. It is a limited technical test, not a public launch, and may end at any time.
 
 Approved participants can:
 

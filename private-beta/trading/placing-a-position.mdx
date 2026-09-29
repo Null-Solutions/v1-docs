@@ -1,12 +1,12 @@
 ---
 title: "Placing a position"
 sidebarTitle: "Placing a position"
-description: "Mint or burn a Receiver or Payer position in a Null market."
+description: "Open or exit a Receiver or Payer position by minting or burning in a Null market."
 ---
 
-Null's trading page uses **Mint** and **Burn** for Receiver and Payer pool positions.
+In Null, **Mint** opens a Receiver or Payer position, while **Burn** exits it.
 
-Before submitting, review the selected market's [fees](/private-beta/trading/fees). Live values come from the current preview, not the illustrative examples in the docs.
+Before submitting, review the selected market's [fees](/private-beta/trading/fees). Use the current preview for live values. Examples in the docs are illustrative only.
 
 ## Mint a position
 
@@ -15,19 +15,19 @@ Before submitting, review the selected market's [fees](/private-beta/trading/fee
     Open `/markets` and select a market. Check its status, oracle price, collateral, Receiver and Payer liquidity, funding, and fees.
   </Step>
   <Step title="Choose Receiver or Payer">
-    Select the side that matches the exposure you want. Read [Position types](/private-beta/trading/position-types) before continuing.
+    Choose the side that matches the price exposure you want. Read [Position types](/private-beta/trading/position-types) before continuing.
   </Step>
   <Step title="Select Mint and enter collateral">
     Choose **Mint** and enter the collateral amount to deposit. If your wallet does not hold enough collateral, fund it before continuing.
   </Step>
   <Step title="Review the preview">
-    Check the selected side, current and next balance, estimated pool shares, estimated position size, Payer bias when applicable, entry fee, and market status. Expand **Advanced details** to verify the market, pool, network, price, liquidity, and fee rate.
+    Check your selected side, current and next balance, estimated pool shares, position size, Payer bias when applicable, entry fee, and market status. Expand **Advanced details** to verify the market, pool, network, price, liquidity, and fee rate.
   </Step>
   <Step title="Approve collateral">
-    If prompted, approve the router to spend the required collateral. Approval permits spending; it does not mint the position. Rejecting or failing the approval stops the flow.
+    If prompted, approve the router to use the required collateral. This only gives permission to spend the collateral; it does not mint your position. If the approval is rejected or fails, the mint will not continue.
   </Step>
   <Step title="Submit the mint">
-    Confirm the transaction in your wallet. The market settles first, then deposits collateral and mints pool shares. Wait for onchain confirmation before treating the displayed position as final.
+    Confirm the transaction in your wallet. The market settles first, then your collateral is deposited and pool shares are minted. Wait for onchain confirmation before treating the displayed position as final.
   </Step>
 </Steps>
 
@@ -38,10 +38,10 @@ Before submitting, review the selected market's [fees](/private-beta/trading/fee
     Open the same market from `/markets`. Connect the wallet that holds the pool shares.
   </Step>
   <Step title="Select the side and Burn">
-    Choose the Receiver or Payer pool that holds your shares, then select **Burn**.
+    Choose the Receiver or Payer position you want to exit, then select **Burn**.
   </Step>
   <Step title="Enter the amount">
-    Enter the shares or position value to redeem. Do not exceed the available balance.
+    Enter how much of the position you want to redeem, up to your available balance.
   </Step>
   <Step title="Review the preview">
     Check the shares to burn, estimated collateral output, next position and balance, exit fee, market status, and advanced details.
@@ -50,30 +50,30 @@ Before submitting, review the selected market's [fees](/private-beta/trading/fee
     If prompted, approve the router to spend the selected pool shares. This approval is separate from a collateral approval used to mint.
   </Step>
   <Step title="Submit the burn">
-    Confirm the transaction. The market settles before your shares are converted, the shares are burned, and the resulting collateral is returned to your wallet.
+    Confirm the transaction. The market settles first, then your shares are burned and the resulting collateral is returned to your wallet.
   </Step>
 </Steps>
 
 ## Why the confirmed result can differ
 
-The preview includes the relevant entry or exit fee, but it uses the latest available state. Execution settles the market before the mint or burn. Price movement, funding, collateral fees, collateral gains or losses, and other transactions can change the share conversion before confirmation.
+The preview includes the relevant entry or exit fee, but it is based on the latest available state. The market settles again when your mint or burn executes. Price movement, funding, collateral performance, fees, and other transactions can change the final share conversion before confirmation.
 
-Treat estimated output and position value as estimates. Review the final wallet and pool-share balances after confirmation.
+Estimated output and position value may change before confirmation. Review the final wallet and pool-share balances after confirmation.
 
 ## Common failure modes
 
 | Message or symptom | What to check |
 | --- | --- |
 | Market is closed or unavailable | Confirm the current market status. A visible market is not necessarily open for transactions. |
-| No Payer funds | The market needs Payer collateral for two-sided exposure. Check whether the app permits adding Payer collateral; otherwise choose another available market or wait for liquidity. |
+| No Payer funds | The market needs collateral in the Payer pool before Receiver exposure can operate. If available, add Payer collateral; otherwise choose another market or wait for liquidity. |
 | Price unavailable or oracle update fails | Wait for valid price data and retry. A stale, zero, or invalid oracle price can block settlement. |
-| Insufficient collateral | Lower the mint amount or add the market's collateral token to the connected wallet. |
+| Insufficient collateral | Lower the mint amount or add more of the market's supported collateral to your connected wallet. |
 | Insufficient pool shares | Lower the burn amount and confirm that the connected wallet owns shares on the selected side. |
-| Allowance too low | Complete the requested collateral or pool-share approval, then resubmit the action. |
-| Slippage exceeded | Refresh the preview. Market settlement changed the result beyond the transaction's protection. |
+| Allowance too low | Complete the required collateral or pool-share approval, then try the transaction again. |
+| Slippage exceeded | Refresh the preview. The market moved beyond the transaction's allowed slippage. |
 | Transaction deadline expired | Refresh and submit a new transaction. |
-| Insufficient network funds | Add enough native network token to pay gas or any required oracle update fee. |
-| Wallet request rejected | Start the action again and approve each required request. |
+| Insufficient network funds | Add enough ETH to cover gas and any required oracle update fee. |
+| Wallet request rejected | Start the transaction again and approve each required wallet request. |
 
 For additional recovery steps and the information to include when requesting help, see [Trading support](/private-beta/support/trading).
 

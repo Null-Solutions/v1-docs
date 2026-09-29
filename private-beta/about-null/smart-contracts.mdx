@@ -1,10 +1,10 @@
 ---
 title: "Smart contracts"
 sidebarTitle: "Smart contracts"
-description: "A high-level map of Null's contract structure: factory, market, pools, and helpers."
+description: "A high-level look at Null's contract structure: factory, market, pools, and supporting contracts."
 ---
 
-Null's private beta runs on Ethereum mainnet smart contracts. This page is a structural overview. For ABIs, function surfaces, and integration detail, use the [Developers](/developers/overview) docs.
+Null's private beta runs on Ethereum mainnet smart contracts. This page gives a structural overview. For ABIs, functions, and integration details, see the [Developers](/developers/overview) docs.
 
 ## Structure
 
@@ -27,21 +27,21 @@ A market is uniquely identified by an immutable tuple:
 (collateral, oracle, funding-rate model)
 ```
 
-Different dependencies create a different market. Those addresses cannot be swapped on an existing market.
+A different set of dependencies creates a different market. Once a market is created, those addresses cannot be changed.
 
 ## Core contracts
 
 ### Factory
 
-`NullV1Factory` creates and registers markets. Creation is permissionless for enabled funding-rate models. Use the canonical factory on the [addresses page](/resources/addresses) when verifying a market.
+`NullV1Factory` creates and registers markets. Anyone can create a market using an enabled funding-rate model. Use the canonical factory on the [addresses page](/resources/addresses) when verifying a market.
 
 ### Market
 
-`NullV1Market` holds the collateral, tracks how much belongs to each pool, and settles price PnL, funding, and fees. Settlement runs when someone interacts with a pool. There is no separate public poke each block.
+`NullV1Market` holds the collateral, tracks how much belongs to each pool, and settles price PnL, funding, and fees. Settlement happens when someone interacts with a pool. There is no separate action required each block.
 
 ### Receiver and Payer pools
 
-Each market has two `NullV1Pool` contracts. Both issue transferable ERC-4626 shares. The pools track ownership; the market holds the collateral.
+Each market has two `NullV1Pool` contracts: Receiver and Payer. Both issue transferable ERC-4626 shares. The pools track ownership, while the market holds the collateral.
 
 ## Supporting contracts
 
@@ -56,7 +56,7 @@ Each market has two `NullV1Pool` contracts. Both issue transferable ERC-4626 sha
 
 **Fixed per market:** collateral, oracle, FRM, Receiver pool, and Payer pool.
 
-**Factory owner can:** enable FRMs for future markets, set fees within contract caps, and collect reserved protocol fees. Entry and exit usually credit the other pool. The owner cannot replace an existing market's dependencies or withdraw pool-allocated collateral as admin funds.
+**Factory owner can:** enable FRMs for future markets, set fees within contract caps, and collect reserved protocol fees. The owner cannot replace an existing market's dependencies or withdraw collateral allocated to the pools.
 
 ## Where to go next
 
@@ -66,5 +66,5 @@ Each market has two `NullV1Pool` contracts. Both issue transferable ERC-4626 sha
 - [Risks and parameters](/learn/risks-and-parameters)
 
 <Warning>
-Onchain structure lets you inspect the rules and state. It does not guarantee correct code, a correct oracle, safe collateral, or a profitable trade.
+Onchain structure lets you inspect the rules and state. It does not guarantee that the code or oracle is correct, that collateral is risk-free, or that a trade will be profitable.
 </Warning>

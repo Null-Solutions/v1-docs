@@ -1,15 +1,15 @@
 ---
 title: "The primitive"
 sidebarTitle: "The primitive"
-description: "Null is a two-pool system: Receiver and Payer share one market's collateral and settle against an oracle price."
+description: "Null uses a two-pool system: Receiver and Payer share a market's collateral and settle based on an oracle price."
 ---
 
-Null is a **two-pool system**. Every market has exactly two pools that face each other:
+Null is a **two-pool system**. Every market has two sides:
 
-- **Receiver** takes the oracle-tracked price return.
-- **Payer** backs that return and takes the other side.
+- **Receiver** gets the oracle-tracked price return.
+- **Payer** provides the backing and takes the other side.
 
-Both pools deposit the same collateral token into one market. The market holds the collateral and moves value between the pools when it settles. The protocol does not lend the tracked asset, open margin accounts, or liquidate individual users.
+Both pools use the same collateral token. The market holds that collateral and moves value between the pools at settlement. The protocol does not lend the tracked asset, open margin accounts, or liquidate individual users.
 
 <Frame>
   <img
@@ -32,7 +32,7 @@ Let `R` be Receiver pool assets and `P` be Payer pool assets.
 - When it **falls**, value normally moves from Receiver → Payer.
 - **Funding** also moves between the pools based on how much Payer coverage exists (`P / R`).
 
-Settlement can only redistribute collateral the market already holds, subject to a minimum-pool floor. Nobody borrows the tracked asset.
+Settlement only moves collateral already held by the market, subject to a minimum-pool floor. The tracked asset is never borrowed.
 
 <Info>
 You do not own or receive the tracked asset. A Receiver position does not include voting rights, dividends, or other ownership benefits unless the market's oracle return explicitly reflects them.
@@ -40,15 +40,15 @@ You do not own or receive the tracked asset. A Receiver position does not includ
 
 ## Positions
 
-A position is your share of one pool. You pick a side, deposit collateral, and receive transferable ERC-4626 shares in that pool. Your shares are a percentage of the whole pool, not a bilateral trade with a fixed entry price.
+A position is your share of one pool. You choose a side, deposit collateral, and receive transferable ERC-4626 shares. Your position represents a percentage of the pool, not a trade with a fixed counterparty or entry price.
 
 ### Receiver
 
-Receiver takes the tracked price return against its pool assets. A 5% accepted price increase credits Receiver by about 5% of Receiver assets. A 5% decrease debits it by about 5%, before funding, fees, collateral changes, and settlement bounds.
+Receiver follows the tracked price return. A 5% accepted price increase adds about 5% to Receiver assets. A 5% decrease reduces them by about 5%, before funding, fees, collateral changes, and settlement bounds.
 
 ### Payer
 
-Payer supplies the reserve that backs Receiver. It takes the opposite price transfer and earns or pays funding according to coverage.
+Payer provides the backing for Receiver. It takes the opposite side of the price movement and earns or pays funding based on coverage.
 
 Payer's **instantaneous leverage** is:
 
@@ -56,13 +56,13 @@ Payer's **instantaneous leverage** is:
 L = R / P
 ```
 
-`L` is not chosen by the trader and is not fixed at entry. It changes whenever either pool's assets change. A Payer holder with current position value `p` has notional:
+`L` is not chosen by the user or fixed when they enter. It changes as the assets in either pool change. A Payer holder with current position value `p` has notional:
 
 ```text
 Payer notional = p * L = p * R / P
 ```
 
-If coverage falls, leverage rises and the same Receiver-side transfer has a larger percentage effect on Payer share value.
+As coverage falls, Payer leverage rises. This means the same Receiver-side transfer has a larger impact on Payer share value.
 
 ## Worked examples
 
@@ -77,7 +77,7 @@ Receiver: 1,000 → 1,020
 Payer:      200 →   180
 ```
 
-Payer leverage is `L = 1,000 / 200 = 5×`. Receiver gains 2%. Payer pays the same 20-unit transfer, which is a 10% loss on its 200-unit pool:
+Payer leverage is `L = 1,000 / 200 = 5×`. Receiver increases by 2%. The same 20-unit transfer reduces the Payer pool by 10%:
 
 ```text
 Payer return ≈ -price move * L ≈ -2% * 5 ≈ -10%
@@ -92,7 +92,7 @@ Receiver: 1,000 →   980
 Payer:      200 →   220
 ```
 
-Receiver loses 2%. Payer gains the same 20 units, about +10% at `5×` leverage.
+Receiver decreases by 2%. Payer receives the same 20-unit transfer, increasing the pool by about 10% at `5×` leverage.
 
 ### Same move, different coverage
 
@@ -104,11 +104,11 @@ A 2% accepted price rise always moves about `0.02 * R` from Payer to Receiver. C
 |       200 |            20% |          5× |       20 |     +2% |        -10% |
 |       100 |            10% |         10× |       20 |     +2% |        -20% |
 
-Lower coverage means higher Payer leverage and a larger percentage impact on Payer for the same oracle move.
+Lower coverage means higher Payer leverage, so the same oracle move has a larger percentage impact on the Payer.
 
 ### Your share of a pool
 
-Pools are shared. If the Payer pool is `P = 200` and you hold `50` of it (25% of the pool), you take 25% of every Payer-side transfer.
+Pools are shared. If the Payer pool is `P = 200` and you hold `50` of it (25% of the pool), your position receives 25% of every Payer-side transfer.
 
 After the +2% price example above (`P: 200 → 180`):
 
@@ -117,7 +117,7 @@ Your Payer claim: 50 → 45
 Your return:      -10%  (same as the pool)
 ```
 
-Minting or burning by others changes pool size and your percentage. Your share of the next transfer changes with it.
+When others mint or burn, the pool size and your percentage can change. Your share of the next transfer changes with it.
 
 ### Funding at different coverage
 
@@ -135,7 +135,7 @@ Funding can reverse as coverage moves through the 100% target. It is not guarant
 
 ## Funding and coverage
 
-The funding-rate model encourages the market toward a target amount of Payer coverage:
+The funding-rate model is designed to move the market toward a target level of Payer coverage:
 
 - below target coverage, funding can flow from Receiver to Payer;
 - above target coverage, funding can flow from Payer to Receiver; and
@@ -176,7 +176,7 @@ A Payer holder with position value `p` has instantaneous notional `pL`, so their
 holder funding transfer = p * L * f
 ```
 
-Positive `f` means Receiver pays Payer. Negative `f` means Payer pays Receiver. Funding is variable, can reverse, and is not guaranteed yield.
+Positive `f` means funding moves from Receiver to Payer. Negative `f` means it moves from Payer to Receiver. Funding is variable, can reverse, and is not guaranteed yield.
 
 For the normalized curve and worked transfers, see [Funding and carry](/learn/funding-and-carry).
 
@@ -187,13 +187,13 @@ For the normalized curve and worked transfers, see [Funding and carry](/learn/fu
     Check the tracked price, collateral, oracle, funding-rate model, pool sizes, current funding, fees, and circuit-breaker behavior.
   </Step>
   <Step title="Choose a pool">
-    Mint into Receiver for the tracked return, or into Payer for the opposite return at current leverage `L = R / P`.
+    Choose Receiver for the tracked return, or Payer for the opposite return at the current leverage `L = R / P`.
   </Step>
   <Step title="Receive shares">
     Deposit collateral and receive ERC-4626 shares in that pool.
   </Step>
   <Step title="Monitor">
-    Pool sizes, funding, fees, collateral value, and oracle settlement can all change your share value.
+    Pool sizes, funding, fees, collateral value, and oracle settlement can all affect the value of your shares.
   </Step>
   <Step title="Burn shares">
     Redeem for your proportional claim after the market settles and applicable fees apply.
@@ -206,11 +206,11 @@ Pool shares are transferable, but that does not guarantee an active secondary ma
 
 Settlement is interaction-driven. Deposits, mints, withdrawals, and redemptions settle the market before continuing. There is no separate public keeper action that updates every block.
 
-During settlement, the market reconciles collateral, accrues fees, reads the oracle and funding-rate model, nets price PnL with funding, and updates each pool's collateral balance. Existing share counts do not change. The collateral value represented by each share does.
+During settlement, the market reconciles collateral, accrues fees, reads the oracle and funding-rate model, and nets price PnL with funding. It then updates each pool's collateral balance. The number of shares does not change, but the collateral value each share represents does.
 
 If an accepted oracle move exceeds the time-adjusted circuit-breaker threshold, the market skips that update's price transfer and records the new price as its next baseline. Funding can still settle. The skipped price PnL is not deferred.
 
-## What the market fixes
+## What stays fixed
 
 Each market is uniquely identified by three dependency addresses:
 

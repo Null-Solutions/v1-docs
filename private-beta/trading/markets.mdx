@@ -1,7 +1,7 @@
 ---
 title: "Markets"
 sidebarTitle: "Markets"
-description: "Browse available Null markets and review a market before trading."
+description: "Browse available Null markets and review the details before choosing a position."
 ---
 
 Open `/markets` to browse available markets. Select a row to open its market page.
@@ -14,19 +14,19 @@ The list can show the following fields when data is available:
 | --- | --- |
 | **Market** | The tracked asset and quote pair. The subtitle identifies the oracle source used when the market settles. |
 | **Last 7 days** | A chart of recent reference-price observations. It does not show executable orders. |
-| **Market price** | The latest available oracle reference price. It can differ from the price stored by the contract until the next update. |
+| **Market price** | The latest available oracle reference price. This may differ from the price currently stored by the contract until its next update. |
 | **7d change** | The percentage change across the displayed seven-day price series. |
 | **Market size** | The current collateral value of the Receiver and Payer pools combined. It is not trading volume or order-book depth. |
 | **Collateral APR** | The estimated annualized yield of the collateral asset. It is separate from funding and can change. |
 | **Funding APR** | The signed annualized rate produced by the market's funding-rate model. Positive means Receiver pays Payer. Negative means Payer pays Receiver. |
-| **Payer Bias** | A comparison of Receiver and Payer pool size shown in the Payer view. Use the underlying pool balances to judge how concentrated the Payer side is. |
+| **Payer Bias** | A comparison of Receiver and Payer pool sizes shown in the Payer view. Check the underlying pool balances to understand how concentrated the Payer side is. |
 | **Collateral** | The token deposited into both pools and returned when shares are burned. It is not necessarily the tracked asset. |
 
 The market page adds contract price, Receiver and Payer liquidity, fees, pool and contract addresses, charts, transaction history, and risk information.
 
-## Read depth as pool coverage
+## Understanding market depth through pool coverage
 
-Null does not use an order book. There are no bids, asks, or quoted depth levels. The relevant capacity is the collateral already in the two pools.
+Null does not use an order book, so there are no bids, asks, or quoted depth levels. Instead, market capacity comes from the collateral already held in the two pools.
 
 Compare:
 
@@ -35,18 +35,18 @@ Payer coverage = Payer pool assets / Receiver pool assets
 ```
 
 - **Market size** tells you how much collateral both pools hold in total.
-- **Receiver liquidity** tells you the pool value taking the tracked return.
-- **Payer liquidity** tells you the reserve taking the opposite price transfer.
-- **Payer coverage** tells you how much reserve backs each unit of Receiver collateral.
+- **Receiver liquidity** tells you how much collateral is currently on the Receiver side.
+- **Payer liquidity** tells you how much collateral is currently backing the Receiver side.
+- **Payer coverage** shows how much Payer collateral backs each unit of Receiver collateral.
 
-A large total market can still have low Payer coverage. Payer's instantaneous leverage is `L = R / P`. Lower coverage means higher leverage, so the same transfer can represent a larger percentage change in Payer share value.
+A large market can still have low Payer coverage. Payer leverage is `L = R / P`. As coverage falls, leverage rises, so the same transfer has a larger percentage impact on Payer share value.
 
-Funding also responds to coverage. For the standard funding-rate model, funding is zero at 100% Payer coverage (`P = R`). Another enabled model can use a different target. Check the current signed funding rate and the market's funding-rate model before choosing a side.
+Funding changes with coverage too. For the standard funding-rate model, funding is zero at 100% Payer coverage (`P = R`). Another enabled model can use a different target. Check the current signed funding rate and the market's funding-rate model before choosing a side.
 
 <Warning>
-A visible market is not always available for a transaction. **Closed** markets cannot be traded. **No payer funds** means two-sided price exposure cannot operate until the Payer pool has assets. Missing or invalid oracle data can also block a transaction.
+A visible market is not always available for a transaction. **Closed** markets cannot be traded. **No Payer funds** means Receiver positions cannot operate until there are assets in the Payer pool. Missing or invalid oracle data can also block a transaction.
 </Warning>
 
-Do not treat displayed APRs, pool balances, or previews as guaranteed execution values. A transaction settles the market before converting collateral and shares, so funding, price movement, fees, or collateral reconciliation can change the result.
+Displayed APRs, pool balances, and previews are **not** guaranteed execution values. The market settles before a transaction converts collateral and shares, so funding, price movement, fees, or collateral changes can affect the final result.
 
 Continue with [Position types](/private-beta/trading/position-types), then [Placing a position](/private-beta/trading/placing-a-position) and [Fees](/private-beta/trading/fees).
