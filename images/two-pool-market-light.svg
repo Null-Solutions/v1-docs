@@ -1,44 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" role="img" aria-label="A Null market holds all collateral and settles value between its Receiver and Payer pools">
-  <title>Two-pool market structure</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" role="img" aria-label="An oracle price feeds a Null market. The market holds nmUSDC collateral in two pools and settlement moves value between them.">
+  <title>Two pools, one pot of collateral</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2e8afa"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#afb4bc"/>
+    </marker>
+  </defs>
 
-  <!-- Collateral in (left) -->
-  <text x="82" y="84" text-anchor="end" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Receivers</text>
-  <line x1="90" y1="80" x2="210" y2="80" stroke="#afb4bc" stroke-width="1.25"/>
-  <polygon points="220,80 210,75.5 210,84.5" fill="#afb4bc"/>
-  <text x="150" y="66" text-anchor="middle" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">collateral in</text>
+  <rect x="290" y="28" width="180" height="52" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="380" y="50" text-anchor="middle" fill="#2d2c2c" font-size="12.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Oracle price</text>
+  <text x="380" y="68" text-anchor="middle" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">the price both pools settle on</text>
 
-  <!-- Collateral in (right) -->
-  <text x="558" y="84" text-anchor="start" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Payers</text>
-  <line x1="550" y1="80" x2="430" y2="80" stroke="#afb4bc" stroke-width="1.25"/>
-  <polygon points="420,80 430,75.5 430,84.5" fill="#afb4bc"/>
-  <text x="490" y="66" text-anchor="middle" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">collateral in</text>
+  <rect x="230" y="118" width="300" height="66" rx="12" fill="#ffffff" stroke="#2e8afa"/>
+  <text x="380" y="146" text-anchor="middle" fill="#2d2c2c" font-size="14" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">The market</text>
+  <text x="380" y="166" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">holds all of the collateral, in nmUSDC</text>
 
-  <!-- Market -->
-  <rect x="220" y="44" width="200" height="70" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="320" y="75" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Market</text>
-  <text x="320" y="94" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">holds all collateral</text>
+  <line x1="380" y1="80" x2="380" y2="110" stroke="#afb4bc" stroke-width="1.25" marker-end="url(#arrowGray)"/>
 
-  <!-- Market to pools elbow -->
-  <path d="M320,114 L320,150 M205,150 L435,150 M205,150 L205,182 M435,150 L435,182" fill="none" stroke="#afb4bc" stroke-width="1.25"/>
-  <polygon points="205,190 200.5,182 209.5,182" fill="#afb4bc"/>
-  <polygon points="435,190 430.5,182 439.5,182" fill="#afb4bc"/>
+  <rect x="60" y="232" width="210" height="76" rx="12" fill="#ffffff" stroke="#2e8afa"/>
+  <text x="165" y="262" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver pool</text>
+  <text x="165" y="282" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">gains when the price rises</text>
 
-  <!-- Receiver pool -->
-  <rect x="120" y="190" width="170" height="70" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="205" y="221" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver pool</text>
-  <text x="205" y="240" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">takes the tracked return</text>
+  <rect x="490" y="232" width="210" height="76" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="595" y="262" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Payer pool</text>
+  <text x="595" y="282" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">gains when the price falls</text>
 
-  <!-- Payer pool -->
-  <rect x="350" y="190" width="170" height="70" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="435" y="221" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Payer pool</text>
-  <text x="435" y="240" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">backs the other side</text>
+  <path d="M330,184 L210,224" fill="none" stroke="#afb4bc" stroke-width="1.25" marker-end="url(#arrowGray)"/>
+  <path d="M430,184 L550,224" fill="none" stroke="#afb4bc" stroke-width="1.25" marker-end="url(#arrowGray)"/>
 
-  <!-- Value transfer between pools -->
-  <line x1="300" y1="225" x2="340" y2="225" stroke="#2e8afa" stroke-width="1.5"/>
-  <polygon points="292,225 300,220.5 300,229.5" fill="#2e8afa"/>
-  <polygon points="348,225 340,220.5 340,229.5" fill="#2e8afa"/>
+  <line x1="278" y1="270" x2="482" y2="270" stroke="#2e8afa" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="380" y="256" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">settlement moves collateral</text>
+  <text x="380" y="296" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">price moves one way, funding the other</text>
 
-  <!-- Caption -->
-  <text x="320" y="296" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Settlement nets price PnL and funding into one bounded transfer between the pools.</text>
+  <text x="110" y="140" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">You buy a share</text>
+  <text x="110" y="156" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">of one pool</text>
+  <path d="M150,164 C170,190 180,205 188,224" fill="none" stroke="#2e8afa" stroke-width="1.5" marker-end="url(#arrow)"/>
 </svg>

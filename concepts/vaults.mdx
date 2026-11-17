@@ -1,17 +1,12 @@
 ---
 title: "Vaults"
 sidebarTitle: "Vaults"
-description: "One Morpho vault share backs Null markets. Savings is how you deposit USDC into that vault."
+description: "How one Morpho Vault V2 share, nmUSDC, serves as Null market collateral and as the asset behind Null Savings Vault."
 ---
 
-Null uses a Morpho Vault V2 share in two roles. The share is the same token. The role depends on what you do with it.
+Null uses the word vault for something very specific, and it is worth slowing down before the word multiplies. At the centre of the system is a single Morpho Vault V2 share. Its underlying asset is USDC. In Null markets, that share is known as `nmUSDC`.
 
-| Role | What you hold | What it does |
-| --- | --- | --- |
-| **Collateral vault** | The market's collateral token, `nmUSDC` | Backs Receiver and Payer. Earns Morpho lending yield. That yield is the source of [funding](/concepts/funding-and-yield). |
-| **Null Savings Vault** | The same vault, shown in the app as **Null Savings Vault** | Takes a USDC deposit from **Cash** and allocates it to Morpho long books. |
-
-Spot markets hold vault shares inside the pools. Savings is how you deposit the underlying USDC into the vault without opening a Receiver or Payer position.
+The same share can appear in two roles that feel different in the app but are closely connected underneath. It can be the collateral held inside a market's Receiver and Payer pools. Or it can be the share you receive when you deposit USDC through **Savings**. The token has not changed between those experiences. What changes is where you met it, and what exposure you took on after holding it.
 
 <Frame>
   <img
@@ -26,40 +21,50 @@ Spot markets hold vault shares inside the pools. Savings is how you deposit the 
   />
 </Frame>
 
-## Collateral vault
+## The collateral vault is the market's foundation
 
-Every Null market is created with one ERC-20 collateral token. On the current stack that token is a Morpho Vault V2 share whose underlying is USDC.
+Every Null market is created with one ERC-20 collateral token. On the current stack, that token is the Morpho Vault V2 share described above. Both pools account in units of that share. That choice matters because the collateral is not idle while it backs a position.
 
-- Both pools account in vault-share units.
-- When Morpho borrowers pay interest, vault share value rises.
-- Settlement reconciles that growth across Receiver and Payer.
-- Receivers pay that yield on the Receiver pool to Payers as funding.
+The vault allocates USDC into lending markets, borrowers pay interest, and over time each vault share comes to represent more USDC than it did before. You do not need a separate rewards claim to see that growth. It accrues into the value of the share itself. Settlement is the moment when Null reconciles that growth with the two pool structure.
 
-## Null Savings Vault
+Rather than letting each pool simply keep the yield on its own collateral, the market applies its funding rules.
 
-In the app, **Savings** is USDC you deposit into the vault. You receive vault shares. Interest accrues into share value. It is not paid as a separate transfer.
+The yield earned on the Receiver pool is paid across to Payers. That is why collateral yield and funding are not two unrelated topics on Null. Funding begins here, in the collateral vault, before it is given a rate and shown in the app. [Funding and yield](/concepts/funding-and-yield) follows that transfer in detail.
 
-The vault does not deposit into Null Receiver pools. It allocates USDC into Morpho Blue **long** books:
+## Savings is a way in, not a pool position
 
-- **Loan token:** USDC
-- **Collateral token:** that market's Receiver pool share
+Open **Savings** in the app and the experience is deliberately plain. You deposit USDC from **Cash**, and you receive the vault share in return. Behind the **Null Savings Vault** label sits that same share, deposited through Savings rather than acquired as market collateral for a trade. Your return arrives as the share grows in value.
 
-Those are the same books leveraged longs borrow from. Savings earns the Morpho supply rate. The Savings card shows that rate as an annual equivalent rate (AER), to two decimal places.
+There is no second interest payment arriving beside it, and no Receiver exposure quietly added to your deposit. That distinction is easy to miss, so it deserves emphasis. The Null Savings Vault does not deposit your USDC into Null Receiver pools. It allocates USDC to Morpho long books.
 
-Most of the vault is lent out. A large withdrawal needs free USDC. If free liquidity is short, withdraw a smaller amount or wait.
+On those books, the loan token is USDC and the collateral token is a market's Receiver pool share. In other words, Savings supplies the USDC that leveraged long borrowers use, and those borrowers post Receiver shares to secure their loans. The Savings card therefore shows the Morpho supply rate as an annual equivalent rate, labelled **AER**, to two decimal places. It is the rate earned by supplying those books, not the oracle return of any asset tracked by Null.
 
-```text
-USDC (Cash)
-   │
-   ├─ Savings: Add money ──► Morpho Vault V2 (nmUSDC)
-   │                            └─ lends USDC on Morpho long books
-   │                               (Receiver shares are borrower collateral)
-   │
-   └─ Spot Buy ──► wrap to nmUSDC ──► Receiver or Payer pool
-```
+## Two doors into related yield
 
-- **Savings** earns Morpho lend yield from borrowers on the long books.
-- **Spot** holds `nmUSDC` in Null pools and tracks the oracle asset.
-- **Margin longs** borrow the USDC that Savings and other lenders supply.
+It can help to follow one deposit of USDC along each path. If you choose **Savings** and use **Add money**, your USDC enters the Morpho vault and is allocated toward the long books. You hold vault shares and earn lender yield. If you choose Spot and use **Buy**, your USDC is wrapped into `nmUSDC` and placed into a Receiver or Payer pool.
 
-See [Morpho markets](/concepts/morpho-markets) and [Savings](/products/savings).
+You still hold an interest bearing form of collateral inside the position, but now the value of your claim is also being moved by oracle settlement and funding. The first path is a lending experience. The second is a market position whose collateral happens to earn yield before funding rules redistribute part of it.
+
+Confusing those paths leads to poor comparisons. A Savings **AER** should not be compared directly with a Receiver's expected price return, because they are answers to different questions.
+
+## Liquidity is shared with borrowers
+
+A vault can be sound and still not have every unit of USDC sitting idle. Most of the USDC supplied through the vault is lent out, which is precisely how the yield is generated. A small withdrawal can usually be met from free USDC. A large withdrawal may need more free USDC than the relevant book has at that moment.
+
+If that happens, withdrawing a smaller amount or waiting for borrower repayments and new supply can make the difference. This is not a queue with a promised completion time. It is the ordinary liquidity condition of a lending market, visible at the point where many depositors' money is actively being borrowed. The same free USDC matters elsewhere in the system.
+
+New Margin longs borrow from the long books that Savings supplies. When free liquidity is thin, a large new long and a large Savings withdrawal can both become harder to complete at the same time. That connection is a feature of the shared design, but it is a real constraint to plan around.
+
+## Reading your vault position
+
+When you look at a Savings balance, separate the number of vault shares you hold from the USDC value those shares currently represent. A deposit increases your share count. Interest, by contrast, mainly shows up as each share becoming worth more USDC over time, rather than as new shares arriving in your wallet.
+
+That distinction also helps when you move between products. Converting USDC into `nmUSDC` is not by itself a bet on a tracked asset. The market exposure begins when that collateral enters a Receiver or Payer pool, and it ends when you leave the pool, even though the vault share may have been present before and after the trade.
+
+It also explains why two balances denominated in the same share can deserve different levels of attention. A Savings balance asks you to watch vault yield and withdrawal liquidity. A Spot balance asks you to watch those things as well, but adds oracle movement, funding, pool coverage, and the live entry or exit fee for the market you chose.
+
+## Where each product sits
+
+Savings earns Morpho lending yield from borrowers on the long books. Spot holds `nmUSDC` inside Null pools and follows the tracked oracle asset. Margin longs borrow the USDC that Savings and other lenders supply, then use Receiver shares as collateral for that borrowing. Once you see those roles together, the system map becomes easier to read.
+
+USDC flows into the vault. The vault supplies Morpho long books. Null pools use the vault share as collateral. Margin connects the two by borrowing against Receiver exposure. [Morpho markets](/concepts/morpho-markets) explains the two lending books beside each market, and [Savings](/products/savings) walks through the deposit itself.

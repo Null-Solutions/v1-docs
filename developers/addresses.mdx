@@ -4,28 +4,34 @@ sidebarTitle: "Deployments"
 description: "Ethereum mainnet addresses for the current Null stack. Copy them only after they are published here."
 ---
 
-The current stack is the yield-share funding model, `nmUSDC` collateral, `NullV1Router`, and `NullV1MorphoRouter`.
+This page is the single source of truth for Null contract addresses on Ethereum mainnet. Integrations should read addresses from here, or resolve them onchain from the factory, rather than copying them out of code samples, forum posts, or earlier versions of these docs.
 
 <Warning>
-Mainnet addresses for that stack are not published on this page yet. Do not reuse an older market's factory, router, collateral, or funding model. If a constant is missing below, treat it as unknown.
+Mainnet addresses for the current stack are not yet published. That stack is the yield share funding model, `nmUSDC` collateral, `NullV1Router`, and `NullV1MorphoRouter`. Until addresses appear below, treat every address for this stack as unknown.
 </Warning>
 
-## What will be listed
+## Do not reuse legacy addresses
 
-When the deployment is verified, this page will list:
+Older Null markets were deployed with a different factory, router, collateral, and funding model. Those contracts still exist onchain, and calling them will often succeed in the narrow sense that the transaction does not revert. It will not interact with the current markets. Do not point a new integration at a legacy factory, router, collateral token, or funding model because an address is available and looks plausible. An integration built on unpublished or legacy addresses is built on nothing.
+
+## What will be published here
+
+When the deployment is verified, this page will list the core contracts first:
 
 | Contract | Role |
 | --- | --- |
-| `NullV1Factory` | Creates markets. Resolve a market with `getMarket(collateral, oracle, frm)`. |
-| `NullV1Router` | Spot deposit and redeem. Chainlink updates are fee-less. |
-| `NullV1MorphoRouter` | Margin `open`, `close`, `openShort`, `closeShort`. |
-| `NullV1YieldShareFundingRateModel` | Funding model the factory has enabled. |
-| `nmUSDC` | Morpho Vault V2 share used as market collateral and as the Null Savings Vault. |
-| Morpho Blue | Singleton the router calls. Use Morpho's canonical address for Ethereum, and verify it in the router. |
+| `NullV1Factory` | Creates markets and resolves them with `getMarket(collateral, oracle, frm)`. |
+| `NullV1Router` | Handles spot deposit and redeem. Chainlink updates through it are fee-less. |
+| `NullV1MorphoRouter` | Handles Margin `open`, `close`, `openShort`, and `closeShort`. |
+| `NullV1YieldShareFundingRateModel` | The funding model the factory has enabled for new markets. |
+| `nmUSDC` | The Morpho Vault V2 share used as market collateral and as the Null Savings Vault. |
+| Morpho Blue | The singleton the router calls. Use Morpho's canonical Ethereum address, and verify it against the router. |
 
-Per-market rows (oracle proxy, market proxy, Receiver pool, Payer pool, long book id, short book id) belong here only after each address is checked on Etherscan against the factory.
+Per market rows come second, and only after each one is checked. Expect the oracle proxy, the market proxy, the Receiver pool, the Payer pool, the long book id, and the short book id for every live market. A per market address will not be listed until it has been checked on Etherscan against the factory that created it.
 
-## How to verify a market
+## How to verify a market yourself
+
+You do not have to trust this page blindly, and once addresses exist you should not. Resolve the market from its identity and then read the market back:
 
 ```text
 factory.getMarket(collateral, oracle, frm) == market
@@ -34,8 +40,12 @@ market.frm() == yield-share model
 market.receiverPool() / market.payerPool() match the tokens you will spend
 ```
 
-For a Morpho book, check `loanToken`, `collateralToken`, `oracle`, `irm`, and `lltv` against the id `keccak256(abi.encode(marketParams))`.
+The three values in `getMarket(collateral, oracle, frm)` are the market identity. If the factory returns a market for a different collateral, oracle, or funding rate model, you are looking at a different market, however similar the names appear.
 
-Integration snippets in these docs use minimal ABIs. They are not a package. Null does not publish an npm SDK. Take ABIs from the verified implementation on Etherscan once the addresses above exist.
+For a Morpho book, verify the full `marketParams` rather than the book id alone. Check `loanToken`, `collateralToken`, `oracle`, `irm`, and `lltv`, and confirm they hash to the id you intend to trade, `keccak256(abi.encode(marketParams))`. A single wrong field is a different book with different liquidation terms.
 
-Next: [Quickstart](/developers/quickstart) · [Morpho router](/developers/morpho-router)
+## A note on ABIs
+
+The snippets in these docs use minimal ABIs written for readability. They are excerpts, not a package, and Null does not publish an npm SDK. Once the addresses above exist, take complete ABIs from the verified implementations on Etherscan and pin them in your own codebase.
+
+Next steps: the [Quickstart](/developers/quickstart) for a first integration, and the [Morpho router](/developers/morpho-router) guide for Margin.

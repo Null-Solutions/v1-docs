@@ -1,61 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" role="img" aria-label="USDC flows into the Null Savings Vault and into Spot pools. The vault lends to Morpho long books. Margin borrows from those books.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 520" role="img" aria-label="How Null fits together: your USDC either earns in the Savings vault or buys into a market's two pools, and Morpho books around those pools power Lending and Margin.">
   <title>How the four products sit on the primitive</title>
-  <text x="120" y="36" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Cash</text>
-  <rect x="40" y="48" width="160" height="52" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="120" y="78" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">USDC</text>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2e8afa"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#afb4bc"/>
+    </marker>
+  </defs>
 
-  <rect x="300" y="28" width="180" height="64" rx="12" fill="#ffffff" stroke="#2e8afa"/>
-  <text x="390" y="54" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Null Savings Vault</text>
-  <text x="390" y="74" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">nmUSDC, lent out</text>
+  <!-- Wallet -->
+  <text x="130" y="86" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">YOU</text>
+  <rect x="40" y="96" width="180" height="92" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="130" y="132" text-anchor="middle" fill="#2d2c2c" font-size="14" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Your wallet</text>
+  <text x="130" y="154" text-anchor="middle" fill="#6e6e6e" font-size="11.5" font-family="Inter, system-ui, -apple-system, sans-serif">USDC is your Cash</text>
+  <text x="130" y="172" text-anchor="middle" fill="#6e6e6e" font-size="11.5" font-family="Inter, system-ui, -apple-system, sans-serif">ETH pays gas</text>
 
-  <rect x="560" y="28" width="160" height="64" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="640" y="54" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Long book</text>
-  <text x="640" y="74" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">USDC vs Receiver</text>
+  <!-- Spot market -->
+  <rect x="300" y="56" width="300" height="216" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="450" y="86" text-anchor="middle" fill="#2d2c2c" font-size="14" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">A Null market (Spot)</text>
+  <text x="450" y="106" text-anchor="middle" fill="#6e6e6e" font-size="11.5" font-family="Inter, system-ui, -apple-system, sans-serif">One market, one oracle price, two pools</text>
 
-  <line x1="200" y1="74" x2="292" y2="60" stroke="#2e8afa" stroke-width="1.5"/>
-  <polygon points="300,58 290,54 294,66" fill="#2e8afa"/>
-  <text x="230" y="54" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Add money</text>
+  <rect x="320" y="122" width="124" height="62" rx="10" fill="#ffffff" stroke="#2e8afa"/>
+  <text x="382" y="148" text-anchor="middle" fill="#2d2c2c" font-size="12.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver</text>
+  <text x="382" y="166" text-anchor="middle" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">takes the return</text>
 
-  <line x1="480" y1="60" x2="552" y2="60" stroke="#2e8afa" stroke-width="1.5"/>
-  <polygon points="560,60 550,55.5 550,64.5" fill="#2e8afa"/>
+  <rect x="456" y="122" width="124" height="62" rx="10" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="518" y="148" text-anchor="middle" fill="#2d2c2c" font-size="12.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Payer</text>
+  <text x="518" y="166" text-anchor="middle" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">backs Receiver</text>
 
-  <rect x="40" y="160" width="200" height="88" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="140" y="192" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral vault</text>
-  <text x="140" y="212" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">nmUSDC inside the market</text>
-  <text x="140" y="230" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">yield pays funding</text>
+  <line x1="444" y1="153" x2="456" y2="153" stroke="#2e8afa" stroke-width="1.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
 
-  <line x1="120" y1="100" x2="120" y2="152" stroke="#afb4bc" stroke-width="1.25"/>
-  <polygon points="120,160 115.5,150 124.5,150" fill="#afb4bc"/>
-  <text x="128" y="132" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Spot Buy wraps</text>
+  <rect x="320" y="200" width="260" height="52" rx="10" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="450" y="222" text-anchor="middle" fill="#2d2c2c" font-size="12" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral: nmUSDC vault shares</text>
+  <text x="450" y="240" text-anchor="middle" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Vault yield is paid from Receivers to Payers</text>
 
-  <rect x="300" y="168" width="160" height="72" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="380" y="198" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver pool</text>
-  <text x="380" y="218" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">oracle return</text>
+  <!-- Savings -->
+  <rect x="680" y="56" width="200" height="92" rx="12" fill="#ffffff" stroke="#2e8afa"/>
+  <text x="780" y="90" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Null Savings Vault</text>
+  <text x="780" y="110" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">The same nmUSDC share,</text>
+  <text x="780" y="126" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">held as savings</text>
 
-  <rect x="500" y="168" width="160" height="72" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="580" y="198" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Payer pool</text>
-  <text x="580" y="218" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">backs Receiver</text>
+  <!-- Long book -->
+  <rect x="680" y="196" width="200" height="96" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="780" y="226" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Morpho long book</text>
+  <text x="780" y="246" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Lends USDC</text>
+  <text x="780" y="262" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">against Receiver shares</text>
 
-  <line x1="240" y1="204" x2="292" y2="204" stroke="#afb4bc" stroke-width="1.25"/>
-  <polygon points="300,204 290,199.5 290,208.5" fill="#afb4bc"/>
-  <line x1="460" y1="204" x2="492" y2="204" stroke="#2e8afa" stroke-width="1.5"/>
-  <polygon points="452,204 462,199.5 462,208.5" fill="#2e8afa"/>
-  <polygon points="500,204 490,199.5 490,208.5" fill="#2e8afa"/>
+  <!-- Short book -->
+  <rect x="680" y="340" width="200" height="96" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="780" y="370" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Morpho short book</text>
+  <text x="780" y="390" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Lends Receiver shares</text>
+  <text x="780" y="406" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">against nmUSDC</text>
 
-  <rect x="300" y="300" width="200" height="72" rx="12" fill="#ffffff" stroke="#dee6ee"/>
-  <text x="400" y="330" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Short book</text>
-  <text x="400" y="350" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver shares vs nmUSDC</text>
+  <!-- Margin -->
+  <rect x="300" y="340" width="300" height="96" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="450" y="370" text-anchor="middle" fill="#2d2c2c" font-size="13.5" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Margin</text>
+  <text x="450" y="390" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">A Long borrows USDC from the long book.</text>
+  <text x="450" y="406" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">A Short borrows shares from the short book.</text>
 
-  <line x1="380" y1="240" x2="380" y2="292" stroke="#afb4bc" stroke-width="1.25"/>
-  <polygon points="380,300 375.5,290 384.5,290" fill="#afb4bc"/>
+  <!-- Flows -->
+  <path d="M220,110 C320,60 560,70 672,92" fill="none" stroke="#2e8afa" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="440" y="52" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Savings: Add money</text>
 
-  <rect x="540" y="300" width="180" height="72" rx="12" fill="#ffffff" stroke="#2e8afa"/>
-  <text x="630" y="330" text-anchor="middle" fill="#2d2c2c" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Margin</text>
-  <text x="630" y="350" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Long borrows USDC</text>
+  <path d="M220,150 C250,150 262,150 292,150" fill="none" stroke="#2e8afa" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="252" y="128" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Spot: Buy</text>
 
-  <line x1="640" y1="92" x2="660" y2="292" stroke="#2e8afa" stroke-width="1.5"/>
-  <polygon points="662,300 654,288 670,292" fill="#2e8afa"/>
-  <line x1="500" y1="336" x2="532" y2="336" stroke="#afb4bc" stroke-width="1.25"/>
-  <polygon points="540,336 530,331.5 530,340.5" fill="#afb4bc"/>
+  <path d="M780,148 L780,188" fill="none" stroke="#2e8afa" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="790" y="172" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">supplies USDC</text>
+
+  <path d="M600,140 C640,160 640,200 672,226" fill="none" stroke="#afb4bc" stroke-width="1.25" stroke-dasharray="4 3" marker-end="url(#arrowGray)"/>
+
+  <path d="M600,232 C640,290 640,340 672,366" fill="none" stroke="#afb4bc" stroke-width="1.25" stroke-dasharray="4 3" marker-end="url(#arrowGray)"/>
+
+  <path d="M680,244 C640,280 620,320 606,352" fill="none" stroke="#2e8afa" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M680,388 L608,388" fill="none" stroke="#2e8afa" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="646" y="300" text-anchor="middle" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Margin borrows</text>
+
+  <path d="M450,340 L450,280" fill="none" stroke="#afb4bc" stroke-width="1.25" stroke-dasharray="4 3" marker-end="url(#arrowGray)"/>
+  <text x="440" y="318" text-anchor="end" fill="#6e6e6e" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">exposure is still Receiver</text>
+
+  <text x="40" y="478" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Blue lines are money moving. Dashed lines are</text>
+  <text x="40" y="494" fill="#6e6e6e" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver shares posted as collateral.</text>
+
+  <!-- Lending caption -->
+  <text x="780" y="470" text-anchor="middle" fill="#6e6e6e" font-size="11.5" font-family="Inter, system-ui, -apple-system, sans-serif">Lending is you supplying either book directly,</text>
+  <text x="780" y="488" text-anchor="middle" fill="#6e6e6e" font-size="11.5" font-family="Inter, system-ui, -apple-system, sans-serif">instead of through the Savings vault.</text>
 </svg>

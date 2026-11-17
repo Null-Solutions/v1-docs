@@ -1,12 +1,14 @@
 ---
 title: "The primitive"
 sidebarTitle: "The primitive"
-description: "Every Null market is two pools that share one collateral token and settle against an oracle price."
+description: "How a Null market turns one collateral pool pair, an oracle price, and a funding transfer into Receiver and Payer exposure."
 ---
 
-Null is a **two-pool market**. Every market has a Receiver pool and a Payer pool. Both pools use the same collateral token. The market holds that collateral and moves value between the pools when the oracle price changes.
+Most markets ask you to find someone willing to take the other side of your trade. Null works differently. Every Null market holds collateral in two pools and lets an oracle price move value between them. One pool is the Receiver. The other is the Payer.
 
-The protocol does not lend the tracked asset, open a Null margin account, or liquidate a Spot holder. [Savings](/products/savings), [Spot](/products/spot), [Lending](/products/lending), and [Margin](/products/margin) are all built on this market.
+Together they form a complete market, with no private counterparty, no order book, and no separate entry price negotiated between two traders. That simple structure is the primitive underneath everything else in the app.
+
+[Savings](/products/savings), [Spot](/products/spot), [Lending](/products/lending), and [Margin](/products/margin) each present it differently, but the pools underneath work the same way.
 
 <Frame>
   <img
@@ -21,117 +23,62 @@ The protocol does not lend the tracked asset, open a Null margin account, or liq
   />
 </Frame>
 
-## Receiver and Payer
+## Two pools, one pot of collateral
 
-Let `R` be Receiver pool assets and `P` be Payer pool assets.
+Picture both pools as compartments inside a single market. Both compartments hold the same collateral token. Call the value in the Receiver pool `R` and the value in the Payer pool `P`. When the accepted oracle price rises, value moves from Payer to Receiver. When it falls, value moves from Receiver to Payer. Nothing leaves the market in that transfer.
 
-- When the accepted oracle price **rises**, value moves from Payer to Receiver.
-- When it **falls**, value moves from Receiver to Payer.
-- **Funding** moves vault yield from the Receiver pool to the Payer pool. It is paid from collateral yield. See [Funding and yield](/concepts/funding-and-yield).
+One side's gain is accounted for as the other side's loss, collateral unit for collateral unit. Your position is a share of one whole pool, expressed as transferable ERC-4626 shares. If you own ten percent of the Receiver pool, you own ten percent of whatever that pool becomes after price movement, funding, entries, and exits have settled.
 
-A position is your share of one pool. You deposit collateral and receive transferable ERC-4626 shares. Your position is a percentage of the pool, not a trade with a fixed counterparty or a private entry price.
+That is a different experience from opening a trade at a price that belongs only to you. You are joining a shared balance whose value is recalculated for every holder at the same moment.
 
-You do not own the tracked asset. A Receiver position does not include voting rights, dividends, or other ownership benefits unless the market's oracle return already reflects them.
+## The Receiver takes the oracle return
 
-### Receiver
+The Receiver is the straightforward side to understand. If the accepted oracle price rises by five percent, roughly five percent of value is added to the Receiver pool, before funding, fees, collateral changes, and settlement limits. If the price falls by five percent, roughly five percent leaves it. Your share of the pool rises or falls with it.
 
-Receiver follows the tracked price return. A 5% accepted price increase adds about 5% to Receiver assets. A 5% decrease reduces them by about 5%, before funding, fees, collateral changes, and settlement bounds.
+In the app, this is Spot. You use **Buy** to acquire Receiver shares and **Sell** when you want to leave. A Receiver share is exposure to the tracked return, not ownership of the tracked asset itself. It carries no voting rights, dividends, or other benefits of ownership unless the market's oracle return has already been defined to reflect them.
 
-In the app this is **Spot**: **Buy** and **Sell** a Receiver share.
+## The Payer backs that return
 
-### Payer
+The Payer pool is what makes the Receiver's return possible. Because the Receiver does not hold the tracked asset, its gains have to come from somewhere inside the market. They come from the Payer pool, and the Payer receives the Receiver's losses in return.
 
-Payer provides the backing for Receiver. Economically, a Payer is a **negative-size position in the Receiver pool**, with the market's collateral held inside that structure. It takes the opposite side of the price movement and receives funding paid from Receiver-side collateral yield.
+Economically, a Payer is a negative-size position in the Receiver pool, with the market's collateral held inside that structure. Another way to say it is that the entire Payer pool stands behind the entire Receiver pool. If `R` is much larger than `P`, a modest move in the Receiver pool is a large event for the smaller pool backing it. That relationship is captured by the short scale, `R / P`.
 
-The short's notional relative to Payer capital scales with the pool ratio:
+If you hold a Payer position currently worth `p`, your short notional is `p * R / P`. The word notional matters here. It describes the amount of Receiver exposure your collateral is backing, not an amount you borrowed and not an amount you could withdraw separately. The short scale is not a setting you choose when you enter.
 
-```text
-short scale = R / P
-```
+It follows from the relative sizes of the two pools, and it changes whenever either pool grows or shrinks. As coverage, written as `P / R`, becomes thinner, the short scale rises and each price transfer lands harder on Payer share value. Because that sensitivity can be substantial, Payer trading in the app sits behind **Pro Mode**.
 
-That ratio is not chosen by you and is not fixed when you enter. It changes as the assets in either pool change. A Payer holder with current position value `p` has short notional:
+## A small market makes the mechanics visible
 
-```text
-Payer short notional = p * R / P
-```
+Start with 1,000 units in the Receiver pool and 200 units in the Payer pool, and ignore funding, fees, and collateral yield for a moment. The short scale is five, because `R / P` is `1,000 / 200`. Now suppose the accepted oracle price rises by two percent. Two percent of the Receiver pool is 20 units, so settlement moves 20 units across.
 
-As coverage `P / R` falls, `R / P` rises. The same Receiver-side transfer then has a larger impact on Payer share value. Payer trading in the app sits behind **Pro Mode**.
+The Receiver pool becomes 1,020 and the Payer pool becomes 180. The Receiver holder has gained about two percent, as expected. The Payer holder has lost 20 units from a 200 unit pool, which is ten percent. That ten percent is the two percent price move multiplied by the short scale of five. Run the example in reverse and the intuition completes itself.
 
-## Worked examples
+A two percent fall moves the same 20 units from Receiver to Payer. The Receiver pool becomes 980, the Payer pool becomes 220, and a Payer holder gains about ten percent. The price move did not change size between the two examples. What changed the outcome was the amount of Receiver exposure each unit of Payer collateral was backing.
 
-These examples ignore funding, fees, collateral changes, rounding, and settlement bounds unless noted. Start from `R = 1,000` Receiver assets.
+Your individual result follows your share of the pool. If you held 50 of the 200 units in the Payer pool before the price rose, you held a quarter of that pool. After settlement, your claim would fall from 50 to 45, preserving the same quarter share of a smaller pool.
 
-### Price rises
+Entries and exits by other people then reshape the next calculation, because they change both the pool size and your percentage of it.
 
-Suppose `P = 200` and the accepted oracle price rises by 2%. The price transfer is about 2% of Receiver assets, or 20 collateral units:
+## Settlement is when the accounting catches up
 
-```text
-Receiver: 1,000 → 1,020
-Payer:      200 →   180
-```
+A Null market does not rewrite both pools on every block. Settlement happens when someone interacts with the market. A deposit or redemption first settles the market, then continues with updated pool values.
 
-Short scale is `R / P = 5`. Receiver increases by 2%. The same 20-unit transfer reduces the Payer pool by 10%:
+During that step, the market reconciles its collateral, reads the oracle, nets price movement together with funding, and applies a single transfer between the pools. The number of shares you hold does not change during settlement. What changes is how much collateral each share represents. This is also where the market's circuit breaker can intervene.
 
-```text
-Payer return ≈ -price move × (R / P) ≈ -2% × 5 ≈ -10%
-```
+If one accepted oracle move is larger than 20 percent in a single settlement, the market skips the price transfer for that update and stores the new price as the baseline for next time.
 
-### Price falls
+Funding can still settle during that same interaction. The skipped movement is not held in reserve and paid later. It is a deliberate break in continuity at a moment when the price has moved too far, too suddenly, to pass straight through to both pools. You can read the contract level detail in [Circuit breaker](/protocol/circuit-breaker).
 
-Same pools, accepted oracle price falls by 2%:
+A separate floor also limits how far a transfer can debit a pool that starts above a small minimum size. That floor constrains an individual transfer. It should not be read as capital protection, a promise of liquidity, or a guarantee that the price you receive will feel fair in a stressed market.
 
-```text
-Receiver: 1,000 →   980
-Payer:      200 →   220
-```
+## What defines a market
 
-Receiver decreases by 2%. Payer receives the same 20-unit transfer and increases by about 10%.
+Each market is identified by three dependency addresses: its collateral, its oracle, and its funding rate model. Those dependencies, together with the two pool addresses, are fixed once the market exists. Change any part of that tuple and you are looking at a different market, even if the name in the app looks familiar.
 
-### Same move, different coverage
-
-A 2% accepted price rise always moves about `0.02 * R` from Payer to Receiver. Coverage changes how hard that hits Payer:
-
-| Payer `P` | Coverage `P/R` | Short scale `R/P` | Transfer | Receiver | Payer return |
-| --------: | -------------: | ----------------: | -------: | -------: | -----------: |
-|       500 |            50% |                2× |       20 |     +2% |         -4% |
-|       200 |            20% |                5× |       20 |     +2% |        -10% |
-|       100 |            10% |               10× |       20 |     +2% |        -20% |
-
-### Your share of a pool
-
-Pools are shared. If the Payer pool is `P = 200` and you hold `50` of it (25% of the pool), your position receives 25% of every Payer-side transfer.
-
-After the +2% price example above (`P: 200 → 180`):
-
-```text
-Your Payer claim: 50 → 45
-Your return:      -10%
-```
-
-When others enter or exit, the pool size and your percentage can change. Your share of the next transfer changes with it.
-
-## Settlement
-
-Settlement is interaction-driven. Deposits and redemptions settle the market before they continue. There is no separate public action that updates every block.
-
-During settlement the market reconciles collateral, reads the oracle, nets price movement with funding, and applies one transfer. The number of shares does not change. The collateral value each share represents does.
-
-If an accepted oracle move is larger than 20% in one settlement, the market skips that update's price transfer and records the new price as its next baseline. Funding can still settle. The skipped price movement is not deferred. See [Circuit breaker](/protocol/circuit-breaker).
-
-The transfer cannot debit a pool below a small minimum if the pool starts above that floor. That floor constrains one kind of transfer. It does not guarantee a fair price, liquidity, or capital protection.
-
-## What stays fixed
-
-Each market is uniquely identified by three dependency addresses:
-
-```text
-(collateral, oracle, funding-rate model)
-```
-
-Those dependencies and the two pool addresses are fixed for that market. A different tuple is a different market.
+Before you trade, it is worth pausing on that identity. The collateral determines what your shares ultimately claim. The oracle determines which return the Receiver takes. The funding rate model determines how collateral yield moves between the pools, which is where the story continues in [Funding and yield](/concepts/funding-and-yield).
 
 <Warning>
-Receiver and Payer can lose most of their pool value.
+Receiver and Payer positions can both lose most of their value. The two pool structure explains how losses are shared. It does not prevent them.
 </Warning>
 
-Next: [Funding and yield](/concepts/funding-and-yield), [Vaults](/concepts/vaults), or [Spot](/products/spot).
+From here, [Vaults](/concepts/vaults) explains the collateral both pools share, and [Spot](/products/spot) shows the simplest way to hold the Receiver side.

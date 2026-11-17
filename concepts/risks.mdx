@@ -1,49 +1,73 @@
 ---
 title: "Risks"
 sidebarTitle: "Risks"
-description: "Receiver, Payer, Savings, Lending, and Margin can all lose money. This page lists the main ways."
+description: "The main ways Receiver, Payer, Savings, Lending, and Margin positions can lose money on Null, and the limits of the protections around them."
 ---
 
-You can lose some or all of the assets you commit. Nothing on this page is a complete list, and nothing here is a promise that a control will protect you.
+It is possible to understand Null perfectly and still lose money. That sentence belongs at the beginning, because elegant mechanics are sometimes mistaken for safety. The two pool design explains where gains and losses go.
 
-## Price
+It does not soften the market, guarantee liquidity, or promise that a safeguard will operate in the way you imagined at the moment you need it. You can lose some or all of the assets you commit. What follows is an account of the main routes by which that can happen, not a complete inventory of everything that could go wrong.
 
-Receiver value moves with the oracle price. Payer value moves the other way, scaled by `R / P`. A Payer is a negative-size position in the Receiver pool. Lower coverage means a larger percentage move for the same oracle change.
+## The price can simply move against you
 
-You do not receive the tracked asset. You do not receive voting rights or dividends unless the oracle return already includes them.
+Receiver value follows the oracle price. When the accepted price falls, value leaves the Receiver pool. Payer value moves in the opposite direction, but not symmetrically in percentage terms. Because a Payer is a negative-size position in the Receiver pool, its response is scaled by `R / P`.
 
-## Funding and collateral yield
+A thin Payer pool therefore turns an ordinary looking price move into a much larger percentage change in Payer share value. That scaling works for you when the price falls and against you when it rises. Neither side comes with the protections of owning the tracked asset.
 
-Funding is variable vault yield paid from Receivers to Payers. It can be near zero for a long time. A vault loss does not create negative funding, but it can reduce collateral value for both pools.
+You do not receive the asset itself, and you receive no voting rights or dividends unless the oracle return has already been defined to include them.
 
-Payer carry after a hedge is funding plus your own collateral yield, minus hedge costs. The hedge can cost more than the carry.
+The position is an accounting claim on a collateral pool whose value is being rewritten by price settlement. In a severe move, that claim can lose most of its value.
 
-## Margin liquidation
+## Funding can disappoint, and collateral can fall
 
-Margin borrows on Morpho. If loan-to-value reaches the book's LLTV, Morpho can liquidate the position. Interest, oracle moves, and collateral value can all push loan-to-value up. Spot positions are not liquidated this way.
+Funding depends on collateral vault yield actually being earned. It may be small for a long period. It may pause while the vault share price recovers to its previous high-water mark. For a Receiver, that means there are periods when you are exposed to price without retaining the underlying collateral yield, because funding rules assign that yield to Payers.
 
-The **Liquidation price** in the app is an estimate from current LLTV and leverage. It is not a guarantee.
+For a Payer, disappointing funding removes part of the compensation you may have counted on for carrying the other side of the market. If you hedge the Payer elsewhere, the combined result is funding and your own collateral yield, reduced by whatever the hedge costs to maintain. The hedge can cost more than Null pays.
 
-## Savings and lending liquidity
+It can also introduce margin calls or liquidation risk on a completely separate venue. A vault loss creates a different kind of disappointment. Funding never turns negative, so Receivers are not asked to pay extra funding because the vault fell. But both pools hold that vault share as collateral.
 
-Savings withdrawals and new Margin longs need free USDC on the long books. If that cash is lent out, a withdrawal or open can fail or fill only in part.
+If its value declines, the collateral behind Receiver and Payer positions declines with it.
 
-Lending **Recall** can fail for the same reason: borrowers still hold the asset. You earn the lend rate while you wait. If borrowers are liquidated and collateral is insufficient, lenders can lose principal.
+## Margin adds a lender who can close you out
 
-## Oracles and settlement
+A Spot position inside the Null pools is not liquidated by Morpho. A Margin position is different because it has borrowed. On Morpho, loan-to-value rises when collateral falls, when the tracked exposure moves against the loan, or when interest keeps adding to the debt. Once loan-to-value reaches the relevant book's LLTV, Morpho can liquidate the position.
 
-A stale, wrong, or unavailable oracle can block a trade or settle a price you did not expect. A single move above 20% skips price transfer for that settlement and resets the baseline. Funding can still move. Skipped price movement is not paid later.
+Liquidation may leave you with less than you expected, potentially nothing from the equity committed. The **Liquidation price** shown in the app is an estimate built from the current LLTV and the position you are opening. Markets move continuously while that estimate stands still.
 
-Settlement runs when someone interacts with the market. Share value can change between the preview and the confirmed transaction.
+Interest accrues, collateral values change, and liquidity at the moment of liquidation may be poor. Treat the displayed figure as a guide to proximity, not as a promised boundary.
 
-## Smart contracts and admin
+## Lending liquidity can be absent when you ask for it
 
-Bugs can cause loss. The factory owner can enable funding-rate models for new markets and can change fees inside published caps. Market identity (collateral, oracle, funding-rate model) does not change after creation.
+Savings and [Lending](/products/lending) feel calm in ordinary conditions because supplying an asset seems reversible. Lending markets are only reversible to the extent that unborrowed assets are available. Most supplied USDC may be working in loans to Margin borrowers.
 
-A completed audit does not mean the deployment you use is bug-free. See [Audits](/protocol/audits).
+A large Savings withdrawal, or a **Recall** from a lending book, can therefore wait for repayments or arrive only after you reduce the amount requested. Meanwhile, a new Margin long can face the same shortage from the opposite direction. The money has not necessarily been lost. It has been lent, and lent money cannot simultaneously sit ready for withdrawal.
 
-## Wallets, region, and tax
+Lender risk becomes principal risk if borrowers are liquidated and their collateral does not cover the outstanding loans.
 
-You control your wallet. Transactions can be irreversible. Null is not offered in the United Kingdom and is unavailable where participation would breach applicable law or sanctions. Tax treatment depends on you and can change.
+At that point the issue is no longer timing. It is whether the book recovers enough value to make lenders whole.
 
-Read the [Legal notices](/legal) before you trade.
+## Oracles and settlement can surprise you
+
+Every market depends on an oracle to say what return the Receiver should take. An oracle can become stale, report a price you did not expect, or become unavailable when you want to trade. Any of those can delay a transaction or settle value using information that feels very different from the price on another screen. Settlement itself is interaction driven.
+
+The market updates when someone deposits or redeems, not continuously in the background on every block. For that reason, the value implied by a preview can change by the time your transaction is confirmed. The circuit breaker adds a deliberate discontinuity.
+
+If a single accepted settlement move exceeds 20 percent, the market skips that update's price transfer and stores the new price as the next baseline.
+
+Funding may still settle. The skipped movement is not stored as a debt to be repaid in a later, calmer interval. If you were counting on that move being reflected in pool value, the protection for the pools becomes a loss of continuity for your position. You can read more about that behaviour in [Circuit breaker](/protocol/circuit-breaker).
+
+## Contracts, settings, and the limits of review
+
+Null is software, and software can contain bugs. A flaw in a market, pool, vault integration, router, or supporting contract could cause losses that no market view would predict. The factory owner can enable funding rate models for new markets and can adjust fees within the published caps.
+
+A market's identity, meaning its collateral, oracle, and funding rate model, does not change after creation, but the existence of governed settings elsewhere in the system still matters. An audit reduces uncertainty. It does not remove it.
+
+A completed audit is not proof that the exact deployment you are using is free of defects, and [Audits](/protocol/audits) should be read with that limitation in mind.
+
+## Some risks remain entirely yours
+
+You control your wallet, your keys, and the transactions you sign. A mistaken address, a compromised device, or an approval you did not intend can produce an irreversible loss before Null mechanics enter the picture. Tax treatment depends on your circumstances and on rules that may change.
+
+It can also differ sharply between a pool transfer, a lending return, and a leveraged trade that looks economically similar. Null is not offered in the United Kingdom and is unavailable where participation would breach applicable law or sanctions. Your eligibility is not something the interface can determine for you. Please read the [Legal notices](/legal) before you trade.
+
+If any part of that leaves you uncertain, the prudent trade is usually the one you postpone.

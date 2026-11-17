@@ -4,20 +4,9 @@ sidebarTitle: "Margin"
 description: "Open a Morpho long or short on a Null market. Liquidation follows that book's LLTV."
 ---
 
-**Margin** is leveraged exposure through Morpho, opened from the Margin desk. **Long** borrows USDC and holds more Receiver exposure than your equity. **Short** borrows Receiver shares and sells them. Spot does not do this.
+Margin exists for the moment a view stops fitting inside your cash. You are not just confident that a price will move; you are confident enough to borrow, so that a given move matters more than it would have on [Spot](/products/spot). That borrowed size cuts both ways, which is why Margin is a separate product with its own desk, its own numbers, and its own way of ending positions that have gone wrong.
 
-<Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/system-map-light.svg"
-    alt="Margin borrows from the long and short Morpho books around the Null pools."
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/system-map-dark.svg"
-    alt="Margin borrows from the long and short Morpho books around the Null pools."
-  />
-</Frame>
+It is built for traders who already think in terms of liquidation levels and borrowing costs. If those ideas are new, Spot will give you the same market with none of the machinery, and nothing is lost by starting there. Margin will still be here when the machinery starts to sound useful rather than intimidating.
 
 <Frame>
   <img
@@ -32,66 +21,53 @@ description: "Open a Morpho long or short on a Null market. Liquidation follows 
   />
 </Frame>
 
-## How it uses the primitive
+## Why this exists
 
-The price exposure is still the Receiver pool. Leverage comes from debt on a Morpho book, not from a Null margin account.
+A Null market already gives you long and short exposure through its two pools. What it cannot give you, by design, is more exposure than you paid for. Payer offers a geared flavour of short, with its scale set by `R / P`, but that gearing is whatever the pools happen to produce, not a number you chose. Margin exists to make leverage a decision: you pick a side, you pick a size, and you accept a borrowing cost and a liquidation price as the terms of that decision.
 
-- **Long** posts Receiver shares as collateral and borrows USDC.
-- **Short** posts `nmUSDC` as collateral and borrows Receiver shares, then sells those shares. Economically that is a larger negative Receiver position than unlevered Payer, with a liquidation price.
+Those terms are worth naming early, because they define the product. A margin position can be closed by the system without your permission when collateral falls too far. No Spot position can. Everything in this page, and most of what the desk shows you, exists to keep that moment from arriving as a surprise.
 
-Mechanics: [Morpho markets](/concepts/morpho-markets).
+## How it connects to the primitive
 
-## What you see
+The price exposure never changes its nature. Underneath every margin trade sits the Receiver pool from [the primitive](/concepts/the-primitive), tracking the oracle return, with Payers holding the negative size position inside it and funding flowing from Receivers to Payers as collateral yield that never turns negative. Margin simply borrows against that exposure using the [Morpho markets](/concepts/morpho-markets) that surround each Null market.
 
-Open **Home → Margin** (`/?section=margin`). An empty overview row reads **No margin yet**.
+A long works the way most people picture leverage. You post Receiver shares as collateral and borrow USDC from the long book, which is the same book [Lending](/products/lending) supplies and the **Null Savings Vault** lends into. The borrowed USDC buys more Receiver exposure than your own money could. A short runs the machinery in reverse: you post `nmUSDC` as collateral, borrow Receiver shares from the short book, and sell them, leaving you with a larger negative Receiver position than an unlevered Payer trade, this time with a stated liquidation price attached. [Funding and yield](/concepts/funding-and-yield) explains how the pool transfer interacts with what you pay to borrow, and the desk nets the two together rather than leaving you to guess.
 
-- A market picker with search and a **Favourites** tab.
-- **Long** and **Short** tabs. A tab is disabled when that book is not configured.
-- A ticket with **Position**, **Loan (USDC)**, **Liquidation price**, order value, margin required, slippage, and fees.
-- Submit states include **Place Order**, **Enter Amount**, **Insufficient Balance**, and **Not Enough Liquidity**.
-- Charts: price, pools, borrow rate, and collateral APR.
-- **My Positions** and **My Activity**. Position columns include **Side**, **Size**, **PnL**, **Liq. price**, **Margin**, **Carry**, and **Close**.
-- **Parameters** lists **Long borrow APR**, **Short borrow APR**, **Long LLTV**, **Short LLTV**, and the max leverage the slider allows.
+## Using the margin desk
 
-Favourites are stored for your browser. The star on a market adds it to the **Favourites** tab.
-
-## Steps
+The desk is reached one way only, through **Home** and then **Margin**. It opens with a market picker that includes search and a **Favourites** tab; selecting the star on any market files it there, so the markets you actually trade stay one click away instead of buried in the full list.
 
 <Steps>
   <Step title="Pick a market and a side">
-    Choose **Long** or **Short**. Read **Parameters** for LLTV and max leverage.
+    Choose your market from the picker, then use the **Long** and **Short** tabs to set direction. A side is only available where its book is configured, which the tabs reflect.
   </Step>
-  <Step title="Set size">
-    Enter equity and leverage. Check **Liquidation price** before you continue.
+  <Step title="Read the parameters first">
+    Before sizing anything, check **Parameters** for the **Long borrow APR**, **Short borrow APR**, **LLTV**, and max leverage for that market. These four numbers are the contract you are signing, and they differ by market.
   </Step>
-  <Step title="Place Order">
-    Confirm in your wallet. The first borrow asks you to authorize the router on Morpho.
+  <Step title="Build the ticket">
+    The ticket shows your **Position**, the **Loan (USDC)** it requires, and the resulting **Liquidation price**. Treat that last figure as the most important number on the screen, and resize until living with it feels comfortable.
   </Step>
-  <Step title="Close">
-    **Close** on the position row repays debt and returns leftover equity. You can also add collateral from activity actions when the desk offers it.
+  <Step title="Place the order">
+    Select **Place Order** and confirm. From there the position is live, accruing borrow interest and funding effects for as long as you hold it.
   </Step>
 </Steps>
 
-## Liquidation distance
+Open positions live under **My Positions**, where each row carries its **Liq. price** and **Carry**, the running net of funding and borrow cost that tells you what holding the position is earning or bleeding. **Close** on that row ends the trade and settles the loan. **My Activity** keeps the history, which is worth consulting before opening a similar trade in the same market, if only to be reminded what the last one actually cost.
 
-Open at leverage `L` with loan-to-value `1 - 1/L`. Liquidation is when loan-to-value hits LLTV:
+## Liquidation, in plain terms
+
+Opening at leverage `L` means borrowing so that your loan to value starts at `1 - 1/L`. Liquidation arrives when that ratio climbs to the market's LLTV, as falling collateral or accruing interest pushes it upward. Put as the price drop that gets you there, it is:
 
 ```text
 drop to liquidation = 1 - (1 - 1/L) / LLTV
 ```
 
-A perpetual with maintenance margin `mm` uses `(1/L - mm) / (1 - mm)` instead. The two distances match only at a specific LLTV. Read the live LLTV on **Parameters**. The app does not publish one LLTV for every market, and the slider stays under `1 / (1 - LLTV)`.
+Traders arriving from perpetual futures often expect the equivalent formula there, `(1/L - mm) / (1 - mm)` for maintenance margin `mm`, to give the same answer. It generally does not. The two distances only coincide at particular LLTV values, so intuition borrowed from a perp desk will misjudge how much room a Null margin position really has. Recheck the distance with this formula and the live LLTV on **Parameters** rather than trusting feel.
 
-Interest accrual can liquidate you before the quoted price move. The quote ignores that.
+Two practical consequences follow. First, read the actual LLTV for your market on **Parameters** instead of assuming a house number, because this documentation deliberately does not publish one figure for every market. Second, the leverage slider's ceiling sits below `1 / (1 - LLTV)`, so the desk will not let you open at a leverage the book's own threshold would immediately endanger. Interest also accrues while you hold, nudging loan to value upward even when the price sits still, so the drop quoted at opening quietly shrinks over time.
 
-## Rates and fees
+## What it costs and what can go wrong
 
-You pay the book's borrow APR. You still sit in the Receiver economics: a long pays Null funding, a short structure receives the short side of the pool transfer. **Carry** on the position row is that net, not the Morpho borrow rate alone.
+You pay the relevant book's borrow APR for your side, long or short, and that cost compounds for the life of the position. Against it sits the funding side of the pool economics, and **Carry** on your position row is precisely that net figure, which is why a position can be right on price and still disappoint. [Fees](/concepts/fees) covers the trading costs that apply when the desk buys or sells shares to open and close you.
 
-Entry and exit fees apply when the router buys or sells shares. See [Fees](/concepts/fees).
-
-## Risks
-
-Morpho can liquidate the position at LLTV. A long needs free USDC in the book. A short close does not need spare share liquidity, because it buys new Receiver shares to repay. Oracle, vault, and smart-contract risk still apply. You can lose more than the price move you expected, up to your equity and, in a shortfall, the value lenders recover.
-
-Next: [Spot](/products/spot) if you want the same pools without debt.
+What can go wrong is, ultimately, liquidation, and [Risks](/concepts/risks) sets it out in full. Reach LLTV and Morpho can sell your collateral to repay lenders, crystallising a loss at the worst available moment and leaving you with whatever equity survives, if any. Oracle faults, thin liquidity, and contract risk all sit behind that headline risk, and fast markets compress the time you have to react to any of them. The honest summary is that Margin converts being wrong from a drawdown into a deadline. Size it so the deadline never gets a vote, and keep [Savings](/products/savings) money out of it entirely.

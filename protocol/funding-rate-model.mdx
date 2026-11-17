@@ -4,48 +4,62 @@ sidebarTitle: "Funding-rate model"
 description: "NullV1YieldShareFundingRateModel pays Payers the vault yield earned on the Receiver pool."
 ---
 
-`NullV1YieldShareFundingRateModel` is the funding-rate model for markets whose collateral is an ERC-4626 vault share. Funding equals the yield the vault paid on the Receiver pool since the previous settlement. Receivers keep none of that yield. Payers receive all of it, on top of the yield on their own shares.
+Funding exists in Null because the two sides of a market do not want the same thing from the collateral. Receivers want price exposure. Payers are providing the balance sheet that makes that exposure possible, and they expect to be paid for it. In many perpetual markets that payment is invented from positioning, an auction between longs and shorts. Here it has a concrete source: the collateral itself is a yield bearing vault share, and funding is simply that yield, taken from the Receiver pool and handed to the Payer pool.
 
-The model does not estimate an APY. It reads the vault share price on every settlement.
+`NullV1YieldShareFundingRateModel` is the model that performs the measurement. It does not forecast an annual percentage yield, subscribe to a rate feed, or smooth anything over time. On each settlement it reads what the vault share is worth now, compares that with the best value it has previously recorded, and turns the growth since then into the rate the market should apply. Receivers end up keeping none of the vault yield on their pool, while Payers receive that yield in addition to the yield on their own shares, which reconciliation has already credited to them. The product view of the same arrangement is in [Funding and yield](/concepts/funding-and-yield).
 
-## Share price
+## Reading a share price precisely
+
+The model prices the collateral by asking the vault to convert a deliberately oversized probe amount:
 
 ```text
 sharePrice = vault.convertToAssets(1e36)
 ```
 
-The probe is `1e36` shares so the quote keeps the vault's precision when one share is worth less than one asset unit. `nmUSDC` is 18 decimals over 6-decimal USDC.
+Quoting for `1e36` shares rather than one share preserves precision when a single share is worth far less than one unit of the underlying asset. That is the normal case here, since `nmUSDC` carries 18 decimals over 6 decimal USDC, and rounding at this step would otherwise become a slow leak or gift between the pools, repeated at every settlement.
 
-The model stores, per market, the highest share price seen at a settlement and the annualized rate from the last settlement.
+For each market the model remembers two things together: the highest share price it has seen at a settlement, its high water mark, and the annualised rate produced by the most recent settlement. Both matter to what happens next.
 
-## Rate
+## From growth to a rate
 
-Let `top` be the stored high-water mark and `price` the current share price. If no time has passed since `state.lastUpdate`, the stored rate is returned and the mark does not move.
-
-If time has passed, both pools are above `MIN_POOL_ASSETS`, and `price > top`:
+Suppose some time has passed since the last settlement, both pools are above the settlement floor, and the current share price stands above the stored mark. The growth over the interval, and the rate derived from it, are:
 
 ```text
-growth = (price - top) * 1e18 / price
+growth = (price - top) / price
 rate = min(growth * 365 days / elapsed, 1e18)
 ```
 
-Growth is measured against the new price because pools hold shares. Receiver yield of `R * (price - top)` in assets is `R * (price - top) / price` in shares.
+Growth is measured against the new price rather than the old one, and the reason is the denomination of the pools. Pools hold vault shares, so yield expressed first in assets has to be converted back into the shares the market actually moves. Dividing by the new price performs exactly that conversion, which is why the market, multiplying the rate by the same elapsed time a second time, lands on a transfer equal to `growth` times the settleable Receiver assets. In plain terms, the Receiver pool pays over precisely the yield it earned during the interval.
 
-The market multiplies this rate by elapsed time again, so the collateral it moves is `growth * settleableReceiver`. That is the Receiver pool's yield for the interval.
+The rate is then capped at `1e18`, or 100 percent annualised. If a vault somehow earned more than that across a single interval, the excess is not charged and stays with Receivers. The cap is a bound on how much one settlement can take, in the same spirit as the other bounds in [Settlement](/protocol/settlement).
 
-The mark moves up to `price` when `price` is higher. If `price` is lower, the mark stays. No funding accrues until the share price is back above the previous top. A dip and recovery cannot create funding, and Receivers do not pay for the recovery of their own vault loss.
+## Why a high water mark
 
-If either pool is at or below `MIN_POOL_ASSETS`, the rate for that call is zero and the mark still advances, so yield from that interval is not charged later.
+The mark only ever rises. When the share price sets a new high, the mark moves up to meet it and funding is charged on the difference. When the price falls, as it can if the vault takes a loss, the mark stays where it was, and no funding accrues at all until the price has climbed back above its previous top.
 
-## Bounds
+This protects Receivers from paying for their own recovery. Without a mark, a dip followed by a return to the same price would look, to a model with no memory, like fresh yield, and Receivers would be charged for vault performance they never actually gained. With the mark, a round trip earns nothing and costs nothing, and only genuinely new highs generate funding. The rate can therefore never be negative, and Payers never pay funding under this model.
 
-- The rate is never negative. Payers never pay funding.
-- `rate <= 1e18` (100% APR). Yield above that for one interval stays with Receivers.
-- State is keyed by `msg.sender` inside `fundingRate`, so only the market that calls the model moves its own mark.
-- `fundingRateView` resolves the market through `factory.getMarket(collateral, oracle, this)`.
+## The quiet intervals
 
-## What the market does with the rate
+A few edge cases complete the picture, and each follows from asking who should bear a measurement that cannot fairly be made. If no time has passed since the last settlement, the model returns the stored rate and leaves the mark untouched, because there is no new yield to measure. The market ignores a rate when no time has passed in any case, so this value exists mainly so previews stay consistent.
 
-Settlement applies a positive rate as a payment from settleable Receiver assets to the Payer pool. See [Settlement](/protocol/settlement). Product language for the same flow is [Funding and yield](/concepts/funding-and-yield).
+If either pool is at or below `MIN_POOL_ASSETS` at settlement, that interval's rate is zero, but the mark still advances to the current price. Yield earned while a pool sat at the floor is therefore never charged later. The market could not have settled funding in that state, since a pool at the floor cannot pay, so the model does not quietly stockpile the claim for a healthier future.
 
-The factory owner must `enableFrm` this contract before a market can be created with it. Enabling does not change markets that already point at a different model.
+Finally, the bookkeeping is kept honest by keying state to the caller. Inside `fundingRate`, marks are indexed by `msg.sender`, so the only contract that can advance a market's mark is that market itself, calling during its own settlement. The read only counterpart, `fundingRateView`, cannot rely on the caller in the same way, so it resolves the market through the factory from the market's collateral, oracle, and this model before reading its mark. That keeps simulation and settlement looking at the same numbers.
+
+## A worked interval
+
+Imagine the vault share price ended the last settlement at a mark of 100 and, a day later, stands at 100.1. Growth against the new price is about a tenth of one percent, which annualises to a rate below the cap, so that rate is stored as it stands. The market then multiplies the rate by the one day that actually elapsed, undoing the annualisation and arriving at a transfer of about the interval's yield. The two operations are inverse by design. They exist so the model can speak in the annualised rates the market's funding machinery expects, while the amount that finally moves remains the modest yield of one interval. Only when a single interval's annualised growth passes 100 percent does the cap intervene, holding back the excess for Receivers as described above.
+
+Now imagine instead that the price fell to 98 and then recovered to 100 over the following week. No funding accrues on the way down, and none accrues on the way back either, because the price has only returned to ground the mark already recorded. Receivers have had a bad week in vault terms, but they have not been billed for climbing out of it. Only the first settlement that prints above 100 starts charging again, and then only on the ground gained above 100.
+
+## Reference
+
+| Item | Value | Meaning |
+| --- | ---: | --- |
+| Share price probe | `1e36` | Shares quoted in `convertToAssets` |
+| Rate cap | `1e18` | 100 percent annualised, per interval |
+| Rate floor | `0` | Funding is never negative |
+| Settlement floor | `1e6` | `MIN_POOL_ASSETS`, in raw collateral units |
+
+The factory owner must enable this model with `enableFrm` before a market can be created using it, and enabling cannot be undone. The contract surface is covered in [Yield share FRM](/contracts/yield-share-frm).

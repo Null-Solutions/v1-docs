@@ -1,40 +1,67 @@
 ---
 title: "Navigating the app"
 sidebarTitle: "Navigating the app"
-description: "Home sections, Markets, Lending, and Points, and what each one is for."
+description: "Home brings Savings, Spot, Lending, Margin, and Cash into one portfolio, while dedicated routes handle trading, the full lending book, and Points."
 ---
 
-The app is organized around **Home**. One wallet can hold Savings, Spot, Lending, and Margin without mixing them into one card.
+The app is built around Home, and that choice tells you how Null thinks
+about your money. Savings, Spot, Lending, and Margin are separate products
+with separate risks, but they belong to one wallet and one portfolio. Home
+keeps them side by side without blending them into a single balance, so you
+can see what you own in each place and what is still sitting idle.
 
-## Home sections
+At the top of Home, the portfolio figure combines the current value of your
+open positions with your Cash. **Invested** is the part already working
+across the four products, while **Cash value** is the USDC still in your
+wallet. Watching those two numbers move against each other is the quickest
+way to tell whether money is deployed or simply waiting.
 
-On a large screen, section pills sit on Home. On a phone, the logo opens **Sections**. Overview is the first item.
+## The sections on Home
 
-| Section | URL | What you see |
+On a large screen, the sections appear as pills across Home. On a phone,
+the logo opens **Sections**, and the same destinations appear there.
+**Overview** comes first and gives you the whole picture: the portfolio,
+its chart, and one row each for Savings, Spot, Lending, Margin, and Cash.
+
+Each remaining section narrows the view to a single product. **Savings**
+shows the **Null Savings Vault** with **Add money** and **Withdraw**. **Spot**
+shows your pool positions. **Lending** shows what you have supplied to
+Morpho books, with a link onward to the full book. **Margin** opens the
+Margin desk, which lives here and nowhere else in the app.
+
+| Section | URL | What it is for |
 | --- | --- | --- |
-| **Overview** | `/` | Portfolio, chart, and rows for Savings, Spot, Lending, Margin, and Cash |
-| **Savings** | `/?section=savings` | **Null Savings Vault**, **Add money**, **Withdraw** |
-| **Spot** | `/?section=spot` | Pool positions |
-| **Lending** | `/?section=lending` | Morpho supplies, and a link to the full book |
-| **Margin** | `/?section=margin` | The Margin desk |
+| **Overview** | `/` | The full portfolio, its chart, and a row for each product plus Cash |
+| **Savings** | `/?section=savings` | The **Null Savings Vault**, with **Add money** and **Withdraw** |
+| **Spot** | `/?section=spot` | Your pool positions at a glance |
+| **Lending** | `/?section=lending` | Your Morpho supplies, with a link to the full book |
+| **Margin** | `/?section=margin` | The Margin desk for leveraged positions |
 
-Empty overview rows read **No savings yet**, **No spot yet**, **No lending yet**, and **No margin yet**.
+If you have not used a product yet, its row says so plainly rather than
+showing an empty chart. You will see **No savings yet**, **No spot yet**,
+**No lending yet**, and **No margin yet**. Those rows are an invitation,
+not an error. Choosing **Invest** on Home asks which product you want, and
+offers to add money to Savings, buy shares, lend, or open a margin position.
 
-**Invest** asks which product you want: add money to Savings, buy shares, lend, or open a margin position.
+## Routes beyond Home
 
-The portfolio figure is invested value plus cash. **Invested** is the current value of open positions. **Cash value** is wallet USDC.
+Some work is better done away from the portfolio view. The `/trade` route
+lists the Spot markets, and opening a row gives you **Buy**, **Sell**, and
+**Receive** for that market. The `/lending` route carries the full lending
+book, where **Lend** and **Recall** act on each book directly. The `/points`
+route tracks Season 0, which the [Points](/points) page explains.
 
-## Other routes
+Margin is the exception worth remembering. It is only available through
+Home and then **Margin**, and you will not find it on `/trade`. If you go
+looking for leverage among the Spot markets, you are in the wrong place.
 
-| Route | For |
-| --- | --- |
-| `/trade` | Spot markets. Open a row for **Buy**, **Sell**, and **Receive**. |
-| `/lending` | Full lending book. **Lend** and **Recall**. |
-| `/points` | Season 0. See [Points](/points). |
-| Docs | These pages. |
+## One setting that changes what you see
 
-Margin is only on Home → Margin. It is not on `/trade`.
+The account menu holds **Pro Mode**, and it matters more than its quiet
+placement suggests. With Pro Mode on, Spot also shows Payer, the pool that
+backs Receiver and behaves very differently from it. If you only want
+Receiver exposure, leave Pro Mode off and Payer stays out of your way.
 
-**Pro Mode**, in the account menu, shows Payer on Spot. Leave it off if you only want Receiver.
-
-Product detail: [Savings](/products/savings), [Spot](/products/spot), [Lending](/products/lending), [Margin](/products/margin).
+When you are ready to go deeper, each product has its own guide:
+[Savings](/products/savings), [Spot](/products/spot),
+[Lending](/products/lending), and [Margin](/products/margin).

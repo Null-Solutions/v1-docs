@@ -1,59 +1,107 @@
 ---
 title: "Market making"
 sidebarTitle: "Market making"
-description: "Payers back Receiver exposure and receive collateral yield. A hedge, if you want one, lives outside Null."
+description: "Holding Payer means backing Receiver exposure for funding and collateral yield, sizing any hedge yourself, and carrying the price risk that comes with it."
 ---
 
-Market making on Null means holding **Payer**. You provide the collateral that backs Receiver. If the oracle price rises, Payer loses. If it falls, Payer gains. You also receive funding paid from Receiver-side collateral yield.
+Market making on Null has a specific meaning, and it is narrower than the phrase suggests
+elsewhere. You are not quoting bids and offers, and you are not running a bot. You are holding
+**Payer**, the pool that stands behind Receiver so that Receiver can take the return of an
+oracle tracked asset. In exchange for taking the other side of that exposure, you collect the
+funding Receivers pay and the yield on the collateral inside your own pool.
 
-Turn on **Pro Mode** to see **Payer buy** and **Payer sell**.
+That trade should be understood before it is admired. When the oracle price rises, Receiver
+gains and Payer loses. When the price falls, the direction reverses. Your return therefore
+depends on whether the funding and yield you collect over time outweigh the price moves
+working against you. Payer pays you to carry risk. It does not remove the risk.
+
+To see any of this in the app, turn on **Pro Mode** in the account menu. Spot then offers
+**Payer buy** and **Payer sell** alongside the Receiver ticket. With Pro Mode off, Payer is
+hidden entirely, which is the right default for anyone who has not yet decided to take this
+side of the market.
 
 ## What you actually hold
 
-A Payer position is a negative-size position in the Receiver pool, with the market's collateral inside that structure. Your short notional is your position value times `R / P`. You do not pick that multiple. The pools set it, and it moves.
+A Payer position is best pictured as a negative size position in the Receiver pool, with the
+market's collateral sitting inside that structure. You are long the collateral and short the
+tracked exposure at the same time. The size of the short is not a setting you choose. It falls
+out of the balance between the two pools, and it changes as other people enter and leave.
+
+The relationship is expressed through two quantities you will see across these docs. `R` is
+the assets in the Receiver pool and `P` is the assets in the Payer pool, both measured in
+collateral units. Their ratio sets how much exposure each unit of Payer capital is carrying.
 
 ```text
 short scale = R / P
 Payer short notional = p × R / P
 ```
 
-Size the external hedge off that notional, and resize it when the pools move. A hedge entered at one scale is the wrong size after coverage changes.
+Read that second line slowly, because it drives every decision that follows. If Receiver holds
+three times the assets Payer does, each dollar of Payer value carries roughly three dollars of
+short exposure. As coverage thins and the ratio climbs, the same position becomes a larger bet
+without you adding a cent. As Receiver drains and the ratio falls, the bet quietly shrinks.
+Position size on Payer is a moving quantity.
 
-## What you earn
+## What you earn for carrying it
 
-Approximate Payer carry, before fees and hedge costs:
+Payers are compensated from two sources, and it helps to keep them apart. The first is the
+yield on your own collateral, which you would earn from that collateral in any case. The second
+is funding, paid across from the Receiver pool out of the yield its collateral generates.
+Combined, the approximate carry on a Payer position, before fees and hedge costs, looks like this.
 
 ```text
-y × (1 + R / P)
+carry ≈ y × (1 + R / P)
 ```
 
-`y` is collateral yield. The `y` term is yield on your own collateral. The `y × R / P` term is funding received from Receivers. Worked numbers: [Funding and yield](/concepts/funding-and-yield).
+Here `y` is the collateral yield. The opening `y` is the return on your own collateral, and the
+`y × R / P` term is the funding arriving from Receivers, scaled by the same ratio that scales
+your short. This is why thin coverage cuts both ways. It raises the funding you receive per unit
+of capital at exactly the moment it raises your exposure per unit of capital. The worked numbers
+behind the formula are in [Funding and yield](/concepts/funding-and-yield).
 
-## The hedge is not Null funding
+## Hedging, and why it is your problem
 
-Many Payers buy the tracked asset, or a perpetual, somewhere else so price risk offsets. What remains is Null funding, plus yield on Payer collateral, minus the cost of that hedge.
+Many Payers do not want outright price exposure, so they hedge outside Null by buying the tracked
+asset, or a perpetual contract on it, at another venue. Done well, the hedge offsets the short
+embedded in Payer. What remains is the trade they actually wanted: Null funding, plus yield on
+Payer collateral, minus whatever the hedge costs to hold.
 
-External venues charge their own funding, fees, and maintenance margin. Those charges are not Funding APR. A positive Funding APR can still lose money after hedge funding and basis.
+Null does not open, size, or manage that hedge for you, and its economics are entirely separate
+from Null funding. An external venue charges its own funding, its own fees, and its own
+maintenance margin, and none of those charges appear in Null's Funding APR. A headline rate that
+looks generous inside Null can still lose money once hedge funding turns against you or the basis
+between the two venues moves. Judge the position on the net of both legs, never on one leg alone.
 
-Null does not open or manage that hedge for you.
+Sizing also needs maintenance. Because the hedge should match the short notional `p × R / P`, and
+because that notional drifts with pool flows, a hedge that was correct on the day you entered can
+be materially wrong a week later. Recheck the ratio after large deposits or withdrawals in either
+pool, and resize the hedge when the scale has moved.
 
-## Operating checklist
+## Running a Payer position
 
 <Steps>
-  <Step title="Read the pools">
-    Check `R`, `P`, collateral APR, and funding APR on the market before you buy Payer.
+  <Step title="Read the pools before you commit">
+    Check `R`, `P`, the collateral APR, and the funding APR on the market. Together they tell
+    you how large a short you are taking on and what you are currently being paid to hold it.
   </Step>
-  <Step title="Buy Payer">
-    Use **Payer buy** in Pro Mode. The fee is on notional, so it scales with `R / P`.
+  <Step title="Buy Payer through Pro Mode">
+    Use **Payer buy** on the Spot ticket. Entry and exit fees are charged on notional rather
+    than on the cash you put in, so the cost scales with `R / P` and deserves a look first.
   </Step>
-  <Step title="Hedge outside, if you choose">
-    Match short notional `p × R / P`. Recheck after large pool flows.
+  <Step title="Place the hedge outside Null, if you want one">
+    Match the short notional at an external venue, and remember that its funding, fees, and
+    margin calls are yours to manage. An unhedged Payer position is a deliberate directional
+    short, not a neutral one.
   </Step>
-  <Step title="Watch carry">
-    Compare Null funding and collateral yield with external funding and fees. Exit with **Payer sell** when the trade no longer pays.
+  <Step title="Watch the carry against its costs">
+    Compare Null funding and collateral yield with the funding and fees on your hedge. When
+    the net no longer pays for the exposure, exit with **Payer sell** rather than waiting
+    for the rate to rescue you.
   </Step>
 </Steps>
 
 <Warning>
-Payer can lose most of its value when the oracle rises and coverage is thin. Funding does not cap that loss.
+Payer can lose most of its value when the oracle price rises and coverage is thin. Funding
+softens that outcome over time, but it does not cap it. Size the position for the price move,
+not for the rate.
 </Warning>

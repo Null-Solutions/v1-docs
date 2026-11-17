@@ -1,44 +1,73 @@
 ---
 title: "FAQ"
 sidebarTitle: "FAQ"
-description: "Short answers about the primitive, the four products, funding, and points."
+description: "Straight answers on what Null is, how its four products differ, why funding flows to Payers, and what points do and do not mean."
 ---
+
+Most questions about Null come down to a few distinctions: pool shares versus the assets they
+track, funded products versus leveraged ones, and rates that describe the present versus
+returns nobody has promised. The answers below take those distinctions one at a time.
 
 <AccordionGroup>
   <Accordion title="What is Null?">
-    A two-pool market for oracle price exposure, plus Savings, Lending, and Margin around it. Start with [the primitive](/concepts/the-primitive).
+    Null is a market built from two pools that take opposite sides of an oracle tracked price,
+    with Savings, Lending, and Margin arranged around that core. If you are new to the design,
+    [the primitive](/concepts/the-primitive) explains how the two pools work together.
   </Accordion>
-  <Accordion title="Do I own the stock or token?">
-    No. You own a share of a collateral pool, or a vault share, or a Morpho supply position. You do not get voting rights or dividends unless the oracle return already includes them.
+  <Accordion title="Do I own the stock or token a market tracks?">
+    No. You own a share of a collateral pool, a share of a vault, or a supply position on Morpho,
+    depending on the product you used. No voting rights and no dividends reach you directly,
+    although an oracle whose return includes distributions reflects them in its price.
   </Accordion>
   <Accordion title="What is the difference between Savings and Lending?">
-    Savings deposits USDC into the Null Savings Vault, which lends on long books for you. Lending supplies a book directly, with **Lend** and **Recall**, including Receiver-share books.
+    Savings is the managed route, where **Add money** deposits USDC into the Null Savings Vault
+    and the vault lends across long books for you. Lending is the direct route, where you pick
+    a book yourself and use **Lend** and **Recall**, including Receiver share books.
   </Accordion>
   <Accordion title="What is the difference between Spot and Margin?">
-    Spot is an unlevered pool share. There is no liquidation. Margin borrows on Morpho and can be liquidated at that book's LLTV.
+    Spot buys you an unlevered share of a pool, so your position can lose value but can never be
+    liquidated. Margin borrows against collateral on Morpho to enlarge the position, and that
+    borrowing introduces a liquidation threshold at the book's LLTV.
   </Accordion>
-  <Accordion title="Where is Payer?">
-    Turn on **Pro Mode** in the account menu. Payer buy and Payer sell then appear on the Spot ticket.
+  <Accordion title="Where is Payer, and why can I not see it?">
+    Payer is hidden until you turn on **Pro Mode** in the account menu. Once it is on, **Payer
+    buy** and **Payer sell** appear on the Spot ticket. Payer backs Receiver and moves against
+    the oracle price, so the app keeps it out of sight until you ask for it.
   </Accordion>
   <Accordion title="Why is funding always paid to Payers?">
-    Funding is the collateral yield on the Receiver pool. Receivers pay it to Payers. It does not flip when Payer collateral is larger than Receiver collateral. Coverage still changes Payer's percentage carry. See [Funding and yield](/concepts/funding-and-yield).
+    Funding is the yield earned on collateral inside the Receiver pool, routed to Payers as
+    payment for backing Receiver exposure. The direction never flips, even when Payer collateral
+    is larger than Receiver collateral, though coverage changes how much each Payer earns.
+    [Funding and yield](/concepts/funding-and-yield) works through the numbers.
   </Accordion>
-  <Accordion title="What does Net APR mean?">
-    Collateral yield plus or minus funding for your side. On a Payer it is scaled by `R / P`. It is not a quote of future profit.
+  <Accordion title="What does Net APR actually mean?">
+    Net APR combines collateral yield with funding, signed for the side you hold, and on a Payer
+    position it is scaled by `R / P`. It describes what current rates imply right now. It is not
+    a quote anyone has made you, and it does not predict your profit at exit.
   </Accordion>
-  <Accordion title="Why can't I withdraw all of my Savings?">
-    Most of the vault is lent to Margin longs. You can withdraw free USDC. The panel shows how much that is.
+  <Accordion title="Why can I not withdraw all of my Savings?">
+    Most of the vault's USDC is out on loan to Margin longs at any given moment, so only the
+    unlent remainder is free to leave immediately. The panel shows how much that is. As loans are
+    repaid or positions close, more of the balance becomes withdrawable.
   </Accordion>
   <Accordion title="What does Receive do?">
-    It shows your wallet address and a QR code. It does not buy a position.
+    **Receive** displays your connected wallet's address and a QR code so you, an exchange, or
+    another wallet can send assets to it. That is all it does. It opens no position and commits
+    no funds, and assets become Cash only once they arrive in the wallet.
   </Accordion>
-  <Accordion title="Are points yield?">
-    No. Season 0 monitors ordinary activity. Points do not change pool value. See [Points](/points) and the [Legal notices](/legal).
+  <Accordion title="Are points a form of yield?">
+    No. Season 0 monitors ordinary trading activity, and points record that activity without
+    changing the value of any pool share, position, or settlement. They carry no stated value
+    and promise no token or payout. See [Points](/points) and the [Legal notices](/legal).
   </Accordion>
-  <Accordion title="Which markets are live?">
-    The list on `/trade` is the live set. These docs do not hardcode symbols, because the indexer decides what is listed.
+  <Accordion title="Which markets are live right now?">
+    The list on `/trade` is the live set, and it is the only list worth trusting. These docs
+    deliberately avoid naming symbols, because the indexer decides what is listed and that set
+    can change without the documentation changing with it.
   </Accordion>
-  <Accordion title="Is there an audit?">
-    Nethermind reviewed an earlier scope of the core contracts. Read [Audits](/protocol/audits) before you treat that as cover for Margin, the vault, or Morpho.
+  <Accordion title="Has Null been audited?">
+    Nethermind reviewed an earlier, defined scope of the core contracts, and that review has
+    real limits. Later contracts, including Margin routing and the vault, can sit outside it.
+    Read [Audits](/protocol/audits) for what was covered before relying on it.
   </Accordion>
 </AccordionGroup>

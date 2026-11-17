@@ -4,34 +4,58 @@ sidebarTitle: "Fees"
 description: "Entry and exit fees are basis points on notional. The collateral fee cap is zero."
 ---
 
-Fee constants live in `ConstantsLib`.
+Fees in Null exist to price an option that would otherwise be free. Oracle prices update in discrete steps, and anyone who can deposit or redeem at a price the market has not yet moved away from is, in effect, trading on information the pools have not absorbed. Entry and exit fees charge for that privilege on both sides of the door, because an entry only fee would leave the mirror image attack, redeeming at a stale price to dodge a move that has already happened, completely unpriced.
+
+That purpose shapes where the money goes. On the standard deployment, fees are not protocol revenue at all. They are paid across to the opposite pool, compensating the holders who were on the other side of the stale price. Only when a factory is deployed with protocol fees allowed does the same charge become income swept to the factory owner. Understanding a Null fee therefore means asking two separate questions: how it is sized, and whose balance it lands in.
+
+## How the charge is sized
+
+Entry and exit fees are quoted in basis points, but they are not charged on the raw amount handed over. They are charged on notional, worked out with `feeOnTotal`, and the distinction matters most exactly when a trade matters most. The notional base is grossed up to Receiver exposure: it includes the assets being added, so a depositor pays on the full position they are about to hold rather than only on the net amount that survives the fee. For a Payer deposit, the base is further scaled by the current pool ratio, because Payer collateral backs a slice of the whole Receiver book. When Receiver assets are large relative to Payer assets, a modest Payer deposit supports a much larger notional, and the fee follows the notional it actually puts at risk.
+
+Given that base, the arithmetic itself is deliberately plain:
+
+```text
+fee = notional * feeBps / 10000
+```
+
+Nothing about the fee depends on elapsed time, pool history, or the funding model. It is a toll on the act of changing the pools' composition at a settled price, charged identically whether the market has been quiet for a week or has just moved.
+
+## Where the charge goes
+
+The destination is decided once for a whole factory, by the immutable `allowProtocolFees` flag copied onto every market it creates. When that flag is off, an entry or exit fee is credited to the counterparty pool: Receiver entrants compensate Payers, and Payer entrants compensate Receivers, with redemptions following the same crosswise logic. The fee is a transfer between the two sides of the same market and never leaves it. When the flag is on, the fee is credited instead to the market's `protocolFees` balance, where it waits to be collected.
+
+There is one exception, and it follows from the settlement floor rather than from fee policy. If the pool that would receive the fee is at or below `MIN_POOL_ASSETS`, the fee is waived back to the caller instead. Crediting a pool in that state would either be meaningless against the floor or would hand an almost empty pool a claim its holders had not earned exposure to, so the charge simply is not taken.
+
+Accrued protocol fees leave a market through `sweepFees`, which sends the whole `protocolFees` balance to the factory owner. Anything else that lands in that balance travels with it, including collateral donated while both pools stood empty and were reconciled into fees during [Settlement](/protocol/settlement).
+
+## Fees inside settlement and outside it
+
+It helps to keep entry and exit fees separate from the transfers that settlement performs. Settlement moves collateral between pools because prices moved and yield accrued, and it would do so whether or not any individual trade occurred. Fees, by contrast, attach to the deposit or redemption itself, are calculated once that trade's notional is known, and are taken whether the preceding settlement moved a great deal or nothing at all. A trader in a quiet market still pays them, because the option being priced is the ability to act at the settled price before the next price movement arrives.
+
+This is also why fees are described as being on total notional rather than on the amount received. The economic exposure a depositor acquires is the gross position, and pricing the stale price option on anything smaller would systematically undercharge exactly the largest and fastest entrants. Redeemers are charged symmetrically on the exposure they are giving up, which closes the otherwise attractive strategy of waiting for news and leaving at the pre news price for free.
+
+Receivers and Payers do not experience these fees identically. A Receiver fee is scaled by straightforward Receiver notional, while a Payer fee is scaled by the pool ratio, so the same cash deposit can attract very different charges on the two sides when the pools are unbalanced. When Payer collateral is scarce relative to Receiver assets, Payer entry is backing a large book and is priced like it. That is intentional, but it means a quoted basis point figure is not a complete description of cost until the current pool ratio has been applied to it.
+
+## Setting fees, and the fee that is switched off
+
+Each market starts with default entry and exit fees, and the factory owner can retune a market afterwards by calling `setFees` on it. The caps exist so that this discretion cannot become a trap: whatever governance does later, entry and exit fees can never exceed the maximums below, and changing them never rewrites positions already taken.
+
+A third fee, the collateral fee, would have charged an annualised percentage of both pools merely for existing. It is present in the interfaces and in the settlement sequence, but its maximum is set to zero, so it cannot be enabled on any market and its step in settlement is permanently idle. Treat any interface field for it as structural rather than live.
+
+## Reference
 
 | Constant | Value | Meaning |
 | --- | ---: | --- |
-| `DEFAULT_ENTRY_FEE` | 25 | 0.25% at market creation, unless `setFees` changes it |
-| `DEFAULT_EXIT_FEE` | 25 | 0.25% |
-| `MAX_ENTRY_FEE` | 250 | 2.50% cap |
-| `MAX_EXIT_FEE` | 250 | 2.50% cap |
-| `DEFAULT_COLLATERAL_FEE` | 0 | |
-| `MAX_COLLATERAL_FEE` | 0 | Collateral fee cannot be enabled |
-| `MAX_BASIS_POINTS` | 10000 | |
+| `DEFAULT_ENTRY_FEE` | 25 bps | Entry fee at market creation |
+| `DEFAULT_EXIT_FEE` | 25 bps | Exit fee at market creation |
+| `MAX_ENTRY_FEE` | 250 bps | Highest entry fee the owner can set |
+| `MAX_EXIT_FEE` | 250 bps | Highest exit fee the owner can set |
+| `DEFAULT_COLLATERAL_FEE` | 0 bps | Collateral fee at market creation |
+| `MAX_COLLATERAL_FEE` | 0 bps | Collateral fee cannot be enabled |
+| `MAX_BASIS_POINTS` | 10000 | Basis point denominator |
 
-The factory owner calls `market.setFees(entryFee, exitFee, collateralFee)`. Values above the caps revert.
+Those defaults deserve a word of interpretation. At 25 basis points each way, a round trip costs half a percent of notional before funding, vault movement, or any Morpho interest on a leveraged position. That is cheap enough that ordinary rebalancing is not meaningfully discouraged, and expensive enough that depositing and redeeming in rapid succession around every oracle update is a losing habit. The fee schedule is, in effect, a statement about the timescale the market wants its holders to trade on: positions held across settlements, not churn within them.
 
-## Notional
+Because the factory owner can raise fees toward the caps after a market is live, holders also carry a modest governance exposure. The caps bound that exposure tightly, and fee changes cannot touch collateral already settled, but an exit fee raised before you leave is a real cost of leaving. Markets where that trust is misplaced should, over time, simply lose their pools to markets whose owners behave better, which is the discipline a permissionless factory is supposed to provide.
 
-Entry and exit fees use a notional that grosses the deposit or redemption up to Receiver exposure, not the raw collateral amount. On a Receiver deposit the base includes the assets being added. On a Payer deposit the base is scaled by the current pool ratio, because Payer collateral backs a larger Receiver notional when `R > P`.
-
-The fee amount is `notional * feeBps / 10000`.
-
-## Who receives it
-
-`allowProtocolFees` is immutable on the factory and copied onto each market.
-
-- When it is false, the fee credits the other pool.
-- When it is true, the fee credits `protocolFees`.
-- If the other pool is at or below `MIN_POOL_ASSETS`, the fee is waived back to the caller.
-
-`sweepFees` sends accrued `protocolFees` to `factory.owner()`. Collateral-fee accruals and donations that land in `protocolFees` use the same sweep. With the collateral fee capped at 0, that bucket is empty unless something donates collateral while both pools are empty.
-
-Product wording: [Fees](/concepts/fees).
+The same fees described from the trader's side of the screen are in [Fees](/concepts/fees).

@@ -4,46 +4,56 @@ sidebarTitle: "Troubleshooting"
 description: "What to check when a Buy, Sell, Savings withdrawal, lend, or Margin order does not go through."
 ---
 
-Transactions send from your wallet to Ethereum. Null cannot replay a failed transaction. A failure still spends the gas the wallet quoted if it was included.
+Most failed transactions fail for a small number of ordinary reasons: the price moved, the balance is somewhere else, or a limit you cannot see on the ticket is doing its job. This page is organized by what you were trying to do and what you saw. Find your symptom, read why it happens, then try the fix in that order.
 
-## The preview and the result differ
+One thing to know before you start. Transactions are sent from your wallet to Ethereum, and Null cannot replay, reverse, or rescue a failed one. A transaction that was included onchain still spends the gas your wallet quoted, even when the action itself reverts.
 
-Settlement runs at the start of the transaction. Someone else can trade, or the oracle can move, between your preview and the block. Raise slippage only if you accept the worse price. Otherwise refresh and submit again.
+## "The price I got is worse than the preview"
 
-**Transaction expired** means the deadline passed. Refresh the quote.
+This is the most common complaint, and it usually is not an error. The preview is a read. Your actual transaction settles the market at the moment it lands, and anyone can trade, or the oracle can move, between the block you previewed and the block you are included in.
 
-## Buy or Sell fails
+If the result is inside the slippage you set, the trade executed as designed. Only raise slippage if you genuinely accept the worse price. Otherwise refresh the quote and submit again. If you see a transaction expired message, the deadline simply passed while the transaction waited. Refresh and resubmit. Nothing about your position changed.
 
-- **Cash** is USDC in the connected wallet, on Ethereum. A balance on another network is not Cash.
-- Approve the router for the token it asks for. Spot through the router spends USDC, not `nmUSDC`, when collateral is a vault.
-- **Sell** spends pool shares. If you sold from another wallet, this wallet's balance is unchanged.
-- The oracle report can be stale. The app attaches an update when it has one. If the feed is down, the transaction reverts rather than using a made-up price.
-- A move larger than 20% in one settlement skips the price transfer and still completes. Your share count changes with the deposit or redemption. The skipped price move is not applied. See [Circuit breaker](/protocol/circuit-breaker).
+## "My Buy or Sell will not go through"
 
-## Savings
+Work through these in order. Almost every spot failure is one of them.
 
-**Add money** needs USDC and gas.
+First, check what **Cash** actually is. Cash is USDC held in your connected wallet on Ethereum. USDC on another network, or USDC sitting inside a product, is not Cash and cannot fund a Buy. Move it to the wallet on Ethereum first.
 
-**Withdraw** needs free USDC in the vault. If the panel says only part of the balance can be withdrawn, the rest is lent on Morpho. Take the smaller amount or wait for borrowers to repay.
+Second, check the approval. Spot trades through the router spend USDC directly when the market collateral is a vault, not `nmUSDC`, and the router needs an allowance for the token it asks for. Approve the amount the wallet requests.
 
-## Lending
+Third, for a **Sell**, remember it spends pool shares held by the connected wallet. If you bought from a different wallet, this wallet's share balance is genuinely zero, and the Sell has nothing to spend. Connect the wallet that made the Buy.
 
-**Lend** fails if the token approval is short or the wallet balance is short.
+Fourth, consider the oracle. If the feed's report is stale, the transaction reverts rather than pricing your trade from invented data. The app attaches an update when it has one. If the feed itself is down, waiting is the fix.
 
-**Recall** fails when borrowers are still using the liquidity. Recall up to **Total Liquidity** minus **Outstanding Loans**, or wait.
+Finally, the circuit breaker. A move larger than 20% in a single settlement skips the price transfer, and the trade still completes. Your share count changes with your deposit or redemption, but the skipped price move is not applied to you and is not paid later. This feels wrong the first time it happens to you. It is the protocol refusing to settle a violent move all at once. See [Circuit breaker](/protocol/circuit-breaker).
 
-## Margin
+## "Savings will only let me withdraw part of my balance"
 
-**Not Enough Liquidity** on a long means the long book does not have enough free USDC. A smaller size can fit.
+**Add money** needs USDC in the wallet and ETH for gas. If it fails, one of those two is short.
 
-**Insufficient Balance** means wallet USDC is below the equity.
+**Withdraw** is limited by free USDC actually sitting in the vault. The rest of the vault's money is lent out on Morpho and cannot be withdrawn until borrowers repay it. The panel is not miscalculating your balance. It is showing you the portion that is liquid today. Withdraw the smaller amount, or wait for loans to be repaid and try again.
 
-The first borrow needs you to authorize `NullV1MorphoRouter` on Morpho. If that signature was rejected, the open cannot borrow.
+## "My Recall failed even though I have a lend position"
 
-**Close** on a short does not need spare Receiver shares in the book. If close still fails, check the deadline, the oracle update, and that the position is on the wallet you connected.
+**Lend** fails for the mundane reasons first: the token approval is short, or the wallet balance is short. Check both before anything else.
 
-A position can be liquidated when loan-to-value reaches LLTV even if you never send another transaction. **Liq. price** is an estimate and does not include later interest.
+**Recall** has a harder limit. You can only recall liquidity that borrowers are not currently using, which is **Total Liquidity** minus **Outstanding Loans**. If your recall is larger than that, it fails. Recall up to the free amount shown, or wait for borrowers to repay and free up more.
 
-## Region
+## "Margin says Not Enough Liquidity"
 
-If the app sends you to an unavailable page, the connection is in a blocked region. A VPN does not make an ineligible person eligible. See [Legal notices](/legal).
+On a long, this message means the long book does not have enough free USDC to lend at the size you asked for. It is a statement about the book, not about your wallet. A smaller size can fit, or you can wait for liquidity to return.
+
+If instead your equity is the problem, the ticket will say so: your wallet USDC is below the equity the position requires.
+
+## "My first Margin open asked for an extra signature"
+
+That signature is expected. Before the router can borrow or withdraw collateral for you, you must authorize `NullV1MorphoRouter` on Morpho. If you rejected that signature, the open cannot borrow, and it will keep failing until you accept it. It is a one time authorization per wallet, separate from token approvals.
+
+Closing a short surprises people in the opposite way. It does not need spare Receiver shares sitting in the book, because the router mints the shares it owes while repaying. If a short close still fails, check the deadline, check that the oracle update went through, and confirm the position actually belongs to the wallet you have connected.
+
+And a standing warning: a Margin position can be liquidated when its loan to value reaches LLTV, even if you never send another transaction. **Liq. price** is an estimate. It does not include interest that accrues later, so leave yourself room.
+
+## "The app sent me to an unavailable page"
+
+If you are redirected to `/unavailable`, the connection is coming from a blocked region, and the app will not let you trade from there. Null is not offered in the United Kingdom. Using a VPN does not make an ineligible person eligible. See [Legal notices](/legal).

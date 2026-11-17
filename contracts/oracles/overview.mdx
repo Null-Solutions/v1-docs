@@ -4,23 +4,47 @@ sidebarTitle: "Oracles"
 description: "Chainlink Data Streams oracles for Null markets, plus the Morpho oracles used by Margin books."
 ---
 
-A Null market stores one oracle address for its lifetime. Spot settlement calls `oracle.price()`, which returns a `1e36`-scaled price of the tracked asset.
+Every Null market is created with one oracle address, and it keeps that oracle for its entire life. When the market settles, it calls `oracle.price()` and receives a `1e36` scaled price for the tracked asset. Everything downstream, pool pricing, funding, and the circuit breaker, is built on that single number. Choosing and feeding the right oracle is therefore part of creating a market, not an afterthought.
 
-The supported price oracles are Chainlink Data Streams:
+Null supports two families of oracle, and confusing them is the most common integration mistake. Chainlink Data Streams oracles price the tracked asset for the market itself. Morpho oracles price Receiver pool shares for the Margin books. This page covers the first family and points to the second.
 
-- **V3** for a single 24/7 feed.
-- **V11** for session feeds (regular, extended, overnight) on assets that do not trade all week.
+## Chainlink Data Streams
 
-Both are pull oracles. The router calls `update(bytes[])` with a signed report before the market reads `price()`. The Chainlink update fee reported to the router is zero. Use `NullV1Router`. Do not send ETH with the call.
+Market oracles are Chainlink Data Streams feeds, in two schemas:
 
-Integration steps: [Chainlink Data Streams](/contracts/oracles/chainlink).
+- **V3** serves a single feed for assets that trade around the clock, 24/7 markets such as crypto.
+- **V11** serves session based feeds, split into regular, extended, and overnight sessions, for assets that do not trade all week.
 
-## Morpho oracles are separate
+Both are pull oracles. Nothing updates on its own. A signed report must be submitted with `update(bytes[])` before the market reads `price()`, and the report that is stored is the price settlement will use. Your trade therefore carries its own price evidence with it, in the `updateData` argument.
 
-Margin books do not use the Chainlink oracle as their Morpho price source. They use [Morpho oracles](/contracts/oracles/morpho), which convert Receiver shares through the pool's previews.
+## Updates are fee-less through the router
 
-## Freshness
+Chainlink Data Streams normally involves an update fee. Through Null it does not. The fee reported to `NullV1Router` is zero, and the router's update path is nonpayable.
 
-If `price()` reverts, settlement reverts and the trade does not land. Pass a fresh `updateData` when the stored report is outside the oracle's accepted window. Pass `[]` only when the stored price is still valid. Never fabricate report bytes.
+Route market trades through `NullV1Router` and attach no ETH to the call. Sending ETH is not a tip and does not improve the update. It simply does not belong in the transaction. If you are used to paying for Data Streams verification elsewhere, drop that habit here.
 
-Market-creation and trade routing: [Oracles](/markets/oracles).
+## Freshness, and what happens when it fails
+
+A stored report is only usable inside the oracle's accepted window. If `price()` reverts, settlement reverts with it, and the trade does not land at all. Null never falls back to an estimated price.
+
+So pass a fresh `updateData` whenever the stored report may have aged out. Pass an empty array only when you know the stored price is still valid, for example when a trade moments ago already updated it. And never fabricate report bytes. Reports are verified, so invented data fails verification rather than quietly pricing your trade.
+
+## Choosing between V3 and V11
+
+The choice is made by the asset, not by preference. If the tracked asset trades continuously, it belongs on a V3 feed with a single price stream. If it trades in sessions, with overnight gaps and distinct regular, extended, and overnight periods, it belongs on V11, which carries a separate feed for each session and lets the report itself state which session it belongs to.
+
+That choice is fixed when the market is created, because the market stores one oracle address for life. There is no migration path that swaps a live market from one schema to the other. Markets that need a different feed are new markets, with their own pools and their own history.
+
+## What to pass, in practice
+
+Treat `updateData` as part of your quote, not as boilerplate. Fetch a current signed report for the market's feed, attach it, and submit promptly. If your transaction sits in the mempool long enough for the report to age out, the failure will look like an oracle revert, because that is what it is. Refresh the report and resubmit rather than raising gas on a payload that can no longer verify.
+
+An empty `updateData` is a positive claim that the stored price is still inside its window. Make that claim only when you have checked, for example immediately after another of your transactions updated the same oracle.
+
+## The Morpho oracles are a separate system
+
+Margin books do not hand Morpho the Chainlink price. Morpho lends against pool shares, so it needs a share price, and the Chainlink feed says nothing about shares. The books instead use dedicated oracles that convert Receiver shares through the pool's own deposit and redeem previews. Those are documented in [Morpho oracles](/contracts/oracles/morpho).
+
+If you take one rule from this page, take this one: the market oracle prices the asset, and the Morpho oracles price the shares. Handing one system the other system's price is the mistake to design against.
+
+For report level detail on schemas, session selection, and staleness windows, read [Chainlink Data Streams](/contracts/oracles/chainlink). For market creation parameters, read [Oracles](/markets/oracles).

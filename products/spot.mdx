@@ -4,20 +4,9 @@ sidebarTitle: "Spot"
 description: "Buy or sell unlevered Receiver shares. Payer is available in Pro Mode."
 ---
 
-**Spot** is an unlevered share of a Null pool. **Buy** Receiver to hold the oracle-tracked return. **Sell** to exit. There is no leverage slider and no liquidation price on Spot.
+Spot is Null in its simplest form, and for most people it is the right place to start. You think a price is going up, or you think it is going down, and you want that view in your wallet without borrowing anything or watching a liquidation level. Spot gives you the view and nothing else. There is no leverage to manage and no debt accruing quietly in the background while you sleep.
 
-<Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/system-map-light.svg"
-    alt="Spot sits in the Receiver and Payer pools, which hold nmUSDC from the collateral vault."
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/system-map-dark.svg"
-    alt="Spot sits in the Receiver and Payer pools, which hold nmUSDC from the collateral vault."
-  />
-</Frame>
+That simplicity is deliberate. Null can express the same market through borrowed, leveraged positions in [Margin](/products/margin), but leverage changes the question from whether you were right to whether you survived being early. Spot keeps the question clean: you own a share of a pool, its value moves, and you sell when you are done.
 
 <Frame>
   <img
@@ -32,51 +21,41 @@ description: "Buy or sell unlevered Receiver shares. Payer is available in Pro M
   />
 </Frame>
 
-## How it uses the primitive
+## Why this exists
 
-A Spot position is a percentage of one pool. Receiver takes the price return. Payer is a negative-size position in the Receiver pool, with the market's collateral inside that structure. Short scale is `R / P` and changes as the pools change.
+A conventional spot purchase ties up the full price of the asset and gives you the asset itself, with custody, settlement, and market hours attached. Null markets exist so that the return of an asset can be held as an onchain position instead. You get exposure to the oracle tracked return, in a share you can buy or sell at any time, without taking delivery of the underlying thing.
 
-You do not borrow the tracked asset. You do not receive the real stock or token. Full mechanics: [The primitive](/concepts/the-primitive).
+The default version of that idea is the Receiver. Buying Receiver is the natural long: as the tracked price rises, the pool's return accrues to your share. The short side exists too, but it is a stranger instrument, so Null puts it behind **Pro Mode** for people who have read enough to want it specifically. More on that below.
 
-## What you see
+## How it connects to the primitive
 
-- **Home → Spot** (`/?section=spot`) lists positions. An empty overview row reads **No spot yet**.
-- **Markets** (`/trade`) lists live markets from the indexer. Open a market for the slide-out.
-- The slide-out actions are **Buy**, **Sell**, and **Receive**. **Receive** shows your wallet address and a QR code so someone can send you assets on this chain. It does not open a position.
-- With **Pro Mode** on (account menu), the terminal also shows **Receiver** and **Payer** tabs, plus **Payer buy** and **Payer sell**.
-- The ticket is amount, then **Review**, then wallet confirmation. The fee line says the protocol fee is included in the purchase or sale.
-- Charts can show price, funding APR, and collateral APR when the indexer has the series.
-- Deep links look like `/trade/[address]?action=buy&side=receiver`.
+Every Null market has two pools, and [the primitive](/concepts/the-primitive) explains the machinery in full. The short version is this. The Receiver pool holds the price return of the asset. The Payer pool is a negative size position inside that Receiver pool, with the market's collateral held within the structure, and its scale set by `R / P`, the ratio of the two pools. When the pools grow or shrink, that scale moves, which is why Payer behaves less like a simple mirror image than newcomers expect.
 
-Under the ticket: **By trading you agree to the Terms of Service and Privacy Policy.** The risk line says you can lose all the money you invest.
+What you are buying on Spot is a percentage of one of those pools, not the tracked asset and not a loan of it. Collateral sits behind the position, and funding flows between the pools as collateral yield that Receivers pay to Payers, never dropping below zero. That last point shapes your returns even on an unlevered trade, so [Funding and yield](/concepts/funding-and-yield) is worth reading before you hold anything overnight. Your position can drift from the pure price return, and funding is usually the reason why.
 
-## Steps
+## Using Spot
+
+Live markets are listed at `/trade`, and your existing positions are summarised under **Home** and then **Spot**. Opening a market brings up a slide-out ticket, and the flow never asks you to decide very much at once.
 
 <Steps>
-  <Step title="Open a market">
-    Go to `/trade` and pick a market. Check price, collateral, collateral APR, and funding APR.
+  <Step title="Pick a market">
+    Browse `/trade` and open the market you want. Spend a moment on the price and the rates attached to it, because two markets on the same asset can carry quite different funding.
   </Step>
-  <Step title="Choose a side">
-    **Buy** takes Receiver. Turn on **Pro Mode** if you want Payer.
+  <Step title="Buy, sell, or receive">
+    Use **Buy** to open a Receiver position or **Sell** to reduce one. **Receive** is not a trade at all: it shows your wallet address and a QR code so someone can send assets to you on this chain.
   </Step>
-  <Step title="Review">
-    Check amount, fee, and slippage, then confirm in your wallet.
+  <Step title="Review before you confirm">
+    Every trade passes through a review step before your wallet signs. Read it. The fee is included in the purchase or sale you are reviewing, rather than appearing as a surprise afterwards.
   </Step>
-  <Step title="Sell to exit">
-    **Sell** returns your share of that pool's collateral, after fees and settlement.
+  <Step title="Turn on Pro Mode for Payer">
+    If you want the short side, open the account menu and enable **Pro Mode**. The slide-out then offers **Payer buy** and **Payer sell** alongside the Receiver actions, with the same review step before anything executes.
   </Step>
 </Steps>
 
-## Rates and fees
+Selling is the whole exit. There is no expiry to manage, no debt to repay, and no margin clerk waiting for the price to touch a line. You sell your share back to the pool and receive its collateral value, which makes Spot positions easy to hold for an afternoon or for a season.
 
-Receiver pays funding out of collateral yield and keeps the price return. Payer receives that funding and keeps their own collateral yield, scaled as in [Funding and yield](/concepts/funding-and-yield). The position **Net APR** column combines those.
+## What it costs and what can go wrong
 
-Entry and exit fees are charged on notional. See [Fees](/concepts/fees).
+The explicit cost is the trading fee described in [Fees](/concepts/fees), and the app folds it into the reviewed trade so the number you approve is the number that settles. The quieter cost is funding. Receivers pay it out of collateral yield and Payers receive it, which means a long held through an expensive funding period can underperform the headline price move, and a Payer position can earn carry that softens a small adverse move. Neither effect is a malfunction. Both are the design working as intended.
 
-## Risks
-
-Price, funding, oracle, and smart-contract risk all apply. Spot is not liquidated by Morpho. A Payer loss scales with `R / P`. Pool liquidity can be thin, so a preview can differ from execution.
-
-Leveraged exposure is [Margin](/products/margin), not a larger Spot trade.
-
-Next: [Position economics](/concepts/the-primitive) or [Market making](/market-making/overview).
+The risks are the honest ones for any market exposure, and [Risks](/concepts/risks) covers them properly. Prices fall as well as rise, and a Payer position's loss scales with `R / P`, so it can move faster than the underlying price in percentage terms. Oracles can misbehave, contracts carry smart contract risk, and a thin pool can execute at a worse price than the preview suggested. If the money behind your view would sit better earning a lending rate instead, [Savings](/products/savings) is the calmer home for it, and [Lending](/products/lending) is the direct version of the same idea.

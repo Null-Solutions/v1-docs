@@ -4,55 +4,58 @@ sidebarTitle: "Overview"
 description: "How a Null V1 market settles: two ERC-4626 pools, one collateral token, yield-share funding."
 ---
 
-A Null market is a pooled total-return swap. The **Receiver** pool takes the oracle return. The **Payer** pool is the reserve on the other side. Each pool issues fungible ERC-4626 shares.
+A Null market exists to turn an oracle price into a transfer between two groups of holders, without either group having to find the other. One side, the Receiver pool, is long the tracked return. The other side, the Payer pool, backs that exposure and takes the opposite return. Both pools hold the same collateral token and issue their own fungible ERC-4626 shares, so a position is simply a share of a pool rather than a private contract with a named counterparty.
 
-This page is the contract view. The product explanation is [The primitive](/concepts/the-primitive).
+That pooled design is the whole protocol in miniature. The market never lends the tracked asset, never holds it, and never liquidates a spot holder. It holds collateral, watches a price, and periodically rewrites how much of that collateral belongs to each pool. Everything else in Null, including leveraged positions through Morpho, is built around that single act of redistribution. For the product level explanation, start with [The primitive](/concepts/the-primitive).
 
-A market is uniquely identified by:
+## What a market is
 
-```text
-(collateral, oracle, frm)
-```
+A market is fixed at creation by three addresses, its collateral, its oracle, and its funding rate model, usually shortened to FRM. Change any one of them and you have a different market, with different pools and a different history. The two pool addresses are derived from that identity, and the dependencies themselves never change afterwards.
 
-- `collateral`: ERC-20 deposited into both pools. On the current stack this is a Morpho Vault V2 share (`nmUSDC`).
-- `oracle`: tracked asset price, scaled to `1e36`.
-- `frm`: funding-rate model. The factory owner must enable it before `createMarket`.
+Creation is permissionless. Anyone can call the factory to create a market for a tuple that does not exist yet, and in this deployment there is no deposit whitelist and no pause standing in the way of using it once created. The one gate sits earlier, at the level of models rather than markets: the factory owner must enable a funding rate model before any market can point at it, and enabling is irreversible. That asymmetry is deliberate. Markets should be free to form, but the code that decides how money moves on every settlement should be admitted once, carefully, and never quietly withdrawn.
 
-The market redistributes collateral it already holds. Spot does not lend the tracked asset or liquidate users. Leveraged positions are [Morpho](/protocol/morpho-integration) periphery.
+On the current stack the collateral is `nmUSDC`, a Morpho Vault V2 share over USDC, which is why funding and collateral cannot really be understood apart. See [Collateral](/protocol/collateral) and [Collateral in the markets section](/markets/collateral).
 
-## Price transfer
+## How value moves
 
-For an ordinary settled move, value goes from Payer to Receiver when price rises, and from Receiver to Payer when price falls. The transfer is the price change times settleable Receiver assets, converted through the `1e36` price scale.
+When the accepted oracle price rises, collateral moves from the Payer pool to the Receiver pool. When it falls, the same amount of logic runs in reverse. The size of the transfer is set by the Receiver side: it is the price change, expressed through the `1e36` price scale, applied to the Receiver assets that are actually available to settle. Receivers therefore gain or lose roughly in proportion to the price move itself.
 
-Payer's percentage move is that transfer divided by Payer assets. Economically, a Payer is a negative-size position in the Receiver pool. Short scale versus Payer capital is `R / P`.
+Payers feel the identical transfer through a smaller or larger base, which is where their leverage comes from. If Receiver assets are `R` and Payer assets are `P`, a transfer that is a modest percentage of `R` can be a large percentage of `P`, and the ratio `R / P` is the Payer short scale. Nobody chooses that number at entry. It drifts as the pools grow, shrink, and settle against each other, and following it is most of what it means to hold the Payer side responsibly.
 
-## Funding
+Funding runs alongside price, and on this stack it has a specific source. The collateral vault earns yield, and the yield share funding model measures that yield and charges it to Receivers, paying it across to Payers. Payers thus earn the yield on their own vault shares and the yield on the Receiver pool as well, while Receivers keep the price return and give the yield away. That exchange is the economic bargain at the centre of the market, and it is covered in [Funding rate model](/protocol/funding-rate-model).
 
-`NullV1YieldShareFundingRateModel` sets funding from vault share-price growth. Receivers pay that yield to Payers. The rate is never negative, uses a high-water mark, and is capped at 100% APR for one interval. See [Funding-rate model](/protocol/funding-rate-model).
+## Settlement in one paragraph
 
-## Settlement order
+Nothing in a market moves until someone interacts with it. A deposit or redemption first settles the market up to the present moment, and only then mints or burns shares at the settled values. Settlement reconciles the collateral the market actually holds, asks the funding model for a rate, works out the price transfer, nets the two together, and applies a single bounded transfer between the pools. The details, including the floor that bounds every transfer and the breaker that can skip a price move entirely, are in [Settlement](/protocol/settlement), [Fees](/protocol/fees), and [Circuit breaker](/protocol/circuit-breaker).
 
-Each pool `deposit` or `redeem` calls `updateState` first, unless you are reading a view.
-
-1. Read `oracle.price()`. A zero price reverts.
-2. Reconcile `collateral.balanceOf(market)` into the two pools and protocol fees.
-3. Accrue the collateral fee. The cap is 0, so this step is idle.
-4. Call `frm.fundingRate` on the prepared state.
-5. If either pool is at or below `MIN_POOL_ASSETS` (`1e6` raw units), skip price and funding.
-6. Otherwise compute price movement on settleable Receiver assets. If the absolute move exceeds 20% of the stored price, skip price movement and still store the new price.
-7. Add funding on settleable Receiver assets, net it with price movement, and cap the debit at settleable assets on the paying side.
-8. Store the new price and timestamp.
-
-Detail: [Settlement](/protocol/settlement).
-
-## Accounting identity
+Two properties are worth holding onto throughout. First, settlement only ever redistributes collateral already inside the market, which is captured by an identity that must hold after every update:
 
 ```text
 receiverPool + payerPool + protocolFees == collateral.balanceOf(market)
 ```
 
-The floor limits the funding and price debit. Reconciliation, fees, and withdrawals are separate and can leave a pool under the floor.
+Second, shares are percentages, not prices. Settlement changes the collateral standing behind each share and leaves the share count untouched, so gains and losses arrive as a changing claim on a pool rather than as cash paid out to anyone.
 
-## Shares
+## What holding a share means
 
-Each share is a percentage of one pool's assets, not a private entry price. The app calls Spot entry and exit **Buy** and **Sell**. Onchain those are `deposit` and `redeem`. `mint` and `withdraw` on the pool are not implemented.
+Because both pools are ordinary ERC-4626 vaults over the market collateral, entering a market is a deposit and leaving it is a redemption. The app calls those actions Buy and Sell in its spot flow, but onchain there is no order, no matching engine, and no counterparty waiting on the other side. Your shares are minted against the pool as it stands after settlement, and they entitle you to the same fraction of that pool whatever happens next.
+
+That also means every holder of a side shares its fate exactly. A large depositor entering the Payer pool dilutes the short scale for everyone already there, and a large exit concentrates it for those who remain. Settlement transfers are shared pro rata, fees credited to a pool lift all of its holders together, and nobody inside a pool has a private entry price, a separate tranche, or a claim senior to anyone else's. If that pooled character matters to your strategy, the pool ratios before you enter are as much a part of the price as the oracle quote itself.
+
+The pools implement `deposit` and `redeem` as their entry and exit paths. The ERC-4626 `mint` and `withdraw` forms are not implemented, so integrations should not assume the full vault interface is available simply because the share token reports itself as ERC-4626. What is available is documented pool by pool in the contract reference.
+
+## How the pieces depend on each other
+
+Read as a dependency graph, a market sits at the centre of four relationships. The oracle tells it what the tracked asset did. The collateral token tells it what it holds, and on this stack quietly earns the yield that keeps the economics turning. The funding model tells it what that yield was worth over the interval just ended. And the factory records that this particular combination of the three was deliberately created, under a funding model its owner chose to admit.
+
+Each dependency is also a distinct failure mode. An oracle can print badly, a vault can lose value or pause withdrawals, and a funding model can mismeasure, and settlement has no way to know which of its inputs has misled it. The protocol's defences are mostly bounds rather than judgements: a floor below which pools stop settling against each other, a breaker that refuses to honour very large single moves, and fee caps that limit how expensive entry and exit can be made after the fact. Those bounds are the subject of the pages that follow, and they reward close reading, because they define the worst settlement the contracts are actually willing to perform.
+
+## Where the protocol ends
+
+The market contract is deliberately narrow. It does not offer margin, and it does not decide what happens when a leveraged position runs out of room. Leverage is arranged outside the market by borrowing against pool shares on Morpho, through a router that the market itself knows nothing about. That separation keeps the settlement engine small enough to reason about, at the cost of making leveraged holders answerable to two systems at once. See [Morpho integration](/protocol/morpho-integration).
+
+The pages that follow take each mechanism in turn. They are written to be read in order the first time, and used as reference afterwards.
+
+A useful way to keep the whole system in mind is to ask, of any event, which of three things it changes. Some events change the price the market has settled to, and so move value between the pools. Some change the collateral balance, and are absorbed by reconciliation and funding. And some, like deposits, redemptions, and fees, change who holds what fraction of a pool. Every behaviour of the protocol, including the surprising ones, is a combination of those three, and the pages that follow are organised so that each mechanism can be placed against that simple scheme.
+
+Nothing in that scheme requires trusting an operator to run it. Settlement is triggered by use, fees and caps are set in contract constants or by a factory owner acting within them, and the factory's one irreversible decision, which funding models to admit, is made in the open before any market depends on it. The protocol's centralisation surface is therefore narrow and legible: a market's dependencies, the factory owner's fee and model powers, and the administrators of whatever vault supplies its collateral.

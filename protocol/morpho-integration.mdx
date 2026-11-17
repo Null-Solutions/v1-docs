@@ -4,56 +4,58 @@ sidebarTitle: "Morpho integration"
 description: "NullV1MorphoRouter opens and closes Morpho Blue longs and shorts around a Null market."
 ---
 
-Margin does not live in `NullV1Market`. `NullV1MorphoRouter` is stateless periphery around Morpho Blue and the Null pools.
+A Null market on its own offers exposure, but not leverage. Pool shares move with the tracked price, one for one on the Receiver side, yet a holder who wants more exposure than their capital buys has to borrow, and the core protocol pointedly does not lend. The Morpho integration is where that borrowing lives. It treats Null pool shares as an asset worth borrowing against, and builds leveraged long and short positions by combining a Null pool with a Morpho Blue lending book.
 
-Product behavior: [Morpho markets](/concepts/morpho-markets). Call shapes: [Morpho router](/developers/morpho-router).
+Keeping this at the periphery, rather than inside the market, is a deliberate division of responsibility. The market only settles prices between pools and has no concept of an individual borrower, a health factor, or a liquidation. Morpho, in turn, knows nothing about Null settlement beyond the price its oracles quote for pool shares. `NullV1MorphoRouter` is the stateless contract that stands between the two and choreographs each opening and closing in a single transaction. The product behaviour is described in [Morpho markets](/concepts/morpho-markets), the call by call guide in [Morpho router](/developers/morpho-router), and the contract reference in [Morpho router](/contracts/morpho-router).
 
-## Books
+## Two books, two directions
 
-| Book | Loan token | Collateral token |
-| --- | --- | --- |
-| Long | Underlying of the Null collateral (USDC), or the collateral itself if it is not a vault | Receiver pool |
-| Short | Receiver pool | Null collateral (`nmUSDC`) |
+The router works with two Morpho books, one for each direction, and the difference between them is simply which Null token is being borrowed and which is posted as security.
 
-The router checks those token pairs. It does not check that the Null market is registered. Pass a market you resolved from the factory.
+A long position borrows the collateral's underlying, which is USDC on the current stack, or the collateral itself when that collateral is not a vault share. It posts Receiver pool shares as the Morpho collateral. The holder is therefore long the tracked asset with borrowed money: they own Receiver shares worth more than their own contribution, and they owe the loan that funded the difference.
 
-## Long
+A short position reverses the pair. It borrows Receiver pool shares themselves, and posts the market collateral, `nmUSDC`, as security. Borrowing Receiver shares only makes sense because they can immediately be redeemed in the Null pool for collateral, which is how the short converts a borrowed long claim into cash in hand and an obligation to buy the claim back later.
 
-`open(market, marketParams, equity, debt, minCollateralShares, deadline, updateData)`
+The router checks that a book's loan and collateral tokens match the pattern expected for the requested direction. It does not check that the Null market was registered with the factory, so callers should pass a market they resolved from the factory rather than an address they were simply handed.
 
-- Pulls `equity` of the loan token from the caller.
-- If `debt` is 0, deposits equity into the Receiver pool and supplies the shares as Morpho collateral. No Morpho authorization.
-- If `debt` is greater than 0, flash-borrows the loan token, deposits equity plus debt into the Receiver pool, supplies the shares, and borrows on Morpho to repay the flash loan.
+## Opening and closing a long
 
-`close` flash-repays borrow shares when the position has debt, withdraws collateral, redeems Receiver shares, and sends leftover loan tokens to the caller. `minAssetsOut` is the floor.
+Opening a long starts with the caller's own contribution, called equity. With no debt requested, the flow is plain: equity is deposited into the Receiver pool and the resulting shares are supplied to Morpho as collateral, producing an unleveraged position that can later be built upon. With debt, the router uses a flash loan to assemble the full position at once. It borrows the loan token, adds the flash borrowed amount to the caller's equity, deposits the combined sum into the Receiver pool, supplies the shares to Morpho, and then borrows against them on Morpho to repay the flash loan. The position that remains is Receiver exposure larger than the equity, with a Morpho debt where the flash loan used to be.
 
-`openWithPermit2` pulls equity through Permit2 instead of an ERC-20 allowance. The permit covers `equity` of the loan token, names the router as spender, and uses the same deadline.
+Closing runs the film backwards. Where the position carries debt, the router flash repays it, withdraws the Receiver shares from Morpho, redeems them in the pool, settles what is owed, and sends whatever loan tokens remain to the caller, subject to a minimum amount out that the caller sets as their floor. Both directions settle the Null market as part of depositing and redeeming, so entry and exit always happen at freshly settled pool values rather than stale ones.
 
-## Short
+## Opening and closing a short
 
-`openShort(market, marketParams, equity, shortShares, minCollateral, deadline, updateData)`
+A short begins by supplying collateral and borrowing Receiver shares against it. The router takes the caller's equity in the loan asset, which is the vault underlying when the collateral is an ERC-4626 share and the collateral itself otherwise, supplies `nmUSDC` built from that equity together with the collateral released by selling the borrowed shares, and redeems the borrowed Receiver shares in the pool. The caller ends holding the proceeds of that redemption and owing Receiver shares to Morpho.
 
-- Pulls `equity` of the loan asset. That asset is the vault underlying when collateral is an ERC-4626, otherwise the collateral itself.
-- Supplies `nmUSDC` (equity plus the collateral raised by selling shares) and borrows `shortShares` of the Receiver token.
-- Redeems those shares in the Receiver pool.
+Closing a short contains the integration's neatest trick. Repaying a loan of Receiver shares normally requires first obtaining Receiver shares, which would mean a separate deposit and an awkward intermediate step. Instead the router repays through Morpho's repay callback, and inside that callback it withdraws the posted collateral, deposits enough of it into the Receiver pool to mint exactly the shares owed, and hands those shares back to complete the repayment. Leftover assets return to the caller. A short can therefore be closed without anyone keeping idle Receiver shares on hand for the purpose.
 
-`closeShort` repays through Morpho's repay callback. The callback withdraws collateral, deposits enough of it into the Receiver pool to receive the shares owed, and returns leftover assets to the caller. The close does not need idle Receiver shares sitting in the book.
+Both directions also come in Permit2 forms, `openWithPermit2` and `openShortWithPermit2`, which pull the caller's equity through a Permit2 signature instead of a standing ERC-20 allowance. The permit covers the equity amount of the relevant loan asset, names the router as spender, and shares the deadline of the rest of the call.
 
-`openShortWithPermit2` is the Permit2 form. The permit covers equity of the loan asset.
+## What leverage does to a Null position
 
-## Authorization
+Leverage through Morpho changes the character of a pool position rather than merely enlarging it. An unleveraged Receiver holder cannot be liquidated by Null and can wait out any drawdown the pool survives. The same holder, financed through the long book, now carries a Morpho debt secured by those Receiver shares, and a fall in the share value that the spot holder would simply endure can instead trigger liquidation and close the position at the worst available moment.
 
-Borrow and withdraw-collateral need `Morpho.setAuthorization(router, true)` from the position owner. Opens with `debt == 0` do not.
+The short book has the mirror-image temperament. Redeeming borrowed Receiver shares fixes the short's proceeds immediately, but the obligation is denominated in Receiver shares, so a rising tracked price makes the debt more expensive in collateral terms at exactly the moment the posted `nmUSDC` has not grown to match. Funding continues to accrue to the Payer side throughout, and the collateral that shorts post is itself the yield bearing vault share, which means a short position is simultaneously exposed to the tracked price, to vault performance, and to the liquidation parameters of its Morpho book.
 
-## Oracles
+Fees compound quietly in both directions. Depositing into and redeeming from the pools charges the entry and exit fees described in [Fees](/protocol/fees), and the Morpho oracles price shares through previews that already include those fees. A round trip therefore pays Null fees on the way in and the way out, in addition to whatever interest the Morpho book charges, and frequent rebalancing can make that stack the dominant cost of holding leverage.
 
-Morpho prices these books with Null oracles, not with the Chainlink oracle on the Null market.
+## What the router does not do
 
-- **Long:** `NullV1MorphoOracle` quotes loan assets per Receiver share via `previewRedeem`, then unwraps the vault when collateral is an ERC-4626.
-- **Short:** `NullV1MorphoInverseOracle` quotes Receiver shares per collateral unit via `previewDeposit`.
+The router opens and closes positions, and that is the whole of its job. It does not monitor health factors, top up collateral, deleverage a position drifting toward liquidation, or notify anyone. Those responsibilities belong to the position owner or to whatever keeper or interface the owner trusts, and a position opened in one transaction will sit entirely unattended until someone returns to it.
 
-Both read the last settled Null state. Entry and exit fees are inside those previews. See [Morpho oracles](/contracts/oracles/morpho).
+Nor does the router choose books on the caller's behalf. The caller supplies the Morpho market parameters, and the router checks the token pattern rather than the wisdom of the choice. An illiquid book, an aggressive liquidation threshold, or a mistyped parameter set is the caller's problem to catch before signing, ideally by resolving both the Null market and the Morpho book from sources they trust and simulating the full transaction.
 
-## Liquidation
+## Authorisation and pricing
 
-Morpho liquidates when loan-to-value reaches the book's LLTV. Null pools do not. A liquidator needs to be able to seize collateral and repay debt under Morpho's rules. The router is not the liquidator.
+Borrowing and withdrawing collateral on Morpho act on a position that belongs to the caller, so Morpho requires the router to be authorised first with `Morpho.setAuthorization(router, true)`. A simple open with no debt never borrows or withdraws, and needs no such authorisation. This is a common source of confusion, because the same interface behaves differently depending on whether leverage was requested.
+
+Morpho also needs a price for pool shares, and it does not reuse the Chainlink oracle that drives Null settlement. Each book has its own Null oracle that reads the last settled state of the relevant pool. The long book's `NullV1MorphoOracle` quotes loan assets per Receiver share through `previewRedeem`, unwrapping the vault where the collateral is an ERC-4626 token, while the short book's `NullV1MorphoInverseOracle` quotes Receiver shares per unit of collateral through `previewDeposit`. Because these previews include entry and exit fees, the prices Morpho lends against already reflect what the shares would actually realise. Settled state, rather than a live simulation, is the basis for both, which makes the quotes stable within a block at the cost of lagging until the next settlement. See [Morpho oracles](/contracts/oracles/morpho).
+
+There is a timing subtlety in that arrangement. Null settlement is interaction driven, so the last settled state the oracles read can lag the oracle price that the next Null interaction will settle to. A position that looks comfortably collateralised against settled values can therefore be closer to liquidation than it appears once a pending price move settles, and the 20 percent circuit breaker in [Circuit breaker](/protocol/circuit-breaker) is the only contract level limit on how much of that move a single settlement can recognise. Borrowers who size positions to the full liquidation threshold are implicitly assuming settlement and liquidation never arrive in an unkind order.
+
+For the same reason, the figures an interface shows for a leveraged position are a composite drawn from two states: Morpho's live view of debt and collateral, and Null's last settled view of what the pool shares are worth. When the two disagree, the Morpho view governs liquidation, because liquidation is executed entirely on Morpho against its oracle price.
+
+Liquidation, finally, belongs entirely to Morpho. When a position's loan to value reaches the book's liquidation threshold, Morpho liquidators may seize collateral and repay debt under Morpho's rules, and Null pools have no part in that process. The router, being stateless and only active during openings and closings, is not the liquidator and cannot rescue a position. Leverage therefore inherits two risk stories at once: the settlement behaviour of the Null market, and the lending behaviour of the book standing behind it.
+
+That inheritance is the honest summary of the integration. Null contributes an exposure that settles in discrete, bounded steps and pays its funding from real vault yield. Morpho contributes credit, pricing, and an unforgiving liquidation rule. The router contributes nothing but choreography, which is exactly what periphery should contribute: enough to make the two systems compose in one transaction, and not a line more of trusted logic than that requires.

@@ -4,13 +4,13 @@ sidebarTitle: "Morpho router"
 description: "Open and close a Morpho long or short with NullV1MorphoRouter."
 ---
 
-`NullV1MorphoRouter` is the write path for Margin. Reads (LLTV, rates, position health) come from Morpho and from `NullV1Lens` loop helpers. This page shows the write path with `viem`.
+Margin positions on Null live on Morpho Blue, not inside the Null market itself. `NullV1MorphoRouter` is the contract that connects the two. In a single transaction it moves your equity into the right Null pool, posts the resulting position as collateral on Morpho, and borrows against it. Closing runs the same path in reverse.
 
-Confirm the router address from [Deployments](/developers/addresses) before you ship. Do not hardcode an address from an example.
+This guide covers the write path with `viem`. Position reads, borrow rates, LLTV, and health checks come from Morpho and from the loop helpers on `NullV1Lens`. Before you ship an integration, confirm the router address on the [Deployments](/developers/addresses) page. The addresses in any example, including this one, are placeholders for the shape of the call, not values to hardcode.
 
-## Authorize the router
+## Authorize the router on Morpho first
 
-Borrow and collateral withdrawal require the user to authorize the router on Morpho. Do this once per wallet.
+Morpho will only let the router borrow or withdraw collateral on your behalf after you authorize it. This is a one time approval per wallet, and it is separate from any ERC-20 token allowance. You will sign it as a `setAuthorization` call against the Morpho singleton:
 
 ```ts
 await walletClient.writeContract({
@@ -22,11 +22,11 @@ await walletClient.writeContract({
 });
 ```
 
-A long open with `debt = 0n` only supplies collateral and does not need this authorization.
+There is one exception worth knowing before you prompt the user for a signature. A long opened with `debt = 0n` never borrows. It only supplies collateral, so it needs no Morpho authorization. Every other flow in this guide, including every close, does.
 
 ## Open a long
 
-`equity` and `debt` are loan-token amounts (USDC). `minCollateralShares` is the Receiver-share floor for the whole deposit.
+A long posts Receiver pool shares as collateral and borrows the loan token, which is USDC when the market collateral is a vault. Two amounts describe your position. `equity` is what you contribute, and `debt` is what the router borrows on top of it. Both are denominated in the loan token. `minCollateralShares` is your slippage floor: the smallest number of Receiver shares the combined deposit may return.
 
 ```ts
 await walletClient.writeContract({
@@ -46,11 +46,13 @@ await walletClient.writeContract({
 });
 ```
 
-`marketParams` is the Morpho Blue tuple `{ loanToken, collateralToken, oracle, irm, lltv }`. For a long, `collateralToken` is the Receiver pool and `loanToken` is USDC.
+Two arguments need care. `marketParams` is the Morpho Blue tuple `{ loanToken, collateralToken, oracle, irm, lltv }`, and for a long the `collateralToken` must be the Receiver pool while `loanToken` is USDC. `updateData` carries the oracle reports the market needs to settle before it trades. Pass fresh reports when you have them, and an empty array only when the stored price is still valid. `deadline` is a Unix timestamp after which the transaction reverts rather than executing at a stale quote.
+
+If you would rather not grant an ERC-20 allowance, `openWithPermit2` pulls the equity through Permit2 instead. The permit covers `equity`, names the router as spender, and uses the same deadline as the call itself.
 
 ## Close a long
 
-`close` unwinds the caller's whole position on that book. `minAssetsOut` is the minimum USDC the caller will accept.
+`close` unwinds your entire position on that book. The router repays the debt, withdraws the collateral, redeems the Receiver shares, and returns whatever loan token remains. `minAssetsOut` is the smallest amount you will accept back, so set it from your quote rather than defaulting it to zero.
 
 ```ts
 await walletClient.writeContract({
@@ -64,7 +66,7 @@ await walletClient.writeContract({
 
 ## Open and close a short
 
-`equity` is in the loan asset (USDC when collateral is a vault). `shortShares` is the Receiver shares to borrow and sell. `minCollateral` is the minimum `nmUSDC` the position will post.
+A short inverts the book. The router borrows Receiver shares from Morpho and sells them, posting `nmUSDC` as collateral. Here `equity` is in the loan asset side of the trade, `shortShares` is the number of Receiver shares to borrow and sell, and `minCollateral` is the minimum `nmUSDC` the finished position must post.
 
 ```ts
 await walletClient.writeContract({
@@ -84,18 +86,10 @@ await walletClient.writeContract({
 });
 ```
 
-`closeShort` uses the same argument order as `close`. The router buys Receiver shares inside the repay callback, so the short book does not need idle shares to exit.
+`closeShort` takes the same argument order as `close`. You do not need to source Receiver shares before calling it. The router mints the shares it owes inside the Morpho repay callback, which is why a short can exit even when the book holds no idle shares. `openShortWithPermit2` is the Permit2 form of the open, with the permit covering `equity` as above.
 
-Permit2 variants are `openWithPermit2` and `openShortWithPermit2`. The permit amount is `equity`, the spender is the router, and the permit deadline is the same `deadline` argument.
+## When a call reverts
 
-## Failures
+Most failures are checks you can predict before submitting. A passed deadline reverts with `TransactionTooOld`. A `marketParams` tuple whose tokens do not match the long or short shape for the Null market is rejected. Closing a book where you hold no Morpho collateral reverts with `NoPosition`. If the pool moved against your floor, the revert is a slippage error, and the right response is a fresh quote rather than a blind retry. Finally, if the market oracle needs a report you did not supply, the oracle reverts before the pool is ever called.
 
-| Condition | What you see |
-| --- | --- |
-| Deadline passed | `TransactionTooOld` |
-| Long book tokens do not match | The router rejects the pair |
-| Caller has no Morpho collateral | `NoPosition` on close |
-| Share floor missed | Slippage-style revert from the router |
-| Oracle payload required and missing | Oracle revert before the pool call |
-
-Book layout and liquidation: [Morpho integration](/protocol/morpho-integration).
+For how the two books are laid out and how liquidation works, read [Morpho integration](/protocol/morpho-integration). For the full function, event, and error surface, see the [contract reference](/contracts/morpho-router).

@@ -4,6 +4,12 @@ sidebarTitle: "Yield-share model"
 description: "Reference for the vault yield funding model."
 ---
 
+`NullV1YieldShareFundingRateModel` is the funding rate model for markets whose collateral is an ERC-4626 vault share, such as `nmUSDC`. Its premise is simple. The Receiver pool holds vault shares, and as the vault earns yield those shares become worth more. This model measures that growth at every settlement and hands all of it to the Payer side as funding. Receivers keep none of the yield earned on the Receiver pool. Payers receive it, on top of the yield on their own shares.
+
+The model never estimates an APY and never extrapolates. It reads the live vault share price, compares it with the highest price it has previously settled at, and annualizes only the growth that has actually happened.
+
+## Functions
+
 ```solidity
 function fundingRate(NullV1MarketParams memory marketParams, MarketState memory state) external returns (int256);
 
@@ -14,18 +20,34 @@ function sharePrice(address collateral) external view returns (uint256);
 function marks(address market) external view returns (uint192 sharePrice, uint64 rate);
 ```
 
-`fundingRate` must be called by the market. It stores the high-water mark under `msg.sender`. `fundingRateView` looks up the market with `factory.getMarket(collateral, oracle, address(this))`.
+`fundingRate` is the state changing entry point, and it is written for the market contract, not for integrators. It records the new high water mark under `msg.sender`, so only the market making the call can advance its own mark. Calling it from any other address prices a different, meaningless entry.
 
-The returned `int256` is a WAD APR, always from 0 to `1e18` inclusive. Positive means Receivers pay Payers, which is the only sign this model produces.
+`fundingRateView` returns the same rate without touching state. Because a view cannot know its market from `msg.sender`, it resolves the market through the factory with `factory.getMarket(collateral, oracle, address(this))` and reads that market's mark. Use it for quotes, interfaces, and keepers that need the rate without settling.
 
-`sharePrice` is `IERC4626(collateral).convertToAssets(1e36)`.
+`sharePrice` reports what one unit of collateral is currently worth in its underlying asset, computed as `IERC4626(collateral).convertToAssets(1e36)`. The probe uses `1e36` shares so the quote keeps its precision even when a single share is worth a fraction of an asset unit, which matters when the collateral has 18 decimals over a 6 decimal underlying.
 
-Math, the high-water mark, and the empty-pool rule: [Funding-rate model](/protocol/funding-rate-model).
+`marks` exposes the stored state for a market directly: the `uint192` high water share price and the `uint64` rate from the last settlement. If you are debugging why a settlement charged the funding it did, this is the first thing to read.
 
-## Errors
+## The rate it returns
 
-| Error | When |
+The return value is a signed WAD APR, but the sign is a formality. This model only ever produces values from 0 to `1e18` inclusive, where `1e18` is 100% APR. Positive means Receivers pay Payers, and that is the only direction funding flows here. Payers never pay funding under this model, and no settlement can produce a negative rate.
+
+Two guardrails follow from the high water mark design. First, if the vault share price falls, no funding accrues, and none accrues again until the price climbs back above its previous peak. A dip followed by a recovery therefore charges Receivers nothing for recovering their own loss. Second, yield that would annualize above the 100% cap for a single interval is not charged. It stays with Receivers.
+
+## Reading it in practice
+
+Suppose the vault share price settled last at its highest recorded value, then rises before the next settlement. The model annualizes that rise over the elapsed time, caps it at `1e18`, and returns it as the rate. The market then applies the rate over the same interval, which hands the actual yield earned in that interval, rather than an annualized estimate of it, to Payers.
+
+Three situations return zero, and each is deliberate. If no time has passed, there is nothing to annualize. If either pool is at or below the protocol's minimum pool size, the rate for that call is zero, and the mark still advances so that interval's yield is not charged later. And if the share price is at or below its high water mark, there is no new yield to distribute.
+
+This is why `fundingRate` must be called during settlement rather than sampled casually. The mark is part of the calculation. Skipping a settlement does not store up a larger charge for later. It simply means the growth in between is measured once, from the last recorded mark, at the next settlement that does happen.
+
+## Errors and setup
+
+| Error | When it reverts |
 | --- | --- |
-| `ZeroFactory` | Constructor factory is the zero address |
+| `ZeroFactory` | The constructor is given a zero address for the factory. |
 
-The factory still has to `enableFrm` this address. `createMarket` reverts with `FrmNotEnabled` until then.
+Deployment alone does not make the model usable. The factory owner must also enable it with `enableFrm`, and `createMarket` reverts with `FrmNotEnabled` for any market that points at this model until that happens. Enabling the model does not affect existing markets, which keep the funding model they were created with.
+
+For the worked mathematics, including the empty pool rule and why growth is measured against the new price, read [Funding-rate model](/protocol/funding-rate-model).

@@ -4,21 +4,19 @@ sidebarTitle: "Audits"
 description: "Nethermind reviewed a defined scope of Null V1. Margin routing is outside that report."
 ---
 
-## Current status
+An audit is evidence about a specific body of code at a specific moment, and this page exists to state exactly which body of code the evidence covers. Null V1 has been reviewed once, by Nethermind Security, under engagement NM-1028. Reading that review well means holding two facts together: the core contracts were examined and their findings were fixed, and some of the contracts now in production were written after the review and are not described by it at all.
 
-Nethermind Security completed a security review of Null V1 contracts (engagement NM-1028). The final report is dated 25 August 2026.
+The final report is dated 25 August 2026 and is published in Nethermind's public audit reports repository.
 
 <Card title="Download the final report" icon="file-text" href="https://github.com/NethermindEth/PublicAuditReports/blob/main/NM-1028_Null_Solutions.pdf">
   NM-1028 Null Solutions Security Review (PDF), published in Nethermind's public audit reports repository on GitHub.
 </Card>
 
-The review covered 1,220 lines of Solidity in the core and listed periphery: factory, market, pools, settlement, router, the funding-rate model in scope at that time, and the Chainlink oracle. Nethermind used manual review and automated analysis.
+## What was reviewed
 
-The yield-share funding model, `NullV1MorphoRouter`, and the Morpho oracles shipped later. Do not read NM-1028 as a review of those contracts.
+The engagement covered 1,220 lines of Solidity across the core protocol and the periphery that existed at the time: the factory, the market, the pools, the settlement library, the router, the funding rate model then in scope, and the Chainlink oracle. Nethermind combined manual review with automated analysis, and rated both the documentation assessment and the test suite assessment as High.
 
-## Result
-
-The final report recorded five findings and marked all five **Fixed**. There were no Critical or High findings.
+The review recorded five findings, every one of them marked Fixed in the final report. There were no Critical or High severity issues. The single Medium finding concerned shares being calculated before fees were recomputed on deposit. Two Low findings covered a deposit that did not revert on zero shares, and a deposit path that was cheaper than its mirror and so missed part of its fee. Two Informational findings addressed inconsistent reentrancy guard implementations across contracts, and the absence of extra controls if a permitted account were compromised.
 
 | Severity | Count | Status |
 | --- | ---: | --- |
@@ -28,20 +26,12 @@ The final report recorded five findings and marked all five **Fixed**. There wer
 | Low | 2 | Fixed |
 | Informational | 2 | Fixed |
 
-Nethermind rated the documentation assessment and the test-suite assessment as High.
+## What was not reviewed
 
-### Findings
+Two significant components shipped after this engagement and fall outside its scope. The yield share funding rate model described in [Funding rate model](/protocol/funding-rate-model) replaced the model that was reviewed, and the Morpho router together with its oracles, described in [Morpho integration](/protocol/morpho-integration), was built later still. Neither should be treated as audited on the strength of NM-1028, however closely they interact with contracts that were.
 
-| # | Severity | Finding | Status |
-| --- | --- | --- | --- |
-| 1 | Medium | Shares were calculated before fee recomputation on deposit | Fixed |
-| 2 | Low | Deposit did not revert on zero shares | Fixed |
-| 3 | Low | One deposit path was cheaper, so a portion of fees was missed | Fixed |
-| 4 | Info | Reentrancy-guard implementations were inconsistent across contracts | Fixed |
-| 5 | Info | No extra control if a permitted account is compromised | Fixed |
+That boundary is not a suggestion that the newer contracts are unsafe. It is simply the limit of what this particular evidence says, and conflating the two would give readers confidence the report never claimed to provide.
 
-## What an audit does not guarantee
+## How to use this
 
-A completed audit does not prove that the protocol has no bugs or that a position is safe. Scope and deployment matter. Oracle behavior, collateral risk, Morpho configuration, and operational failures can sit outside the report.
-
-Before you deposit, read [Risks](/concepts/risks), the [circuit breaker](/protocol/circuit-breaker), and the market's parameters.
+Treat the audit as one input among several. It speaks to the quality of the core settlement and pool code at a point in time, and it cannot speak to oracle behaviour on a live market, to collateral and vault risk, to Morpho book configuration, or to operational mistakes, all of which can lose money through contracts that behave exactly as written. Before depositing, read [Risks](/concepts/risks) and [Circuit breaker](/protocol/circuit-breaker) alongside this page, and check the parameters of the specific market you intend to use.

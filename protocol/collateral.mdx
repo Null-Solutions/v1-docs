@@ -4,30 +4,57 @@ sidebarTitle: "Collateral"
 description: "Markets hold one ERC-20. On the current stack that token is the nmUSDC vault share."
 ---
 
-`collateral` is an immutable dependency of the market. Both pools account in that token. The market's token balance is the sum of Receiver assets, Payer assets, and protocol fees.
+Collateral is the only asset a Null market ever holds, and everything a holder owns is ultimately a claim on it. Prices, funding, and fees are all just instructions for moving this one token between the Receiver pool, the Payer pool, and the protocol fee balance. Choosing the collateral therefore chooses the market's unit of account, its source of yield, and a good part of its risk, which is why the token is fixed in the market identity at creation and can never be swapped afterwards.
 
-## nmUSDC
+On the current stack that token is `nmUSDC`, a Morpho Vault V2 share whose underlying asset is USDC. The choice is not incidental. Because the collateral is itself an interest bearing vault share, the market's balance grows as Morpho borrowers pay interest, and that growth is what funds the Payer side through the mechanism described in [Funding rate model](/protocol/funding-rate-model). A market collateralised by a plain, non yielding token would still settle prices correctly, but it would have nothing natural to pay Payers with. The user facing description of the same vault, including its role as the Null Savings Vault, is in [Vaults](/concepts/vaults) and [Collateral](/markets/collateral).
 
-The current stack uses a Morpho Vault V2 share whose underlying is USDC. The app calls that share `nmUSDC`.
+## One token, two denominations
 
-- Spot deposits wrap USDC into `nmUSDC`, then deposit the shares into a pool.
-- Pool redemptions return `nmUSDC`. The router unwraps to USDC when you exit through it.
-- Vault share price rises when Morpho borrowers pay interest. Settlement reconciles that, and the [funding-rate model](/protocol/funding-rate-model) moves the Receiver portion to Payers.
+Working with a vault share as collateral means constantly keeping two units apart. The core contracts speak only in the collateral token itself. A pool deposit takes `nmUSDC` shares, a pool redemption returns them, previews are quoted in them, and the lens reports pool balances in them. USDC enters the picture only at the edges, where routers and the app wrap and unwrap on the user's behalf. Through the router, a spot deposit first turns USDC into `nmUSDC` and then deposits the shares, while an exit redeems the pool position and converts the resulting shares back into USDC before returning them.
 
-The same vault is the **Null Savings Vault** when a user deposits USDC without opening a pool position. Roles: [Vaults](/concepts/vaults).
+The practical rule is to never carry an amount across that boundary without converting it. Share decimals on a pool are the collateral decimals plus ten, as they are for the pools' own ERC-4626 shares, and the vault share and its underlying do not share decimals either. An amount that is correct in USDC units is simply a different, usually much larger or smaller, amount in vault share units. Most integration mistakes in this area are unit mistakes, and they are avoidable by asking the vault for its exchange rate rather than assuming one.
 
-## Units
+## How outside yield gets in
 
-| Call | Amount unit |
-| --- | --- |
-| Router `depositMarket` / `redeemMarket` | Underlying (USDC) when `collateral.asset()` succeeds |
-| Pool `deposit` / `redeem` / `preview*` | Market collateral (`nmUSDC` shares) |
-| Lens pool fields | Market collateral |
+A vault share held by the market becomes more valuable without the market's share balance changing, and donations or direct transfers can change the balance itself. Either way, the token balance drifts away from what the pools have booked, and settlement exists partly to close that gap. At the start of every settlement the market reconciles `collateral.balanceOf(market)` against its recorded split, assigning any surplus or shortfall to the two pools in proportion to their sizes. That step, detailed in [Settlement](/protocol/settlement), is how vault yield first enters the pools' accounts at all.
 
-Share decimals on a pool are collateral decimals plus 10. Do not pass USDC units into a pool preview.
+What happens next is the subtle part, and it is worth separating clearly. Reconciliation credits both pools with their share of the growth, so for a moment Receivers do hold their yield. Funding then measures that same growth on the Receiver side and transfers it to the Payers. The two steps use different mechanisms, one balance based and one price based, and collapsing them into a single idea of yield appearing in the Payer pool hides the cases where they diverge, such as intervals spent at the settlement floor, where the yield is credited but never charged. Those cases are spelled out in [Funding rate model](/protocol/funding-rate-model).
 
-## Reconciliation
+## Entering and leaving through the vault
 
-External yield, donations, and direct transfers change `collateral.balanceOf(market)` without changing booked pool assets. The next settlement assigns the difference in proportion to the two pools. See [Settlement](/protocol/settlement).
+For a spot holder, the vault is present at both ends of the position even though they may never think about it. Buying means USDC is deposited into the vault, the resulting `nmUSDC` shares are deposited into the chosen pool, and pool shares come back. Selling unwinds the same chain, and the holder receives USDC rather than vault shares. The market itself sees only the middle step, in vault shares, throughout the position's life.
 
-If you integrate a different ERC-4626 as collateral, the yield-share model still requires `convertToAssets`. A rebasing token that changes balances without a share-price move will not match this model. Test the vault before you enable a market on it.
+This layering has a consequence that surprises people the first time they reconcile statements. A Receiver holder can watch the tracked price stand still and still see their USDC value drift, because two separate things are happening to the vault shares behind their pool shares. The share price of the vault moves the value of everything in the market, and funding then redistributes the Receiver side of that movement to Payers. The holder's remaining drift is their share of vault performance on the Payer terms they agreed to, minus fees, and it is properly explained by [Funding and yield](/concepts/funding-and-yield) rather than by the oracle price.
+
+## The same vault in two roles
+
+The vault behind `nmUSDC` is also offered directly, as the Null Savings Vault, to users who want the yield without any price exposure. The two uses share an asset but not a risk profile. A savings depositor holds vault shares and takes only the vault's performance. A market depositor hands those same shares to a pool, where settlement can move them to the other pool in size, and where the Receiver side additionally surrenders its yield as funding. Identical collateral, held through the market, is a materially different instrument from the same collateral held outright.
+
+It is also worth being precise about what the market does not do with the vault. The market does not deposit into Morpho markets itself, choose lending venues, or manage the vault's strategy. It accepts the vault share as a finished asset, reads its price, and settles in it. All lending risk and strategy risk is imported wholesale from the vault and its own dependencies.
+
+## When balances change without settlement
+
+Because reconciliation runs on balances, anything that changes the market's collateral balance is eventually treated as pool performance, whether or not it was. Yield belongs there, and so, unavoidably, do donations. Collateral sent directly to the market address is divided between the pools at the next settlement in proportion to their sizes, and collateral that arrives while both pools are empty falls into protocol fees instead. There is no way to donate to one pool only, and no way to tag a transfer with an intention the settlement code would recognise.
+
+Shortfalls are handled with the same indifference to cause. If the balance is lower than the books say, through a vault loss expressed as a falling share price or through any other mechanism, the pools absorb it pro rata at the next reconciliation. The market does not halt, raise an error, or wait for an explanation. Integrators building on top should therefore read pool balances only through settled views, since the raw token balance and the booked split can legitimately disagree between settlements.
+
+## What a collateral token must be like
+
+The yield share model makes a specific demand of its collateral: the token must be an ERC-4626 vault whose `convertToAssets` honestly reports a share price. That is how funding reads yield, so a token that rebases balances upward without moving its share price would earn yield the model cannot see, and a token whose quoted price can be manipulated at settlement time would let that manipulation set the funding rate. Neither failure is guarded against inside the market, because the market deliberately treats the collateral as a trusted dependency.
+
+Similar trust runs through the rest of the design. The market assumes transfers move exactly the amount requested and that the balance it reads is the balance it can use. Before enabling a market on a new vault, the vault's strategy, administrators, and withdrawal behaviour deserve the same scrutiny as the Null contracts themselves, since depositors are exposed to all of it continuously. The checklist version of these considerations lives in [Collateral](/markets/collateral).
+
+## Reading collateral risk on a live market
+
+For anyone evaluating a specific market, the collateral questions are concrete. What does the vault lend to, and who can change that? How quickly can the vault itself honour redemptions when its own borrowers are slow to repay? Has its share price ever fallen, and would a fall here be absorbed by reconciliation across both pools, as any other shortfall would be? None of these questions are answered by the Null contracts, because the Null contracts have intentionally delegated the answers.
+
+The delegation cuts both ways. Holders benefit from a vault run by specialists and audited on its own terms, and the market inherits improvements to that vault without changing a line of its own code. Holders also inherit every change the vault makes, including strategy migrations and fee changes, with no vote and no notice period inside Null. Depositing into a market is therefore partly an underwriting decision about the vault, renewed for as long as the position is held.
+
+That is particularly true for Payers, whose compensation is the vault yield itself. A vault that quietly earns less pays Payers less, through a lower measured funding rate, while leaving the price settlement machinery untouched. A Payer evaluating a market is really forecasting two things at once: the path of the tracked price, and the income of the collateral vault that stands behind both sides of the trade.
+
+One final distinction matters when reading any figure on this site or in an interface. Amounts described as pool assets, settlement amounts, and preview results are collateral amounts, in `nmUSDC` shares, unless a page explicitly says it has converted them. Amounts described as deposits made or proceeds received through a router or the app are usually underlying amounts, in USDC. The two are related by the vault exchange rate at the moment of conversion, and that rate moves, so a round trip cannot be audited by comparing raw numbers in different units.
+
+When in doubt, the contracts settle the question. The pool you call defines the unit it accepts, the router you call defines the unit it pulls, and the vault's `convertToAssets` and `convertToShares` define the bridge between them at any given block. Prefer reading those values live over copying a rate or a decimal count from documentation, including this page.
+
+Collateral, in short, is not a passive deposit. It is the asset that prices are settled in, the asset that pays funding, and the asset that remains when everything else has finished moving.
+

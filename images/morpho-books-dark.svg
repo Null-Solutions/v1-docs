@@ -1,19 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" role="img" aria-label="The long Morpho book lends USDC against Receiver shares. The short book lends Receiver shares against nmUSDC.">
-  <title>Morpho long and short books</title>
-  <rect x="36" y="36" width="300" height="200" rx="12" fill="#141416" stroke="#29323b"/>
-  <text x="186" y="72" text-anchor="middle" fill="#d4dce7" font-size="15" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Long book</text>
-  <text x="186" y="100" text-anchor="middle" fill="#a0a0a0" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Loan: USDC</text>
-  <text x="186" y="122" text-anchor="middle" fill="#a0a0a0" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral: Receiver shares</text>
-  <text x="186" y="156" text-anchor="middle" fill="#d4dce7" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Savings and lenders supply</text>
-  <text x="186" y="178" text-anchor="middle" fill="#d4dce7" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Margin longs borrow</text>
-  <line x1="70" y1="196" x2="302" y2="196" stroke="#b8d9fa" stroke-width="1.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 360" role="img" aria-label="Two Morpho books sit beside a Null market. The long book lends USDC against Receiver shares. The short book lends Receiver shares against nmUSDC.">
+  <title>The two Morpho books</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b8d9fa"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#787c86"/>
+    </marker>
+  </defs>
 
-  <rect x="384" y="36" width="300" height="200" rx="12" fill="#141416" stroke="#29323b"/>
-  <text x="534" y="72" text-anchor="middle" fill="#d4dce7" font-size="15" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Short book</text>
-  <text x="534" y="100" text-anchor="middle" fill="#a0a0a0" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Loan: Receiver shares</text>
-  <text x="534" y="122" text-anchor="middle" fill="#a0a0a0" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral: nmUSDC</text>
-  <text x="534" y="156" text-anchor="middle" fill="#d4dce7" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Lenders supply shares</text>
-  <text x="534" y="178" text-anchor="middle" fill="#d4dce7" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Margin shorts borrow</text>
-  <line x1="418" y1="196" x2="650" y2="196" stroke="#b8d9fa" stroke-width="1.5"/>
+  <!-- Long book panel -->
+  <rect x="30" y="30" width="400" height="300" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="230" y="62" text-anchor="middle" fill="#d4dce7" font-size="14" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Long book</text>
+  <text x="230" y="82" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Borrow cash against a long position</text>
+
+  <rect x="56" y="110" width="150" height="64" rx="10" fill="#141416" stroke="#29323b"/>
+  <text x="131" y="136" text-anchor="middle" fill="#d4dce7" font-size="12" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Lenders</text>
+  <text x="131" y="154" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Savings and you</text>
+
+  <rect x="254" y="110" width="150" height="64" rx="10" fill="#141416" stroke="#b8d9fa"/>
+  <text x="329" y="136" text-anchor="middle" fill="#d4dce7" font-size="12" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Margin longs</text>
+  <text x="329" y="154" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">borrow the USDC</text>
+
+  <line x1="206" y1="142" x2="246" y2="142" stroke="#b8d9fa" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="226" y="130" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">USDC</text>
+
+  <rect x="56" y="216" width="348" height="76" rx="10" fill="#141416" stroke="#29323b"/>
+  <text x="230" y="244" text-anchor="middle" fill="#d4dce7" font-size="12" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral: Receiver shares</text>
+  <text x="230" y="264" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">If their value falls too far against the debt,</text>
+  <text x="230" y="280" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Morpho liquidates at this book's LLTV</text>
+  <path d="M329,174 L300,208" fill="none" stroke="#787c86" stroke-width="1.25" stroke-dasharray="4 3" marker-end="url(#arrowGray)"/>
+
+  <!-- Short book panel -->
+  <rect x="450" y="30" width="400" height="300" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="650" y="62" text-anchor="middle" fill="#d4dce7" font-size="14" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Short book</text>
+  <text x="650" y="82" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Borrow the asset to sell it</text>
+
+  <rect x="476" y="110" width="150" height="64" rx="10" fill="#141416" stroke="#29323b"/>
+  <text x="551" y="136" text-anchor="middle" fill="#d4dce7" font-size="12" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Lenders</text>
+  <text x="551" y="154" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">supply Receiver shares</text>
+
+  <rect x="674" y="110" width="150" height="64" rx="10" fill="#141416" stroke="#b8d9fa"/>
+  <text x="749" y="136" text-anchor="middle" fill="#d4dce7" font-size="12" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Margin shorts</text>
+  <text x="749" y="154" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">borrow and sell them</text>
+
+  <line x1="626" y1="142" x2="666" y2="142" stroke="#b8d9fa" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="646" y="130" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">shares</text>
+
+  <rect x="476" y="216" width="348" height="76" rx="10" fill="#141416" stroke="#29323b"/>
+  <text x="650" y="244" text-anchor="middle" fill="#d4dce7" font-size="12" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral: nmUSDC</text>
+  <text x="650" y="264" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">If the share price rises too far against it,</text>
+  <text x="650" y="280" text-anchor="middle" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Morpho liquidates at this book's LLTV</text>
+  <path d="M749,174 L720,208" fill="none" stroke="#787c86" stroke-width="1.25" stroke-dasharray="4 3" marker-end="url(#arrowGray)"/>
 </svg>

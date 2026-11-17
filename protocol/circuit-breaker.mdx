@@ -4,18 +4,57 @@ sidebarTitle: "Circuit breaker"
 description: "A single settlement that moves the oracle price by more than 20% skips price transfer and resets the baseline."
 ---
 
-`MAX_ABS_CHANGE_BPS` is **2000**. `MAX_BASIS_POINTS` is **10000**. One settlement may apply at most a 20% price move.
+Every settlement trusts the oracle, and the circuit breaker exists for the moment that trust would be expensive. Prices occasionally do things that are not really price moves at all: a stock splits, a feed prints a grossly wrong value, or an asset legitimately reprices while a market sits untouched for a long stretch. If settlement mechanically converted a jump like that into a transfer between the pools, one side could be emptied by an event that neither side had any chance to react to. The breaker draws a line around what a single settlement is allowed to do, and treats anything beyond the line as a change of baseline rather than as profit and loss.
+
+The rule itself could hardly be simpler. During settlement, the market compares the fresh oracle price with the price stored at the previous settlement. If the two differ by more than 20 percent, the price leg of that settlement is skipped in full. No partial transfer is made up to the boundary. The move is either entirely within bounds and settled in full, or entirely beyond them and settled not at all.
+
+## What happens on the settlement that trips it
+
+Skipping the price leg does not mean skipping the settlement. The fresh price is still written into storage, so it becomes the baseline the next settlement measures from, and the timestamp still advances. Funding still runs, subject to the usual pool floor, since a discontinuity in the tracked price says nothing about the vault yield that accrued over the interval. The deposit or redemption that triggered settlement then proceeds at the existing pool values. Holders keep the shares they had, revalued only by funding and by whatever the interaction itself does.
+
+The skipped movement is gone rather than postponed. It is not carried forward, averaged into later settlements, or paid out if the price stays at its new level, which is the only sensible treatment for a suspected split or bad print. The cost of that cleanliness falls on whoever was positioned for the move: a genuine 25 percent rally produces no price gain at the settlement that first observes it, and gains resume only on movement after the new baseline. An `UpdateState` event marks the occasion with a circuit breaker flag, so indexers and interfaces can show that a tick was skipped rather than leaving users to infer it from unchanged balances.
+
+## Two settlements worth picturing
+
+Consider a market whose stored price is 100, left untouched while the tracked asset genuinely rallies. The next person to deposit arrives to find the oracle at 125. That is a 25 percent move, beyond the threshold, so the price leg is skipped, the depositor enters at the pool values as they stood at price 100, and 125 becomes the stored price. If the asset then rises to 130, the following settlement sees a modest 4 percent move from the new baseline and settles it normally. Receiver holders gained from the second move only, and Payer holders were spared a transfer based on the first, however real that first move turned out to be.
+
+Now consider the same rally arriving in smaller prints, 100 to 112 to 125, with a settlement between each. Neither step exceeds 20 percent, so both settle in full, and the pools end in almost the same place as if the breaker had never existed. The contrast between the two paths is the breaker's whole personality. It is a guard against discontinuity, not against volatility, and whether a large move is honoured depends on the accident of how often the market happens to settle while it unfolds.
+
+Markets with frequent deposits and redemptions will therefore thread most real moves through in slices the breaker accepts, while a dormant market facing the identical chart is far more likely to trip it. That asymmetry is worth remembering when comparing two markets over the same asset and period, because their settled histories can diverge for reasons of activity alone.
+
+## Calibration, and what it does not promise
+
+The threshold is a flat 20 percent per settlement. It is deliberately not scaled by elapsed time, because the contract makes no attempt to judge how fast a market ought to be able to move. A 20 percent change over a minute and the same change over a day are treated identically, which means quiet markets are exposed to the breaker precisely when they finally wake up.
+
+That flatness also limits what the breaker can protect against. It caps each individual settlement, not the cumulative path. Two consecutive accepted moves of 19 percent settle in full, one after the other, and together carry the price much further than a single clipped move would have. Anyone sizing a position, especially on the thinner Payer side where transfers are amplified, should think in terms of paths of acceptable moves rather than treating 20 percent as a bound on their loss. See [Settlement](/protocol/settlement) for how transfers are amplified between pools.
+
+The breaker only guards against large moves, not wrong ones within bounds. A fresh price that is incorrect by 15 percent settles completely, and a zero price or a reverting oracle stops settlement altogether before the breaker is ever consulted, since the comparison has nothing trustworthy to compare. Oracle selection therefore remains a first order risk, covered in [Risks](/concepts/risks).
+
+## Living with a skipped move
+
+For holders, the practical lesson is to treat the breaker as a change in what their shares represent, not as a malfunction. After a trip, pool shares are claims on unchanged collateral amounts, in a market whose reference price has jumped. The tracked asset may have genuinely moved, and the market has consciously declined to settle that movement, so the gap between a share's settled value and a naive mark to market is at its widest exactly then. Interfaces that display position values from settled state are reporting the protocol's truth, even when an external chart disagrees.
+
+Traders who need exposure to continue through such an event have no mechanism inside the market for claiming the skipped move later. Their remedy is the ordinary one: resize, exit, or re-enter at settled values, paying the entry and exit fees in [Fees](/protocol/fees) for the privilege. That cost is part of the breaker's design. A discontinuity that could be traded through cheaply and immediately would simply move the harm from passive holders to whoever was slowest to react.
+
+It is also worth noticing what the breaker refuses to protect. Slow, grinding moves of any total size settle completely, provided each settlement step stays within bounds, and so do sharp moves in markets active enough to settle them in slices. Capital protection in Null comes from position sizing against paths like those, not from the breaker, which answers only the narrow question of whether one settlement should be believed in full.
+
+## Why not simply cap the transfer
+
+An obvious alternative design would settle the first 20 percent of a large move and discard only the remainder. The contract deliberately does not do this. Settling up to a cap would require deciding that the opening portion of a suspected bad print is trustworthy, when the whole premise of the breaker is that a move of this size cannot be distinguished from an error or a corporate action. It would also pay out real collateral against a price that the very next settlement might abandon entirely.
+
+Discarding the whole leg keeps the rule auditable. Either a settlement's price move was within bounds and was honoured completely, or it was not and nothing was paid on it, and the flag in the settlement event tells observers which of the two happened. In a system whose entire job is moving other people's collateral on the strength of a price, that kind of blunt, easily verified rule is a feature rather than a lack of sophistication.
+
+## Reference
+
+| Constant | Value | Meaning |
+| --- | ---: | --- |
+| `MAX_ABS_CHANGE_BPS` | 2000 bps | Largest price move one settlement may apply |
+| `MAX_BASIS_POINTS` | 10000 | Basis point denominator |
+| `PRICE_SCALE` | `1e36` | Scale oracle prices are stored and compared at |
+
+Formally, the breaker fires when the following holds, and the price leg alone is discarded:
 
 ```text
 abs(newPrice - storedPrice) > storedPrice * 2000 / 10000
 ```
 
-When that is true, `finalizeUpdate` sets `circuitBreakerFired` and skips the price transfer. It still writes `newPrice` into storage, so the next settlement measures from the new price. Skipped movement is not paid later.
-
-Funding still runs on that settlement, subject to the pool floor and the funding model.
-
-The check is not scaled by elapsed time. A 20% move over a minute and a 20% move over a day are treated the same. Two accepted moves of 19% settle in full, one after the other. Size for a path of accepted moves, not only for the single-tick cap.
-
-A zero oracle price reverts before this check. If `oracle.price()` itself reverts, settlement reverts and the market does not update.
-
-`UpdateState` includes the boolean so indexers can show that a tick was skipped.

@@ -1,41 +1,74 @@
 ---
 title: "Sign in"
 sidebarTitle: "Sign in"
-description: "Connect your own wallet. Null does not custody your assets."
+description: "Connect your own wallet to Null on Ethereum mainnet, with no custodial account and no separate balance to open."
 ---
 
-Null is on Ethereum mainnet. You use your own wallet. There is no separate Null balance and no custodial account.
+Null runs on Ethereum mainnet, and signing in means connecting a wallet you
+already control. There is no Null account sitting between you and your assets,
+and no internal balance waiting to be funded. The wallet you connect is the
+wallet that holds your positions, signs your transactions, and receives
+anything you later withdraw or sell back to USDC.
 
-## Before you start
+That simplicity is worth pausing on, because it shapes everything that
+follows. If you lose access to your wallet, Null cannot restore it for you.
+If you send assets to the wrong network, they will not appear in the app.
+And if you connect a different wallet later, you will be looking at a
+different portfolio, even though the app itself looks exactly the same.
 
-- A wallet you control.
-- USDC for **Cash**, Savings, or collateral.
-- A little ETH for gas.
-- Confirmation that you are allowed to use the app where you are. Null is not offered in the United Kingdom, and the app blocks sanctioned regions.
+## What to have ready
 
-The trade ticket includes **By trading you agree to the Terms of Service and Privacy Policy.** The [Legal notices](/legal) summarize the main limits. If those notices and an agreement in the app ever differ, the agreement controls.
+Before you connect, it helps to have three things in place. You will need a
+wallet you control and can sign with. You will need USDC in that wallet,
+because USDC is the cash that Savings, Spot, Lending, and Margin all draw
+from. Finally, keep a little ETH in the same wallet for gas, since every
+transaction on Ethereum mainnet costs ETH to confirm.
 
-## Steps
+You should also be sure you are allowed to use Null where you are. Null is
+not offered in the United Kingdom, and the app blocks sanctioned regions.
+The trade ticket carries the line **By trading you agree to the Terms of
+Service and Privacy Policy**, and the [Legal notices](/legal) page explains
+the main limits in plain language. If those notices and an agreement shown
+in the app ever differ, the agreement is the one that controls.
+
+## Connecting your wallet
 
 <Steps>
-  <Step title="Open the app">
-    Go to the Null app and choose **Sign in**.
+  <Step title="Open the app and start the connection">
+    Choose **Sign in** and select your wallet when the app asks how you want
+    to connect. Approving that prompt links the address to your session. It
+    does not move any funds.
   </Step>
-  <Step title="Connect a wallet">
-    Approve the connection in your wallet. The address you connect is the address that holds positions.
+  <Step title="Confirm you are on Ethereum">
+    The app should show Ethereum as the network. If your wallet asks you to
+    sign on a different network, stop and check before approving. Null
+    positions live on Ethereum mainnet, and activity elsewhere will not show
+    up here.
   </Step>
-  <Step title="Check the network">
-    The app should show Ethereum. Reject a prompt that asks you to sign on a different network unless you meant to.
+  <Step title="Check the address, not just the connection">
+    The connected address is where positions will be held and where proceeds
+    will return. If you keep funds across several wallets, take a second to
+    confirm you connected the one you actually intend to trade from.
   </Step>
-  <Step title="Fund Cash">
-    USDC in that wallet is **Cash**. See [Fund your account](/get-started/fund-your-account).
+  <Step title="Fund Cash when you are ready">
+    Once connected, USDC in that wallet appears as **Cash**. Nothing else is
+    required to get started, and [Fund your account](/get-started/fund-your-account)
+    walks through getting USDC to the right place.
   </Step>
 </Steps>
 
-**Receive**, on Spot and on the home actions, shows this wallet's address. Assets sent there on the selected chain arrive as a normal transfer.
+## Receiving assets into the wallet
+
+You will see **Receive** on Spot and among the home actions. It shows the
+address of the wallet you connected, so you or an exchange can send assets
+to it. A transfer sent there on the selected chain arrives as an ordinary
+wallet transfer. It does not open a position on its own, and choosing
+**Receive** does not commit you to anything.
 
 <Warning>
-Null cannot recover a wallet, reverse a transaction, or move funds without your signature.
+Null cannot recover a wallet, reverse a confirmed transaction, or move funds
+without your signature. Check the network and the address before you send.
 </Warning>
 
-Next: [Navigating the app](/get-started/navigating-the-app).
+With your wallet connected and Cash in place, the next step is learning your
+way around. Continue to [Navigating the app](/get-started/navigating-the-app).
