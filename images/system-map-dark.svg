@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" role="img" aria-label="USDC flows into the Null Savings Vault and into Spot pools. The vault lends to Morpho long books. Margin borrows from those books.">
+  <title>How the four products sit on the primitive</title>
+  <text x="120" y="36" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Cash</text>
+  <rect x="40" y="48" width="160" height="52" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="120" y="78" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">USDC</text>
+
+  <rect x="300" y="28" width="180" height="64" rx="12" fill="#141416" stroke="#b8d9fa"/>
+  <text x="390" y="54" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Null Savings Vault</text>
+  <text x="390" y="74" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">nmUSDC, lent out</text>
+
+  <rect x="560" y="28" width="160" height="64" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="640" y="54" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Long book</text>
+  <text x="640" y="74" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">USDC vs Receiver</text>
+
+  <line x1="200" y1="74" x2="292" y2="60" stroke="#b8d9fa" stroke-width="1.5"/>
+  <polygon points="300,58 290,54 294,66" fill="#b8d9fa"/>
+  <text x="230" y="54" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Add money</text>
+
+  <line x1="480" y1="60" x2="552" y2="60" stroke="#b8d9fa" stroke-width="1.5"/>
+  <polygon points="560,60 550,55.5 550,64.5" fill="#b8d9fa"/>
+
+  <rect x="40" y="160" width="200" height="88" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="140" y="192" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral vault</text>
+  <text x="140" y="212" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">nmUSDC inside the market</text>
+  <text x="140" y="230" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">yield pays funding</text>
+
+  <line x1="120" y1="100" x2="120" y2="152" stroke="#787c86" stroke-width="1.25"/>
+  <polygon points="120,160 115.5,150 124.5,150" fill="#787c86"/>
+  <text x="128" y="132" fill="#a0a0a0" font-size="10.5" font-family="Inter, system-ui, -apple-system, sans-serif">Spot Buy wraps</text>
+
+  <rect x="300" y="168" width="160" height="72" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="380" y="198" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver pool</text>
+  <text x="380" y="218" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">oracle return</text>
+
+  <rect x="500" y="168" width="160" height="72" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="580" y="198" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Payer pool</text>
+  <text x="580" y="218" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">backs Receiver</text>
+
+  <line x1="240" y1="204" x2="292" y2="204" stroke="#787c86" stroke-width="1.25"/>
+  <polygon points="300,204 290,199.5 290,208.5" fill="#787c86"/>
+  <line x1="460" y1="204" x2="492" y2="204" stroke="#b8d9fa" stroke-width="1.5"/>
+  <polygon points="452,204 462,199.5 462,208.5" fill="#b8d9fa"/>
+  <polygon points="500,204 490,199.5 490,208.5" fill="#b8d9fa"/>
+
+  <rect x="300" y="300" width="200" height="72" rx="12" fill="#141416" stroke="#29323b"/>
+  <text x="400" y="330" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Short book</text>
+  <text x="400" y="350" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Receiver shares vs nmUSDC</text>
+
+  <line x1="380" y1="240" x2="380" y2="292" stroke="#787c86" stroke-width="1.25"/>
+  <polygon points="380,300 375.5,290 384.5,290" fill="#787c86"/>
+
+  <rect x="540" y="300" width="180" height="72" rx="12" fill="#141416" stroke="#b8d9fa"/>
+  <text x="630" y="330" text-anchor="middle" fill="#d4dce7" font-size="13" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Margin</text>
+  <text x="630" y="350" text-anchor="middle" fill="#a0a0a0" font-size="11" font-family="Inter, system-ui, -apple-system, sans-serif">Long borrows USDC</text>
+
+  <line x1="640" y1="92" x2="660" y2="292" stroke="#b8d9fa" stroke-width="1.5"/>
+  <polygon points="662,300 654,288 670,292" fill="#b8d9fa"/>
+  <line x1="500" y1="336" x2="532" y2="336" stroke="#787c86" stroke-width="1.25"/>
+  <polygon points="540,336 530,331.5 530,340.5" fill="#787c86"/>
+</svg>

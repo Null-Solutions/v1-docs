@@ -1,0 +1,41 @@
+---
+title: "Deployments"
+sidebarTitle: "Deployments"
+description: "Ethereum mainnet addresses for the current Null stack. Copy them only after they are published here."
+---
+
+The current stack is the yield-share funding model, `nmUSDC` collateral, `NullV1Router`, and `NullV1MorphoRouter`.
+
+<Warning>
+Mainnet addresses for that stack are not published on this page yet. Do not reuse an older market's factory, router, collateral, or funding model. If a constant is missing below, treat it as unknown.
+</Warning>
+
+## What will be listed
+
+When the deployment is verified, this page will list:
+
+| Contract | Role |
+| --- | --- |
+| `NullV1Factory` | Creates markets. Resolve a market with `getMarket(collateral, oracle, frm)`. |
+| `NullV1Router` | Spot deposit and redeem. Chainlink updates are fee-less. |
+| `NullV1MorphoRouter` | Margin `open`, `close`, `openShort`, `closeShort`. |
+| `NullV1YieldShareFundingRateModel` | Funding model the factory has enabled. |
+| `nmUSDC` | Morpho Vault V2 share used as market collateral and as the Null Savings Vault. |
+| Morpho Blue | Singleton the router calls. Use Morpho's canonical address for Ethereum, and verify it in the router. |
+
+Per-market rows (oracle proxy, market proxy, Receiver pool, Payer pool, long book id, short book id) belong here only after each address is checked on Etherscan against the factory.
+
+## How to verify a market
+
+```text
+factory.getMarket(collateral, oracle, frm) == market
+market.collateral() == nmUSDC
+market.frm() == yield-share model
+market.receiverPool() / market.payerPool() match the tokens you will spend
+```
+
+For a Morpho book, check `loanToken`, `collateralToken`, `oracle`, `irm`, and `lltv` against the id `keccak256(abi.encode(marketParams))`.
+
+Integration snippets in these docs use minimal ABIs. They are not a package. Null does not publish an npm SDK. Take ABIs from the verified implementation on Etherscan once the addresses above exist.
+
+Next: [Quickstart](/developers/quickstart) · [Morpho router](/developers/morpho-router)

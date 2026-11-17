@@ -65,7 +65,7 @@ function redeem(
 
 Before conversion, each entry point locks the market's reentrancy guard and calls `market.updateState()`. Deposits transfer collateral directly from the caller to the market; withdrawals are paid by the market. If the caller redeems or withdraws another owner's shares, the owner must approve the caller.
 
-Entry and exit fees are sized on settleable-R notional (`assets × settleableR / ownAssets`), not on collateral alone. Entry fees are included in the `assets` paid by depositors and excluded from assets converted into shares. Exit fees are charged in addition to withdrawn assets or deducted from redeemed assets. They credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/developers/fees).
+Entry and exit fees are sized on settleable-R notional (`assets × settleableR / ownAssets`), not on collateral alone. Entry fees are included in the `assets` paid by depositors and excluded from assets converted into shares. Exit fees are charged in addition to withdrawn assets or deducted from redeemed assets. They credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/protocol/fees).
 
 ## Previews
 

@@ -2,25 +2,26 @@
 
 ## About this project
 
-- Mintlify docs site for Null V1
+- Mintlify docs site for Null V1 on Ethereum mainnet
 - Pages are MDX with YAML frontmatter
 - Configuration lives in `docs.json`
-- Three nav tabs: **App** (product/UX), **Developers** (protocol/contracts), and **Support**
-- Paths under `private-beta/` are legacy URL prefixes; do not reintroduce "private beta" product language
+- Three nav tabs: **Guides** (product), **Developers** (protocol and contracts), and **Support**
 
 ## Terminology
 
 - **Receiver** / **Payer**: the two ERC-4626 pools in a market
+- **Payer**: a negative-size position in the Receiver pool, with the market's collateral inside it. Short scale is `R / P`. Do not describe that scale as a leverage setting.
 - **Market identity**: `(collateral, oracle, frm)`
-- **FRM**: funding-rate model address still bound at market creation; **product funding** is yield share of **collateral APR** paid by Receivers to Payers (never negative in app copy)
-- **Collateral vault**: Morpho Vault V2 share used as Null market collateral (e.g. `nmUSDC`)
-- **Null Savings Vault**: same Morpho vault as a Savings product; allocates USDC to Morpho Blue long markets
-- **Margin**: Morpho long/short loops via `NullV1MorphoRouter` (LLTV liquidations)
-- **deposit / redeem**: onchain and developer docs language
-- **Buy / Sell**: app Spot copy for the same flows (older docs said Mint / Burn)
+- **Funding**: vault yield on the Receiver pool, paid to Payers by `NullV1YieldShareFundingRateModel`. Never negative. High-water mark. Capped at 100% APR for one interval.
+- **Collateral vault** and **Null Savings Vault**: two roles of the same `nmUSDC` Morpho Vault V2 share
+- **Buy / Sell**: app words for pool deposit and redeem. Use those words in Guides.
+- **deposit / redeem**: onchain and developer docs language for the same flows
+- **Add money / Withdraw**: Savings. **Lend / Recall**: Lending. **Place Order / Close** and **Long / Short**: Margin.
 - **Settlement**: market update before pool actions (not a separate public poke)
-- Target **Ethereum mainnet**; do not publish deployment addresses until the addresses page has verified mainnet values
-- Prefer **contracts-first**; do not document a published Null SDK or partner trading API unless one ships
+- **Circuit breaker**: a single settlement move above 20% (`MAX_ABS_CHANGE_BPS = 2000`) skips price transfer and resets the stored price
+- Do not publish deployment addresses until [developers/addresses](/developers/addresses) lists verified mainnet values for this stack
+- Prefer **contracts-first**. Do not document a published Null SDK or partner trading API unless one ships
+- Contract source of truth is `v1-contracts` branch `feat/morpho-loop` (yield-share model, no depositor allow-list, no deposit pause)
 
 ## Style preferences
 
@@ -39,20 +40,12 @@
 - Match the app design tokens: Inter text; light mode ink `#2d2c2c`, secondary `#6e6e6e`, borders `#dee6ee`, guides `#afb4bc`, accent `#2e8afa`; dark mode ink `#d4dce7`, secondary `#a0a0a0`, borders `#29323b`, guides `#787c86`, accent `#b8d9fa`, surfaces `#141416`
 - Boxes use `rx="10"`-`rx="12"`; solid accent lines for writes, dashed gray lines for reads; include `role="img"`, `aria-label`, and `<title>`
 
-## Motion
-
-- Match the functional motion roles in `v1-ui/docs/MOTION.md`: micro for controls, surface for overlays, and content for page changes
-- Keep hover and press feedback between 50-150ms, surfaces between 180-280ms, and route reveals at 140ms
-- Blur is reserved for content reveals and must not be added to buttons, navigation items, or overlays
-- Use the `--null-motion-*` and `--null-ease-*` tokens in `style.css`; do not add raw durations or easing curves unless the platform requires one
-- Every new animation must include a `prefers-reduced-motion` behavior that leaves content visible and controls usable
-- Prefer stable IDs, ARIA attributes, and `data-component-part` selectors over Mintlify-generated utility class chains
-
 ## Content boundaries
 
-- App tab: Home sections, Savings, Spot, Lending, Margin, market making, Points Season 0, legal notices
-- Developers tab: protocol mechanics, vaults, Morpho, integration, market setup, deployments, contract reference
-- Support tab: troubleshooting, audit status, and brand assets
-- Leave `liquidation-compare/` intact as an offline Morpho LLTV vs perps note; cross-link from Morpho docs when useful
+- Guides: what Null is, the four products, the primitive, funding, vaults, Morpho books, fees, risks, market making, points, and legal
+- Developers: protocol mechanics, integration, market setup, deployments, contract reference
+- Support: troubleshooting and brand assets
+- Audits live once, under Developers → Protocol
 - Do not invent SDK packages, API keys, webhooks, order books, or mainnet addresses
-- Empty legacy stubs under `resources/` (faq, whitepapers, etc.) are not part of the Developers nav. Prefer deleting or filling over linking
+- Do not document removed behavior: depositor allow-lists, deposit pause, a signed funding curve, a time-scaled 7 percent breaker, or a price-oracle vendor other than Chainlink Data Streams
+- `liquidation-compare/` is a research note. The public explanation is the formula on the Margin page

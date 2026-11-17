@@ -25,7 +25,7 @@ Product funding is **yield share of collateral APR** (Receivers pay Payers; neve
 </ParamField>
 
 <ParamField path="frm" type="INullV1FundingRateModel" required>
-  Funding-rate model queried every settlement. The factory must enable it before market creation. Product economics treat funding as a share of collateral APR paid to Payers; see [Funding and carry](/learn/funding-and-carry).
+  Funding-rate model queried every settlement. The factory must enable it before market creation. Product economics treat funding as a share of collateral APR paid to Payers; see [Funding and carry](/concepts/funding-and-yield).
 </ParamField>
 
 <Warning>
@@ -54,7 +54,7 @@ Factory owner can set three fees. Entry and exit default to 25 bps and are cappe
 | `exitFee()` | `withdraw` / `redeem`, same notional | 250 bps (2.5%) |
 | `collateralFee()` | Pool assets, annualized during settlement | 0 (disabled) |
 
-Entry and exit credit the opposite pool unless the factory was deployed with `allowProtocolFees`. `sweepFees()` settles first, then pays the factory owner any `protocolFees`. Details: [Fees](/developers/fees).
+Entry and exit credit the opposite pool unless the factory was deployed with `allowProtocolFees`. `sweepFees()` settles first, then pays the factory owner any `protocolFees`. Details: [Fees](/protocol/fees).
 
 ## Funding model (product)
 
@@ -69,7 +69,7 @@ annual funding transfer = f * R    (Receiver → Payer)
 - Coverage still sets the Payer short scale `R / P` (negative Receiver size vs Payer capital) and scales how funding lands per unit of Payer.
 - Lens returns both `fundingRate` and `collateralRate` for display.
 
-Historical `NullV1ImbalanceFundingRateModel` deployments used a signed coverage curve. Do not document that curve as current product behavior. Always identify `market.frm()` onchain and prefer Lens projections plus [Funding and carry](/learn/funding-and-carry).
+The funding model in use is [NullV1YieldShareFundingRateModel](/protocol/funding-rate-model). Always read `market.frm()` onchain. A different enabled model would be a different market tuple.
 
 ## Read onchain
 
@@ -86,4 +86,4 @@ uint16 exitFee       = market.exitFee();
 uint16 collateralFee = market.collateralFee();
 ```
 
-Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/developers/settlement). Morpho periphery: [Morpho](/learn/morpho).
+Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/protocol/settlement). Morpho periphery: [Morpho](/concepts/morpho-markets).

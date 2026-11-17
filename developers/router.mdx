@@ -1,47 +1,24 @@
 ---
 title: "Router"
 sidebarTitle: "Router"
-description: "Use NullV1Router or NullV1PayableRouter for create, deposit, redeem, deadlines, slippage, and oracle updates."
+description: "Use NullV1Router for create, deposit, redeem, deadlines, slippage, and Chainlink oracle updates."
 ---
 
-Null V1 has two routers with the same market-operation signatures and different oracle fee models:
-
-| Contract              | Use for                | Fee model                                    |
-| --------------------- | ---------------------- | -------------------------------------------- |
-| `NullV1Router`        | Chainlink Data Streams | Fee-less `update(bytes[])`                   |
-| `NullV1PayableRouter` | Pyth                   | Pays native update fees from its ETH balance |
-
-`NullV1Router` is stateless, ownerless, and nonpayable. `NullV1PayableRouter` is owned because its owner manages the ETH used for oracle updates.
+`NullV1Router` is the Spot router. It is stateless, ownerless, and nonpayable. Chainlink Data Streams updates are fee-less: the router calls `update(bytes[])` and forwards no ETH.
 
 User-facing `createMarket`, `depositMarket`, and `redeemMarket` calls are not payable. Do not attach `msg.value`.
 
-## Payable router ETH operations
-
-```solidity
-receive() external payable;
-
-function withdrawEth(address to, uint256 amount) external;
-
-event WithdrawEth(address indexed to, uint256 amount);
-```
-
-Anyone can send ETH directly to the payable router. Only its owner can call `withdrawEth`. The withdrawal reverts for a zero recipient, insufficient router balance, failed ETH transfer, or unauthorized caller.
-
-For a nonempty oracle payload, the payable router reads `getUpdateFee(updateData)` and pays exactly that amount from its existing balance. It reverts with `InsufficientUpdateFeeBalance(balance, required)` when underfunded.
+Margin opens and closes go through [`NullV1MorphoRouter`](/developers/morpho-router), not this router.
 
 ## Oracle update data
 
-The routers apply nonempty `updateData` before market creation, deposit, or redemption:
+The router applies nonempty `updateData` before market creation, deposit, or redemption by calling the fee-less `update(updateData)` interface.
 
-- `NullV1Router` calls the fee-less `update(updateData)` interface.
-- `NullV1PayableRouter` calls the payable update interface using its own ETH.
+Fetch and encode data from Chainlink:
 
-Fetch and encode data according to the selected oracle:
-
-- [Pyth update data](/contracts/oracles/pyth#update-data)
 - [Chainlink update requirements](/contracts/oracles/chainlink#nonpayable-fee-zero-routing)
 
-Pass `[]` only when the stored oracle price is usable. The fee-less router cannot pay a Pyth update fee.
+Pass `[]` only when the stored oracle price is usable.
 
 ## Create market
 
@@ -55,7 +32,7 @@ function createMarket(
 ) external returns (INullV1Market market);
 ```
 
-The router optionally updates the oracle, then calls the supplied factory. It does **not** verify that the factory is a canonical Null deployment. Copy the factory from [Ethereum deployments](/resources/addresses) and validate untrusted configuration. Do not substitute an address from another network.
+The router optionally updates the oracle, then calls the supplied factory. It does **not** verify that the factory is a canonical Null deployment. Copy the factory from [Deployments](/developers/addresses) and validate untrusted configuration. Do not substitute an address from another network.
 
 The factory requires nonzero dependencies, an enabled FRM, a nonzero initial oracle price, and an unused `(collateral, oracle, frm)` tuple.
 

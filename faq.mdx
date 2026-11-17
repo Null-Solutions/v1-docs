@@ -1,0 +1,44 @@
+---
+title: "FAQ"
+sidebarTitle: "FAQ"
+description: "Short answers about the primitive, the four products, funding, and points."
+---
+
+<AccordionGroup>
+  <Accordion title="What is Null?">
+    A two-pool market for oracle price exposure, plus Savings, Lending, and Margin around it. Start with [the primitive](/concepts/the-primitive).
+  </Accordion>
+  <Accordion title="Do I own the stock or token?">
+    No. You own a share of a collateral pool, or a vault share, or a Morpho supply position. You do not get voting rights or dividends unless the oracle return already includes them.
+  </Accordion>
+  <Accordion title="What is the difference between Savings and Lending?">
+    Savings deposits USDC into the Null Savings Vault, which lends on long books for you. Lending supplies a book directly, with **Lend** and **Recall**, including Receiver-share books.
+  </Accordion>
+  <Accordion title="What is the difference between Spot and Margin?">
+    Spot is an unlevered pool share. There is no liquidation. Margin borrows on Morpho and can be liquidated at that book's LLTV.
+  </Accordion>
+  <Accordion title="Where is Payer?">
+    Turn on **Pro Mode** in the account menu. Payer buy and Payer sell then appear on the Spot ticket.
+  </Accordion>
+  <Accordion title="Why is funding always paid to Payers?">
+    Funding is the collateral yield on the Receiver pool. Receivers pay it to Payers. It does not flip when Payer collateral is larger than Receiver collateral. Coverage still changes Payer's percentage carry. See [Funding and yield](/concepts/funding-and-yield).
+  </Accordion>
+  <Accordion title="What does Net APR mean?">
+    Collateral yield plus or minus funding for your side. On a Payer it is scaled by `R / P`. It is not a quote of future profit.
+  </Accordion>
+  <Accordion title="Why can't I withdraw all of my Savings?">
+    Most of the vault is lent to Margin longs. You can withdraw free USDC. The panel shows how much that is.
+  </Accordion>
+  <Accordion title="What does Receive do?">
+    It shows your wallet address and a QR code. It does not buy a position.
+  </Accordion>
+  <Accordion title="Are points yield?">
+    No. Season 0 monitors ordinary activity. Points do not change pool value. See [Points](/points) and the [Legal notices](/legal).
+  </Accordion>
+  <Accordion title="Which markets are live?">
+    The list on `/trade` is the live set. These docs do not hardcode symbols, because the indexer decides what is listed.
+  </Accordion>
+  <Accordion title="Is there an audit?">
+    Nethermind reviewed an earlier scope of the core contracts. Read [Audits](/protocol/audits) before you treat that as cover for Margin, the vault, or Morpho.
+  </Accordion>
+</AccordionGroup>

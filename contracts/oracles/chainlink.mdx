@@ -65,8 +65,7 @@ uint256 currentPrice = oracle.price();
 
 <Note>
   Use the stateless `NullV1Router` for Chainlink. It calls the nonpayable
-  `update(updateData)` and forwards no native currency. Do not use the payable
-  Pyth router as the normal Chainlink path.
+  `update(updateData)` and forwards no native currency.
 </Note>
 
 `updateData` must contain at least one signed report. Each submitted report is

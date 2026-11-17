@@ -1,0 +1,49 @@
+---
+title: "Risks"
+sidebarTitle: "Risks"
+description: "Receiver, Payer, Savings, Lending, and Margin can all lose money. This page lists the main ways."
+---
+
+You can lose some or all of the assets you commit. Nothing on this page is a complete list, and nothing here is a promise that a control will protect you.
+
+## Price
+
+Receiver value moves with the oracle price. Payer value moves the other way, scaled by `R / P`. A Payer is a negative-size position in the Receiver pool. Lower coverage means a larger percentage move for the same oracle change.
+
+You do not receive the tracked asset. You do not receive voting rights or dividends unless the oracle return already includes them.
+
+## Funding and collateral yield
+
+Funding is variable vault yield paid from Receivers to Payers. It can be near zero for a long time. A vault loss does not create negative funding, but it can reduce collateral value for both pools.
+
+Payer carry after a hedge is funding plus your own collateral yield, minus hedge costs. The hedge can cost more than the carry.
+
+## Margin liquidation
+
+Margin borrows on Morpho. If loan-to-value reaches the book's LLTV, Morpho can liquidate the position. Interest, oracle moves, and collateral value can all push loan-to-value up. Spot positions are not liquidated this way.
+
+The **Liquidation price** in the app is an estimate from current LLTV and leverage. It is not a guarantee.
+
+## Savings and lending liquidity
+
+Savings withdrawals and new Margin longs need free USDC on the long books. If that cash is lent out, a withdrawal or open can fail or fill only in part.
+
+Lending **Recall** can fail for the same reason: borrowers still hold the asset. You earn the lend rate while you wait. If borrowers are liquidated and collateral is insufficient, lenders can lose principal.
+
+## Oracles and settlement
+
+A stale, wrong, or unavailable oracle can block a trade or settle a price you did not expect. A single move above 20% skips price transfer for that settlement and resets the baseline. Funding can still move. Skipped price movement is not paid later.
+
+Settlement runs when someone interacts with the market. Share value can change between the preview and the confirmed transaction.
+
+## Smart contracts and admin
+
+Bugs can cause loss. The factory owner can enable funding-rate models for new markets and can change fees inside published caps. Market identity (collateral, oracle, funding-rate model) does not change after creation.
+
+A completed audit does not mean the deployment you use is bug-free. See [Audits](/protocol/audits).
+
+## Wallets, region, and tax
+
+You control your wallet. Transactions can be irreversible. Null is not offered in the United Kingdom and is unavailable where participation would breach applicable law or sanctions. Tax treatment depends on you and can change.
+
+Read the [Legal notices](/legal) before you trade.

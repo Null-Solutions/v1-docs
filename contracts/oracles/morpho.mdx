@@ -1,0 +1,35 @@
+---
+title: "Morpho oracles"
+sidebarTitle: "Morpho oracles"
+description: "NullV1MorphoOracle and NullV1MorphoInverseOracle price Receiver shares for Morpho Blue."
+---
+
+These oracles implement Morpho's `price()` at `1e36` scale. They do not read Chainlink. They read the Null pool's last settled conversion.
+
+## Long: NullV1MorphoOracle
+
+Loan assets per Receiver share:
+
+```text
+collateralAssets = receiverPool.previewRedeem(sampleShares)
+loanAssets = vault.previewRedeem(collateralAssets)   // or passthrough when collateral is not a vault
+price = loanAssets * 1e36 / sampleShares
+```
+
+`previewRedeem` includes the exit fee. A Morpho long's collateral value is the USDC a redemption would raise, not a mid price.
+
+## Short: NullV1MorphoInverseOracle
+
+Receiver shares per collateral unit:
+
+```text
+price = receiverPool.previewDeposit(sampleAssets) * 1e36 / sampleAssets
+```
+
+`previewDeposit` includes the entry fee. The short book lends Receiver shares against `nmUSDC`, so this price rises when Receiver shares become more expensive in collateral terms.
+
+## Settlement lag
+
+Both oracles use the last settled pool state. A trade that settles the Null market just before Morpho reads `price()` is what updates them. They do not push a Chainlink report.
+
+If you liquidate or borrow, settle or accept that the quoted price can be one interaction behind the oracle on the Null market.

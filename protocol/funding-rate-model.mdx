@@ -1,0 +1,51 @@
+---
+title: "Funding-rate model"
+sidebarTitle: "Funding-rate model"
+description: "NullV1YieldShareFundingRateModel pays Payers the vault yield earned on the Receiver pool."
+---
+
+`NullV1YieldShareFundingRateModel` is the funding-rate model for markets whose collateral is an ERC-4626 vault share. Funding equals the yield the vault paid on the Receiver pool since the previous settlement. Receivers keep none of that yield. Payers receive all of it, on top of the yield on their own shares.
+
+The model does not estimate an APY. It reads the vault share price on every settlement.
+
+## Share price
+
+```text
+sharePrice = vault.convertToAssets(1e36)
+```
+
+The probe is `1e36` shares so the quote keeps the vault's precision when one share is worth less than one asset unit. `nmUSDC` is 18 decimals over 6-decimal USDC.
+
+The model stores, per market, the highest share price seen at a settlement and the annualized rate from the last settlement.
+
+## Rate
+
+Let `top` be the stored high-water mark and `price` the current share price. If no time has passed since `state.lastUpdate`, the stored rate is returned and the mark does not move.
+
+If time has passed, both pools are above `MIN_POOL_ASSETS`, and `price > top`:
+
+```text
+growth = (price - top) * 1e18 / price
+rate = min(growth * 365 days / elapsed, 1e18)
+```
+
+Growth is measured against the new price because pools hold shares. Receiver yield of `R * (price - top)` in assets is `R * (price - top) / price` in shares.
+
+The market multiplies this rate by elapsed time again, so the collateral it moves is `growth * settleableReceiver`. That is the Receiver pool's yield for the interval.
+
+The mark moves up to `price` when `price` is higher. If `price` is lower, the mark stays. No funding accrues until the share price is back above the previous top. A dip and recovery cannot create funding, and Receivers do not pay for the recovery of their own vault loss.
+
+If either pool is at or below `MIN_POOL_ASSETS`, the rate for that call is zero and the mark still advances, so yield from that interval is not charged later.
+
+## Bounds
+
+- The rate is never negative. Payers never pay funding.
+- `rate <= 1e18` (100% APR). Yield above that for one interval stays with Receivers.
+- State is keyed by `msg.sender` inside `fundingRate`, so only the market that calls the model moves its own mark.
+- `fundingRateView` resolves the market through `factory.getMarket(collateral, oracle, this)`.
+
+## What the market does with the rate
+
+Settlement applies a positive rate as a payment from settleable Receiver assets to the Payer pool. See [Settlement](/protocol/settlement). Product language for the same flow is [Funding and yield](/concepts/funding-and-yield).
+
+The factory owner must `enableFrm` this contract before a market can be created with it. Enabling does not change markets that already point at a different model.

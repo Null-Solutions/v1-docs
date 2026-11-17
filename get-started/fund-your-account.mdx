@@ -1,0 +1,38 @@
+---
+title: "Fund your account"
+sidebarTitle: "Fund your account"
+description: "Cash is USDC in your wallet. Savings, Spot, Lending, and Margin all spend from it."
+---
+
+**Cash** is the USDC in the wallet you connected. The portfolio tooltip describes it as available USDC in your wallet, shown in USD. There is no internal cash account to transfer into first.
+
+## What each product spends
+
+| Product | Asset you need | What happens to it |
+| --- | --- | --- |
+| Savings | USDC | **Add money** deposits it into the Null Savings Vault. |
+| Spot | USDC | **Buy** wraps it to `nmUSDC` and deposits that into a pool. |
+| Lending | USDC or a Receiver share | **Lend** supplies it to a Morpho book. |
+| Margin | USDC | Equity for **Long** or **Short**. |
+| Any transaction | ETH | Gas. |
+
+Get USDC from an exchange, a bridge, or another wallet. Send it to the address shown under **Receive**. Send it on Ethereum. USDC sent on another chain does not appear as Cash.
+
+## Steps
+
+<Steps>
+  <Step title="Copy your address">
+    Use **Receive**. Check the chain name in the notice before you send.
+  </Step>
+  <Step title="Send USDC">
+    Transfer USDC on Ethereum. Wait for the transfer to confirm.
+  </Step>
+  <Step title="Leave ETH for gas">
+    A deposit that spends your last ETH can get stuck. Keep a buffer.
+  </Step>
+  <Step title="Confirm Cash">
+    Home should show the USDC under **Cash**. Then use **Invest** to pick Savings, Spot, Lending, or Margin.
+  </Step>
+</Steps>
+
+Savings withdrawals and Spot sells return USDC to this same wallet, subject to liquidity and fees.

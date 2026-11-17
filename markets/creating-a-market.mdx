@@ -26,8 +26,7 @@ Only the factory owner can enable an FRM. Enabling is irreversible because the f
 
 All supported oracles are pull-based, so the router can update the oracle before factory init reads `price()`:
 
-- **Pyth** → pre-funded `NullV1PayableRouter`
-- **Chainlink V3 / V11** → fee-less `NullV1Router`
+- **Chainlink V3 / V11** → `NullV1Router` (fee-less update)
 
 ```solidity
 INullV1Market market = router.createMarket(
@@ -178,7 +177,7 @@ export async function createNullMarket({
 }
 ```
 
-Use `NullV1Router` for Chainlink and `NullV1PayableRouter` for Pyth. The payable router must already hold enough ETH for the Pyth fee; the market-creation call itself is nonpayable.
+Use `NullV1Router` for Chainlink. The market-creation call is nonpayable. Do not attach ETH.
 
 ## Factory behavior
 
@@ -216,4 +215,4 @@ After the receipt succeeds, read `getMarket(collateral, oracle, frm)` from the s
 
 The dependency addresses on a live market cannot change. Enabling another FRM only permits new tuples that use it; it does not replace the FRM on an existing market.
 
-See [Factory](/contracts/factory) · [Oracles](/markets/oracles) · [Ethereum deployments](/resources/addresses).
+See [Factory](/contracts/factory) · [Oracles](/markets/oracles) · [Deployments](/developers/addresses).

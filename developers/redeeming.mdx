@@ -4,9 +4,9 @@ sidebarTitle: "Redeeming"
 description: "Redeem Receiver or Payer shares for collateral via the router or direct ERC-4626, with previews, slippage, and vault unwrap."
 ---
 
-Redeeming burns Receiver or Payer pool shares and returns assets. Use `redeemMarket` for production UIs. It settles before conversion, enforces a deadline and minimum output, accepts oracle update data, and unwraps ERC-4626 collateral.
+Redeeming returns Receiver or Payer pool shares to the market and sends assets back. Use `redeemMarket` for production UIs. It settles before conversion, enforces a deadline and minimum output, accepts oracle update data, and unwraps ERC-4626 collateral.
 
-In the Null app, this action is called **Burn**. Contract integrations should use the ERC-4626 term `redeem`.
+In the Null app, this action is called **Sell**. Contract integrations should use the ERC-4626 term `redeem`.
 
 ## Output units
 
@@ -55,7 +55,7 @@ function applySlippageFloor(quotedOutput: bigint): bigint {
 
 ## ERC-4626 collateral example
 
-This example redeems a caller's full Receiver balance from a published market whose collateral is an ERC-4626 vault. It assumes configured `publicClient`, `walletClient`, and `account` objects. Populate every address from [Ethereum deployments](/resources/addresses); do not use placeholders in a transaction.
+This example redeems a caller's full Receiver balance from a published market whose collateral is an ERC-4626 vault. It assumes configured `publicClient`, `walletClient`, and `account` objects. Populate every address from [Deployments](/developers/addresses); do not use placeholders in a transaction.
 
 ```ts
 import { parseAbi, type Address } from "viem";
@@ -170,10 +170,9 @@ The deadline is Unix time in seconds. Expired calls revert with `TransactionTooO
 
 Use nonempty `updateData` when the oracle requires a fresh push update:
 
-- [Pyth update data](/contracts/oracles/pyth#update-data)
 - [Chainlink update requirements](/contracts/oracles/chainlink#nonpayable-fee-zero-routing)
 
-Pass `[]` only when the stored price is usable. Use `NullV1Router` for Chainlink and the pre-funded `NullV1PayableRouter` for Pyth. Do not attach ETH to `redeemMarket`.
+Pass `[]` only when the stored price is usable. Use `NullV1Router`. Do not attach ETH to `redeemMarket`.
 
 ## Direct ERC-4626 exit
 
@@ -193,4 +192,4 @@ If the transaction sender differs from the share owner, the owner must approve t
 
 ## Related
 
-[Depositing](/developers/depositing) · [Fees](/developers/fees) · [Pools](/developers/pools) · [Router](/developers/router)
+[Depositing](/developers/depositing) · [Fees](/protocol/fees) · [Pools](/developers/pools) · [Router](/developers/router)

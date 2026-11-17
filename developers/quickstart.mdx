@@ -6,7 +6,7 @@ description: "Configure an Ethereum integration, discover a market, preview shar
 
 This guide targets Ethereum mainnet and shows an ERC-4626 collateral flow using the generic names `collateralVault` and `underlying`.
 
-Take every address and deployment block from [Ethereum deployments](/resources/addresses). Never substitute addresses, deployment blocks, collateral, markets, or oracles from another network.
+Take every address and deployment block from [Deployments](/developers/addresses). Never substitute addresses, deployment blocks, collateral, markets, or oracles from another network.
 
 ## Prerequisites
 
@@ -15,11 +15,11 @@ Take every address and deployment block from [Ethereum deployments](/resources/a
 - Published Ethereum infrastructure constants and a published market tuple
 - The verified oracle type and any required signed update payload
 
-This page uses minimal inline ABIs because no ABI package is assumed. For production, use the verified Etherscan ABI linked from [Ethereum deployments](/resources/addresses) and confirm the contract name and compiler metadata before generating types.
+This page uses minimal inline ABIs because no ABI package is assumed. For production, use the verified Etherscan ABI linked from [Deployments](/developers/addresses) and confirm the contract name and compiler metadata before generating types.
 
 ## 1. Build typed configuration
 
-Copy published values from [Ethereum deployments](/resources/addresses). Keep infrastructure and selected-market data typed and explicit:
+Copy published values from [Deployments](/developers/addresses). Keep infrastructure and selected-market data typed and explicit:
 
 ```ts
 import type { Address } from "viem";
@@ -28,7 +28,7 @@ interface PublishedEthereumDeployment {
   chainId: 1;
   factory: Address;
   router: Address;
-  payableRouter: Address;
+  morphoRouter: Address;
 }
 
 interface PublishedMarket {
@@ -36,7 +36,7 @@ interface PublishedMarket {
   underlying: Address;
   oracle: Address;
   frm: Address;
-  oracleKind: "chainlink" | "pyth";
+  oracleKind: "chainlink";
 }
 
 interface IntegrationConfig
@@ -178,14 +178,13 @@ const payerShortScaleWad =
     ? undefined
     : (receiverPoolAssets * 10n ** 18n) / payerPoolAssets; // R/P: Payer short scale vs capital
 
-const router =
-  config.oracleKind === "pyth" ? config.payableRouter : config.router;
+const router = config.router;
 const updateData: Hex[] = []; // Only while the stored oracle price is usable.
 ```
 
 Coverage is `P/R`. `R/P` is the magnitude of Payer's negative Receiver size relative to Payer capital at this market state. It is not a funding rate. Each ratio is undefined when its denominator is zero.
 
-For a fresh update, fetch signed payloads before submitting. Follow [Oracle update flow](/markets/oracles#update-flow) and the implementation-specific [Pyth](/contracts/oracles/pyth#update-data) or [Chainlink](/contracts/oracles/chainlink) instructions. Never fabricate payload bytes.
+For a fresh update, fetch signed payloads before submitting. Follow [Oracle update flow](/markets/oracles#update-flow) and the [Chainlink](/contracts/oracles/chainlink) instructions. Never fabricate payload bytes.
 
 ## 4. Preview and deposit
 
@@ -301,7 +300,7 @@ await publicClient.waitForTransactionReceipt({ hash: redeemHash });
 
 ## Next
 
-1. Read [Settlement](/developers/settlement) to understand why previews can move.
+1. Read [Settlement](/protocol/settlement) to understand why previews can move.
 2. Review every parameter in [Depositing](/developers/depositing) and [Redeeming](/developers/redeeming).
 3. Read [Router](/developers/router) and [Oracles](/markets/oracles) before handling user funds.
 4. Add position reads with [Frontend integration](/contracts/integration/ui) or history with [Indexer integration](/contracts/integration/indexer).

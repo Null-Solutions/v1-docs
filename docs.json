@@ -38,68 +38,192 @@
   },
   "redirects": [
     {
-      "source": "/",
-      "destination": "/private-beta/about-null/overview"
+      "source": "/private-beta/overview",
+      "destination": "/"
     },
     {
-      "source": "/private-beta/overview",
-      "destination": "/private-beta/about-null/overview"
+      "source": "/private-beta/about-null/overview",
+      "destination": "/"
+    },
+    {
+      "source": "/private-beta/about-null/the-primitive",
+      "destination": "/concepts/the-primitive"
+    },
+    {
+      "source": "/private-beta/about-null/smart-contracts",
+      "destination": "/developers/overview"
     },
     {
       "source": "/private-beta/getting-started",
-      "destination": "/private-beta/getting-started/null-private-beta"
+      "destination": "/get-started/sign-in"
+    },
+    {
+      "source": "/private-beta/getting-started/null-private-beta",
+      "destination": "/get-started/sign-in"
+    },
+    {
+      "source": "/private-beta/getting-started/account-setup",
+      "destination": "/get-started/sign-in"
     },
     {
       "source": "/private-beta/fund-account",
-      "destination": "/private-beta/getting-started/fund-your-account"
+      "destination": "/get-started/fund-your-account"
+    },
+    {
+      "source": "/private-beta/getting-started/fund-your-account",
+      "destination": "/get-started/fund-your-account"
+    },
+    {
+      "source": "/private-beta/getting-started/before-you-trade",
+      "destination": "/concepts/risks"
     },
     {
       "source": "/private-beta/trading",
-      "destination": "/private-beta/trading/using-the-app"
+      "destination": "/get-started/navigating-the-app"
+    },
+    {
+      "source": "/private-beta/trading/using-the-app",
+      "destination": "/get-started/navigating-the-app"
+    },
+    {
+      "source": "/private-beta/trading/markets",
+      "destination": "/products/spot"
+    },
+    {
+      "source": "/private-beta/trading/position-types",
+      "destination": "/concepts/the-primitive"
+    },
+    {
+      "source": "/private-beta/trading/placing-a-position",
+      "destination": "/products/spot"
+    },
+    {
+      "source": "/private-beta/trading/fees",
+      "destination": "/concepts/fees"
     },
     {
       "source": "/private-beta/portfolio",
-      "destination": "/private-beta/about-null/overview"
+      "destination": "/"
     },
     {
       "source": "/private-beta/portfolios/portfolio-overview",
-      "destination": "/private-beta/about-null/overview"
+      "destination": "/"
     },
     {
       "source": "/private-beta/strategies",
-      "destination": "/private-beta/market-make/overview"
+      "destination": "/market-making/overview"
     },
     {
       "source": "/private-beta/strategies/about-strategies",
-      "destination": "/private-beta/market-make/overview"
+      "destination": "/market-making/overview"
     },
     {
       "source": "/private-beta/strategies/null-strategies",
-      "destination": "/private-beta/market-make/overview"
+      "destination": "/market-making/overview"
+    },
+    {
+      "source": "/private-beta/market-make/overview",
+      "destination": "/market-making/overview"
     },
     {
       "source": "/private-beta/market-make/farm-the-basis",
-      "destination": "/private-beta/market-make/overview"
+      "destination": "/market-making/overview"
     },
     {
       "source": "/private-beta/support/market-making",
-      "destination": "/private-beta/market-make/overview"
+      "destination": "/market-making/overview"
     },
     {
       "source": "/private-beta/status-and-points",
-      "destination": "/private-beta/status-and-points/points-and-referrals"
+      "destination": "/points"
+    },
+    {
+      "source": "/private-beta/status-and-points/points-and-referrals",
+      "destination": "/points"
     },
     {
       "source": "/private-beta/referrals",
-      "destination": "/private-beta/status-and-points/points-and-referrals"
+      "destination": "/points"
     },
     {
       "source": "/private-beta/status-and-points/referrals",
-      "destination": "/private-beta/status-and-points/points-and-referrals"
+      "destination": "/points"
+    },
+    {
+      "source": "/private-beta/status-and-points/home-dashboard",
+      "destination": "/get-started/navigating-the-app"
+    },
+    {
+      "source": "/private-beta/status-and-points/how-to-earn-points",
+      "destination": "/points"
+    },
+    {
+      "source": "/private-beta/legal/private-beta-notices",
+      "destination": "/legal"
+    },
+    {
+      "source": "/private-beta/faq",
+      "destination": "/faq"
     },
     {
       "source": "/private-beta/support",
-      "destination": "/private-beta/support/trading"
+      "destination": "/support/troubleshooting"
+    },
+    {
+      "source": "/private-beta/support/trading",
+      "destination": "/support/troubleshooting"
+    },
+    {
+      "source": "/private-beta/support/audits",
+      "destination": "/protocol/audits"
+    },
+    {
+      "source": "/private-beta/support/brand-kit",
+      "destination": "/support/brand-kit"
+    },
+    {
+      "source": "/learn/overview",
+      "destination": "/protocol/overview"
+    },
+    {
+      "source": "/learn/funding-and-carry",
+      "destination": "/concepts/funding-and-yield"
+    },
+    {
+      "source": "/learn/vaults",
+      "destination": "/concepts/vaults"
+    },
+    {
+      "source": "/learn/morpho",
+      "destination": "/concepts/morpho-markets"
+    },
+    {
+      "source": "/learn/risks-and-parameters",
+      "destination": "/concepts/risks"
+    },
+    {
+      "source": "/developers/settlement",
+      "destination": "/protocol/settlement"
+    },
+    {
+      "source": "/developers/fees",
+      "destination": "/protocol/fees"
+    },
+    {
+      "source": "/security/circuit-breaker",
+      "destination": "/protocol/circuit-breaker"
+    },
+    {
+      "source": "/security/risks",
+      "destination": "/concepts/risks"
+    },
+    {
+      "source": "/resources/addresses",
+      "destination": "/developers/addresses"
+    },
+    {
+      "source": "/contracts/oracles/pyth",
+      "destination": "/contracts/oracles/overview"
     },
     {
       "source": "/developers-tab/overview",
@@ -111,7 +235,7 @@
     },
     {
       "source": "/developers-tab/market-update",
-      "destination": "/developers/settlement"
+      "destination": "/protocol/settlement"
     },
     {
       "source": "/developers-tab/pools-and-erc4626",
@@ -131,7 +255,7 @@
     },
     {
       "source": "/fees",
-      "destination": "/developers/fees"
+      "destination": "/protocol/fees"
     },
     {
       "source": "/quick-start",
@@ -139,93 +263,76 @@
     },
     {
       "source": "/how-it-works",
-      "destination": "/learn/overview"
+      "destination": "/protocol/overview"
     },
     {
       "source": "/receive/overview",
-      "destination": "/learn/overview"
+      "destination": "/concepts/the-primitive"
     },
     {
       "source": "/pay/overview",
-      "destination": "/learn/overview"
+      "destination": "/concepts/the-primitive"
     },
     {
       "source": "/mechanics/funding",
-      "destination": "/learn/funding-and-carry"
+      "destination": "/concepts/funding-and-yield"
     },
     {
       "source": "/mechanics/price-returns",
-      "destination": "/developers/settlement"
+      "destination": "/protocol/settlement"
     },
     {
       "source": "/mechanics/yield-bearing-collateral",
-      "destination": "/markets/collateral"
-    },
-    {
-      "source": "/private-beta/getting-started/account-setup",
-      "destination": "/private-beta/getting-started/null-private-beta"
-    },
-    {
-      "source": "/private-beta/status-and-points/home-dashboard",
-      "destination": "/private-beta/trading/using-the-app"
-    },
-    {
-      "source": "/private-beta/status-and-points/how-to-earn-points",
-      "destination": "/private-beta/status-and-points/points-and-referrals"
-    },
-    {
-      "source": "/security/risks",
-      "destination": "/learn/risks-and-parameters"
+      "destination": "/protocol/collateral"
     }
   ],
   "navigation": {
     "tabs": [
       {
-        "tab": "App",
+        "tab": "Guides",
         "groups": [
           {
-            "group": "About Null",
+            "group": "Start here",
             "pages": [
-              "private-beta/about-null/overview",
-              "private-beta/about-null/the-primitive",
-              "private-beta/about-null/smart-contracts"
+              "index",
+              "get-started/sign-in",
+              "get-started/fund-your-account",
+              "get-started/navigating-the-app"
             ]
           },
           {
-            "group": "Getting Started",
+            "group": "Products",
             "pages": [
-              "private-beta/getting-started/null-private-beta",
-              "private-beta/getting-started/fund-your-account",
-              "private-beta/getting-started/before-you-trade"
+              "products/savings",
+              "products/spot",
+              "products/lending",
+              "products/margin"
             ]
           },
           {
-            "group": "Using Null",
+            "group": "How it works",
             "pages": [
-              "private-beta/trading/using-the-app",
-              "private-beta/trading/markets",
-              "private-beta/trading/position-types",
-              "private-beta/trading/placing-a-position",
-              "private-beta/trading/fees",
-              "private-beta/market-make/overview"
+              "concepts/the-primitive",
+              "concepts/funding-and-yield",
+              "concepts/vaults",
+              "concepts/morpho-markets",
+              "concepts/fees",
+              "concepts/risks"
             ]
           },
           {
-            "group": "Points",
+            "group": "Earn as a Payer",
             "pages": [
-              "private-beta/status-and-points/points-and-referrals"
+              "market-making/overview"
             ]
           },
           {
-            "group": "Legal",
+            "group": "More",
             "pages": [
-              "private-beta/legal/private-beta-notices"
-            ]
-          },
-          {
-            "group": "FAQ",
-            "pages": [
-              "private-beta/faq"
+              "points",
+              "faq",
+              "glossary",
+              "legal"
             ]
           }
         ]
@@ -238,27 +345,21 @@
             "pages": [
               "developers/overview",
               "developers/quickstart",
-              "developers/ai-llms"
-            ]
-          },
-          {
-            "group": "Deployments",
-            "pages": [
-              "resources/addresses"
+              "developers/ai-llms",
+              "developers/addresses"
             ]
           },
           {
             "group": "Protocol",
             "pages": [
-              "learn/overview",
-              "learn/funding-and-carry",
-              "learn/vaults",
-              "learn/morpho",
-              "developers/settlement",
-              "developers/fees",
-              "learn/risks-and-parameters",
-              "security/circuit-breaker",
-              "private-beta/support/audits"
+              "protocol/overview",
+              "protocol/settlement",
+              "protocol/funding-rate-model",
+              "protocol/collateral",
+              "protocol/morpho-integration",
+              "protocol/fees",
+              "protocol/circuit-breaker",
+              "protocol/audits"
             ]
           },
           {
@@ -268,6 +369,7 @@
               "developers/redeeming",
               "developers/pools",
               "developers/router",
+              "developers/morpho-router",
               "contracts/integration/ui",
               "contracts/integration/indexer"
             ]
@@ -293,6 +395,8 @@
             "group": "Periphery",
             "pages": [
               "contracts/router",
+              "contracts/morpho-router",
+              "contracts/yield-share-frm",
               "contracts/lens",
               "contracts/multicall"
             ]
@@ -301,8 +405,8 @@
             "group": "Oracles",
             "pages": [
               "contracts/oracles/overview",
-              "contracts/oracles/pyth",
-              "contracts/oracles/chainlink"
+              "contracts/oracles/chainlink",
+              "contracts/oracles/morpho"
             ]
           }
         ]
@@ -313,9 +417,8 @@
           {
             "group": "Support",
             "pages": [
-              "private-beta/support/trading",
-              "private-beta/support/audits",
-              "private-beta/support/brand-kit"
+              "support/troubleshooting",
+              "support/brand-kit"
             ]
           }
         ]

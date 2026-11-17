@@ -1,0 +1,47 @@
+---
+title: "Audits"
+sidebarTitle: "Audits"
+description: "Nethermind reviewed a defined scope of Null V1. Margin routing is outside that report."
+---
+
+## Current status
+
+Nethermind Security completed a security review of Null V1 contracts (engagement NM-1028). The final report is dated 25 August 2026.
+
+<Card title="Download the final report" icon="file-text" href="https://github.com/NethermindEth/PublicAuditReports/blob/main/NM-1028_Null_Solutions.pdf">
+  NM-1028 Null Solutions Security Review (PDF), published in Nethermind's public audit reports repository on GitHub.
+</Card>
+
+The review covered 1,220 lines of Solidity in the core and listed periphery: factory, market, pools, settlement, router, the funding-rate model in scope at that time, and the Chainlink oracle. Nethermind used manual review and automated analysis.
+
+The yield-share funding model, `NullV1MorphoRouter`, and the Morpho oracles shipped later. Do not read NM-1028 as a review of those contracts.
+
+## Result
+
+The final report recorded five findings and marked all five **Fixed**. There were no Critical or High findings.
+
+| Severity | Count | Status |
+| --- | ---: | --- |
+| Critical | 0 | None |
+| High | 0 | None |
+| Medium | 1 | Fixed |
+| Low | 2 | Fixed |
+| Informational | 2 | Fixed |
+
+Nethermind rated the documentation assessment and the test-suite assessment as High.
+
+### Findings
+
+| # | Severity | Finding | Status |
+| --- | --- | --- | --- |
+| 1 | Medium | Shares were calculated before fee recomputation on deposit | Fixed |
+| 2 | Low | Deposit did not revert on zero shares | Fixed |
+| 3 | Low | One deposit path was cheaper, so a portion of fees was missed | Fixed |
+| 4 | Info | Reentrancy-guard implementations were inconsistent across contracts | Fixed |
+| 5 | Info | No extra control if a permitted account is compromised | Fixed |
+
+## What an audit does not guarantee
+
+A completed audit does not prove that the protocol has no bugs or that a position is safe. Scope and deployment matter. Oracle behavior, collateral risk, Morpho configuration, and operational failures can sit outside the report.
+
+Before you deposit, read [Risks](/concepts/risks), the [circuit breaker](/protocol/circuit-breaker), and the market's parameters.

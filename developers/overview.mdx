@@ -6,11 +6,7 @@ description: "Integrate Null V1 markets, pools, routers, oracles, and read surfa
 
 Null V1 is a **contracts-first** protocol. Integrators discover markets, read state, and deposit or redeem through Solidity interfaces, typically via `viem`, `ethers`, or a wallet SDK. There is no published Null npm SDK and no partner trading API with API keys.
 
-These integration guides target **Ethereum mainnet**. Before connecting, copy the published Ethereum chain ID, deployment block, and contract addresses from [Ethereum deployments](/resources/addresses). If that page does not list Ethereum constants yet, treat deployment configuration as unavailable rather than inventing values.
-
-<Note>
-Hosted-product access is separate from this contracts-first integration guide. Do not infer a contract-level whitelist policy from product access controls.
-</Note>
+These integration guides target **Ethereum mainnet**. Copy addresses only from [Deployments](/developers/addresses). If a constant is not listed there yet, treat it as unknown.
 
 <Note>
 The app uses Buy / Sell for Spot deposit and redeem flows. Onchain and in these docs, use ERC-4626 `deposit` / `redeem` (and router `depositMarket` / `redeemMarket`).
@@ -23,9 +19,9 @@ A Null market is a fully collateralized pooled total-return swap. Users deposit 
 | Side | Role |
 | --- | --- |
 | **Receiver** | Synthetic long on the oracle-tracked price |
-| **Payer** | Backs Receiver; takes the opposite price exposure and receives funding paid from collateral APR |
+| **Payer** | Negative-size position in the Receiver pool. Takes the opposite price exposure and receives funding paid from collateral yield |
 
-Spot has no Null-native loans, margin accounts, or undercollateralized claims. Settlement redistributes collateral the market already holds. Leveraged Morpho loops are separate periphery; see [Morpho](/learn/morpho).
+Spot has no Null-native loans or liquidations. Settlement redistributes collateral the market already holds. Leveraged positions are separate periphery. See [Morpho integration](/protocol/morpho-integration).
 
 A market is uniquely identified by an immutable tuple:
 
@@ -43,7 +39,7 @@ For market-level metrics, let `R` be Receiver pool assets and `P` be Payer pool 
 - A **Payer** is a negative-size position in the Receiver pool, with the market's collateral held inside that structure. The magnitude of that short relative to Payer capital is `R/P` at the current market state (inverse of coverage).
 
 Handle a zero denominator explicitly. Neither ratio is defined when its denominator is zero.
-`R/P` is not a funding rate. Product funding is yield share of collateral APR paid on Receiver notional; see [Funding and carry](/learn/funding-and-carry).
+`R/P` is not a funding rate. Funding is vault yield on the Receiver pool, paid to Payers. See [Funding-rate model](/protocol/funding-rate-model).
 
 ## Architecture
 
@@ -56,7 +52,7 @@ Handle a zero denominator explicitly. Neither ratio is defined when its denomina
     `NullV1Pool` (×2) exposes Receiver and Payer ERC-4626 shares.
   </Card>
   <Card title="Periphery" icon="route">
-    `NullV1Router` / `NullV1PayableRouter` wrap create, deposit, redeem, deadlines, slippage, and oracle `updateData`.
+    `NullV1Router` wraps create, deposit, redeem, deadlines, slippage, and Chainlink `updateData`. `NullV1MorphoRouter` opens and closes Margin.
 
     `NullV1Lens` / `NullV1Multicall` provide read-only previews and batch simulation.
   </Card>
@@ -117,8 +113,10 @@ Pools call `updateState()`. External integrators normally do not.
 Standard ERC-4626 entry points on each side:
 
 ```solidity
-deposit / mint / withdraw / redeem
-previewDeposit / previewMint / previewWithdraw / previewRedeem
+deposit / redeem
+previewDeposit / previewRedeem
+
+`mint` and `withdraw` revert. Use `deposit` and `redeem`.
 ```
 
 ### Router
@@ -130,7 +128,7 @@ depositMarket(market, receiverAssets, payerAssets, minReceiverShares, minPayerSh
 redeemMarket(market, receiverShares, payerShares, minReceiverAssets, minPayerAssets, deadline, updateData)
 ```
 
-Use `NullV1Router` for fee-less Chainlink updates. Use pre-funded `NullV1PayableRouter` for Pyth (callers do not attach `msg.value`).
+Use `NullV1Router` for Chainlink updates. Do not attach `msg.value`. Margin writes go through [NullV1MorphoRouter](/developers/morpho-router).
 
 ## What is not available
 
@@ -138,22 +136,22 @@ Use `NullV1Router` for fee-less Chainlink updates. Use pre-funded `NullV1Payable
 | --- | --- |
 | Published Null SDK | Use ABIs + `viem` / `ethers` against the contracts |
 | Public partner REST API / webhooks | Reads are onchain (Lens) or your own indexer; the product indexer is not a keyed public API |
-| Ethereum deployment constants | Copy them from [Ethereum deployments](/resources/addresses); do not guess |
-| Order book / MM credentials | Markets are pooled mint/burn, not CLOB |
+| Ethereum deployment constants | Copy them from [Deployments](/developers/addresses); do not guess |
+| Order book / MM credentials | Markets are pooled deposit and redeem, not a central limit order book |
 
 ## Recommended path
 
 <Steps>
   <Step title="Understand the payoff">
-    Read [Protocol overview](/learn/overview), then [Funding and carry](/learn/funding-and-carry). Use [Risks and parameters](/learn/risks-and-parameters) to understand the limits.
+    Read [Protocol overview](/protocol/overview), then [Funding-rate model](/protocol/funding-rate-model). Use [Risks](/concepts/risks) for the limits.
   </Step>
   <Step title="Build the first transaction">
     Follow the [Quickstart](/developers/quickstart). It resolves a market, reads both pools, previews a deposit, and submits router calls.
   </Step>
   <Step title="Learn execution details">
-    Read [Settlement](/developers/settlement), [Depositing](/developers/depositing), [Redeeming](/developers/redeeming), and [Oracles](/markets/oracles).
+    Read [Settlement](/protocol/settlement), [Depositing](/developers/depositing), [Redeeming](/developers/redeeming), and [Oracles](/markets/oracles).
   </Step>
   <Step title="Prepare for production">
-    Add the [Router](/developers/router), then build a [Frontend](/contracts/integration/ui) or [Indexer](/contracts/integration/indexer). Revisit [Audits](/private-beta/support/audits) and [Risks and parameters](/learn/risks-and-parameters) before shipping.
+    Add the [Router](/developers/router), then build a [Frontend](/contracts/integration/ui) or [Indexer](/contracts/integration/indexer). Revisit [Audits](/protocol/audits) and [Risks](/concepts/risks) before shipping.
   </Step>
 </Steps>

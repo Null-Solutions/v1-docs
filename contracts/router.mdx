@@ -4,38 +4,15 @@ sidebarTitle: "Router"
 description: "Atomic oracle updates, market creation, deposits, and redemptions."
 ---
 
-Null V1 has two routers with the same market-operation signatures but different oracle fee models.
-
-## Choose the correct router
-
-### `NullV1Router`
-
 `NullV1Router` is stateless, ownerless, and nonpayable. It never holds or forwards ETH. When `updateData` is nonempty it calls:
 
 ```solidity
 INullV1UpdatableOracle(address(oracle)).update(updateData);
 ```
 
-Use it for fee-less updatable oracles such as the Null V1 Chainlink implementation. Pass an empty array to skip the update. Native-fee oracles are unsupported.
+Use it for the Null V1 Chainlink oracles. Pass an empty array to skip the update. Do not send ETH with the call.
 
-### `NullV1PayableRouter`
-
-`NullV1PayableRouter` is for native-fee oracles such as Pyth. It has an owner and a payable `receive()` function. Pre-fund the router with ETH; when `updateData` is nonempty it calls `getUpdateFee(updateData)` and forwards exactly that amount to `update`.
-
-User calls are not payable. The fee comes from the router's existing balance.
-
-```solidity
-constructor(address newOwner);
-
-function withdrawEth(
-    address to,
-    uint256 amount
-) external;
-
-event WithdrawEth(address indexed to, uint256 amount);
-```
-
-Only the owner may withdraw. `withdrawEth` reverts with `ZeroAddress()`, `InsufficientUpdateFeeBalance(uint256 balance, uint256 required)`, or `TransferFailed()` as applicable, plus OpenZeppelin's ownership error for an unauthorized caller.
+Margin writes use [`NullV1MorphoRouter`](/contracts/morpho-router).
 
 ## Shared market operations
 

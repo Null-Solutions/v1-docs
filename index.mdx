@@ -1,47 +1,62 @@
 ---
-title: "Null V1"
-sidebarTitle: "Introduction"
-description: "Fully collateralized synthetic markets with yield-bearing collateral, Morpho Savings and Margin, and pooled Receiver / Payer backing."
+title: "Null"
+sidebarTitle: "Home"
+description: "Null is one two-pool primitive. Savings, Spot, Lending, and Margin are the products built on it."
 ---
 
-Null V1 is an onchain market primitive: fully collateralized synthetic exposure to an oracle-tracked asset, with immutable market rules and no broker in the middle.
+Null lets you hold **onchain exposure to an oracle price**, denominated in yield-bearing collateral, and to lend or borrow around that exposure.
 
-A market is fixed at creation by three immutable dependencies: the collateral token, the price oracle, and the funding-rate model (FRM), written as `(collateral, oracle, frm)`. Receivers deposit collateral for ERC-4626 shares that track the reference return. Payers supply the backing pool and take the opposite price risk. **Funding is paid from collateral APR** to Payers; it is not a separate floating rate against an external index.
+You do not buy the tracked asset. You do not borrow it for Spot. A market holds one collateral token and splits it between two pools. Everything else in the app is a way of using those pools.
 
-Every Spot gain is paid from collateral already inside the market. Null redistributes value between pools; Spot cannot create Null-native debt or mint an undercollateralized claim. Leveraged **Margin** uses Morpho Blue around those pools.
+## One primitive
 
-## Choose your path
+Every market has a **Receiver** pool and a **Payer** pool.
+
+- Receiver takes the oracle return.
+- Payer is a negative-size position in the Receiver pool, with the market's collateral held inside that structure. Payers receive the collateral yield that Receivers earn.
+- The market settles by moving collateral it already holds. There is no Null liquidation on Spot.
+
+Read [The primitive](/concepts/the-primitive) once. The product pages below assume it.
+
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/system-map-light.svg"
+    alt="Collateral vault backs the two pools. Savings and lenders supply Morpho long books. Margin borrows from the long and short books."
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/system-map-dark.svg"
+    alt="Collateral vault backs the two pools. Savings and lenders supply Morpho long books. Margin borrows from the long and short books."
+  />
+</Frame>
+
+## Four products
+
+| Product | What you do | What you earn or track |
+| --- | --- | --- |
+| [Savings](/products/savings) | **Add money** in USDC to the **Null Savings Vault** | Morpho supply **AER** |
+| [Spot](/products/spot) | **Buy** or **Sell** a pool share | Oracle return, minus or plus funding |
+| [Lending](/products/lending) | **Lend** or **Recall** on a Morpho book | Morpho **Lend rate** |
+| [Margin](/products/margin) | **Place Order** on **Long** or **Short**, then **Close** | Leveraged pool exposure, with an LLTV liquidation |
+
+**Cash** is the USDC in your wallet. **Points** tracks Season 0 activity. It is not a fifth product and it does not change settlement.
+
+## Where to go
 
 <CardGroup cols={2}>
-  <Card title="Use the app" icon="log-in" href="/private-beta/about-null/overview">
-    Home sections, Savings, Spot, Lending, Margin, and Points Season 0.
+  <Card title="Sign in" icon="wallet" href="/get-started/sign-in">
+    Connect a wallet on Ethereum mainnet.
   </Card>
-
-  <Card title="Learn the protocol" icon="book-open" href="/learn/overview">
-    Receiver / Payer model, funding, vaults, Morpho, fees, and risk controls.
+  <Card title="The primitive" icon="layers" href="/concepts/the-primitive">
+    Receiver, Payer, and how value moves.
   </Card>
-
-  <Card title="Build an integration" icon="code" href="/developers/overview">
-    Contracts-first integration: discover markets, deposit, redeem, index.
+  <Card title="Funding and yield" icon="percent" href="/concepts/funding-and-yield">
+    Collateral APR, Funding APR, and Net APR.
   </Card>
-
-  <Card title="Contract reference" icon="file-code" href="/contracts/factory">
-    Factory, market, pools, routers, Lens, Multicall, and oracles.
+  <Card title="Risks" icon="alert-triangle" href="/concepts/risks">
+    What you can lose, including Margin liquidation.
   </Card>
 </CardGroup>
 
-## How Null works
-
-<Steps>
-  <Step title="Two pools">
-    Receiver and Payer each hold fungible ERC-4626 shares over pooled collateral.
-  </Step>
-  <Step title="Yield-bearing collateral">
-    Markets use a Morpho vault share as collateral. Savings deposits USDC into that vault; the vault allocates to Morpho long markets.
-  </Step>
-  <Step title="Settle before action">
-    Deposits and redeems update the market first: oracle, reconciliation, fees, funding, price PnL.
-  </Step>
-</Steps>
-
-Null V1 is deployed on **Ethereum mainnet**. Verified addresses are listed on [Ethereum deployments](/resources/addresses).
+Null is not offered in the United Kingdom. Read the [Legal notices](/legal) before you use the app.

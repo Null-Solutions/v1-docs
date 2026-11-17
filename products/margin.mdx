@@ -1,0 +1,97 @@
+---
+title: "Margin"
+sidebarTitle: "Margin"
+description: "Open a Morpho long or short on a Null market. Liquidation follows that book's LLTV."
+---
+
+**Margin** is leveraged exposure through Morpho, opened from the Margin desk. **Long** borrows USDC and holds more Receiver exposure than your equity. **Short** borrows Receiver shares and sells them. Spot does not do this.
+
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/system-map-light.svg"
+    alt="Margin borrows from the long and short Morpho books around the Null pools."
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/system-map-dark.svg"
+    alt="Margin borrows from the long and short Morpho books around the Null pools."
+  />
+</Frame>
+
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/morpho-books-light.svg"
+    alt="A long borrows USDC against Receiver shares. A short borrows Receiver shares against nmUSDC."
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/morpho-books-dark.svg"
+    alt="A long borrows USDC against Receiver shares. A short borrows Receiver shares against nmUSDC."
+  />
+</Frame>
+
+## How it uses the primitive
+
+The price exposure is still the Receiver pool. Leverage comes from debt on a Morpho book, not from a Null margin account.
+
+- **Long** posts Receiver shares as collateral and borrows USDC.
+- **Short** posts `nmUSDC` as collateral and borrows Receiver shares, then sells those shares. Economically that is a larger negative Receiver position than unlevered Payer, with a liquidation price.
+
+Mechanics: [Morpho markets](/concepts/morpho-markets).
+
+## What you see
+
+Open **Home → Margin** (`/?section=margin`). An empty overview row reads **No margin yet**.
+
+- A market picker with search and a **Favourites** tab.
+- **Long** and **Short** tabs. A tab is disabled when that book is not configured.
+- A ticket with **Position**, **Loan (USDC)**, **Liquidation price**, order value, margin required, slippage, and fees.
+- Submit states include **Place Order**, **Enter Amount**, **Insufficient Balance**, and **Not Enough Liquidity**.
+- Charts: price, pools, borrow rate, and collateral APR.
+- **My Positions** and **My Activity**. Position columns include **Side**, **Size**, **PnL**, **Liq. price**, **Margin**, **Carry**, and **Close**.
+- **Parameters** lists **Long borrow APR**, **Short borrow APR**, **Long LLTV**, **Short LLTV**, and the max leverage the slider allows.
+
+Favourites are stored for your browser. The star on a market adds it to the **Favourites** tab.
+
+## Steps
+
+<Steps>
+  <Step title="Pick a market and a side">
+    Choose **Long** or **Short**. Read **Parameters** for LLTV and max leverage.
+  </Step>
+  <Step title="Set size">
+    Enter equity and leverage. Check **Liquidation price** before you continue.
+  </Step>
+  <Step title="Place Order">
+    Confirm in your wallet. The first borrow asks you to authorize the router on Morpho.
+  </Step>
+  <Step title="Close">
+    **Close** on the position row repays debt and returns leftover equity. You can also add collateral from activity actions when the desk offers it.
+  </Step>
+</Steps>
+
+## Liquidation distance
+
+Open at leverage `L` with loan-to-value `1 - 1/L`. Liquidation is when loan-to-value hits LLTV:
+
+```text
+drop to liquidation = 1 - (1 - 1/L) / LLTV
+```
+
+A perpetual with maintenance margin `mm` uses `(1/L - mm) / (1 - mm)` instead. The two distances match only at a specific LLTV. Read the live LLTV on **Parameters**. The app does not publish one LLTV for every market, and the slider stays under `1 / (1 - LLTV)`.
+
+Interest accrual can liquidate you before the quoted price move. The quote ignores that.
+
+## Rates and fees
+
+You pay the book's borrow APR. You still sit in the Receiver economics: a long pays Null funding, a short structure receives the short side of the pool transfer. **Carry** on the position row is that net, not the Morpho borrow rate alone.
+
+Entry and exit fees apply when the router buys or sells shares. See [Fees](/concepts/fees).
+
+## Risks
+
+Morpho can liquidate the position at LLTV. A long needs free USDC in the book. A short close does not need spare share liquidity, because it buys new Receiver shares to repay. Oracle, vault, and smart-contract risk still apply. You can lose more than the price move you expected, up to your equity and, in a shortfall, the value lenders recover.
+
+Next: [Spot](/products/spot) if you want the same pools without debt.

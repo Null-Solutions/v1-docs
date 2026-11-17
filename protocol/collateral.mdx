@@ -1,0 +1,33 @@
+---
+title: "Collateral"
+sidebarTitle: "Collateral"
+description: "Markets hold one ERC-20. On the current stack that token is the nmUSDC vault share."
+---
+
+`collateral` is an immutable dependency of the market. Both pools account in that token. The market's token balance is the sum of Receiver assets, Payer assets, and protocol fees.
+
+## nmUSDC
+
+The current stack uses a Morpho Vault V2 share whose underlying is USDC. The app calls that share `nmUSDC`.
+
+- Spot deposits wrap USDC into `nmUSDC`, then deposit the shares into a pool.
+- Pool redemptions return `nmUSDC`. The router unwraps to USDC when you exit through it.
+- Vault share price rises when Morpho borrowers pay interest. Settlement reconciles that, and the [funding-rate model](/protocol/funding-rate-model) moves the Receiver portion to Payers.
+
+The same vault is the **Null Savings Vault** when a user deposits USDC without opening a pool position. Roles: [Vaults](/concepts/vaults).
+
+## Units
+
+| Call | Amount unit |
+| --- | --- |
+| Router `depositMarket` / `redeemMarket` | Underlying (USDC) when `collateral.asset()` succeeds |
+| Pool `deposit` / `redeem` / `preview*` | Market collateral (`nmUSDC` shares) |
+| Lens pool fields | Market collateral |
+
+Share decimals on a pool are collateral decimals plus 10. Do not pass USDC units into a pool preview.
+
+## Reconciliation
+
+External yield, donations, and direct transfers change `collateral.balanceOf(market)` without changing booked pool assets. The next settlement assigns the difference in proportion to the two pools. See [Settlement](/protocol/settlement).
+
+If you integrate a different ERC-4626 as collateral, the yield-share model still requires `convertToAssets`. A rebasing token that changes balances without a share-price move will not match this model. Test the vault before you enable a market on it.

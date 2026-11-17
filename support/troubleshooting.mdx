@@ -1,0 +1,49 @@
+---
+title: "Troubleshooting"
+sidebarTitle: "Troubleshooting"
+description: "What to check when a Buy, Sell, Savings withdrawal, lend, or Margin order does not go through."
+---
+
+Transactions send from your wallet to Ethereum. Null cannot replay a failed transaction. A failure still spends the gas the wallet quoted if it was included.
+
+## The preview and the result differ
+
+Settlement runs at the start of the transaction. Someone else can trade, or the oracle can move, between your preview and the block. Raise slippage only if you accept the worse price. Otherwise refresh and submit again.
+
+**Transaction expired** means the deadline passed. Refresh the quote.
+
+## Buy or Sell fails
+
+- **Cash** is USDC in the connected wallet, on Ethereum. A balance on another network is not Cash.
+- Approve the router for the token it asks for. Spot through the router spends USDC, not `nmUSDC`, when collateral is a vault.
+- **Sell** spends pool shares. If you sold from another wallet, this wallet's balance is unchanged.
+- The oracle report can be stale. The app attaches an update when it has one. If the feed is down, the transaction reverts rather than using a made-up price.
+- A move larger than 20% in one settlement skips the price transfer and still completes. Your share count changes with the deposit or redemption. The skipped price move is not applied. See [Circuit breaker](/protocol/circuit-breaker).
+
+## Savings
+
+**Add money** needs USDC and gas.
+
+**Withdraw** needs free USDC in the vault. If the panel says only part of the balance can be withdrawn, the rest is lent on Morpho. Take the smaller amount or wait for borrowers to repay.
+
+## Lending
+
+**Lend** fails if the token approval is short or the wallet balance is short.
+
+**Recall** fails when borrowers are still using the liquidity. Recall up to **Total Liquidity** minus **Outstanding Loans**, or wait.
+
+## Margin
+
+**Not Enough Liquidity** on a long means the long book does not have enough free USDC. A smaller size can fit.
+
+**Insufficient Balance** means wallet USDC is below the equity.
+
+The first borrow needs you to authorize `NullV1MorphoRouter` on Morpho. If that signature was rejected, the open cannot borrow.
+
+**Close** on a short does not need spare Receiver shares in the book. If close still fails, check the deadline, the oracle update, and that the position is on the wallet you connected.
+
+A position can be liquidated when loan-to-value reaches LLTV even if you never send another transaction. **Liq. price** is an estimate and does not include later interest.
+
+## Region
+
+If the app sends you to an unavailable page, the connection is in a blocked region. A VPN does not make an ineligible person eligible. See [Legal notices](/legal).

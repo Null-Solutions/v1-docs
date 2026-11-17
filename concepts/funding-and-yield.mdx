@@ -1,0 +1,72 @@
+---
+title: "Funding and yield"
+sidebarTitle: "Funding and yield"
+description: "Funding is the collateral vault's yield, paid from Receivers to Payers. It does not flip sign."
+---
+
+Funding on Null is collateral yield. Receivers pay the vault yield earned on the Receiver pool to Payers. Payers do not pay funding back.
+
+There is no separate signed rate that flips when pool sizes change. Coverage still changes how large that same transfer is, relative to Payer capital.
+
+## Three rates in the app
+
+| Label | What it is |
+| --- | --- |
+| **Collateral APR** | Annualized yield on the market's collateral vault. |
+| **Funding APR** | Annualized yield Receivers pay Payers. It is the collateral yield measured on the Receiver pool. |
+| **Net APR** | Collateral yield plus or minus funding for the side you hold. On a Payer it is scaled by the pool ratio. |
+
+Savings shows a different rate: the Morpho vault supply **AER**. That is what a Savings depositor earns. It is not Funding APR. See [Savings](/products/savings).
+
+## How the amount is set
+
+The funding-rate model reads the collateral vault's share price at each settlement. It does not estimate an APY in advance.
+
+Let the vault share price rise from a stored high-water mark `top` to a new price. Growth in share units is:
+
+```text
+g = (price - top) / price
+```
+
+The market then moves about `g` times the settleable Receiver assets from Receiver to Payer. That amount is the yield the Receiver pool earned over the interval.
+
+Three bounds matter:
+
+- **Never negative.** If the share price falls, no funding accrues until the price is back above its previous high. Receivers do not pay for the recovery of a vault loss.
+- **Capped.** The implied annualized rate used for one interval cannot exceed 100% APR. Yield above that cap for the interval stays with Receivers.
+- **Skipped with the floor.** If either pool is at or below the minimum pool size, that interval's yield is not charged later. The mark still moves forward.
+
+Full contract behavior: [Funding-rate model](/protocol/funding-rate-model).
+
+## What each side keeps
+
+Let `y` be the collateral yield over the interval, and assume the cap does not bind.
+
+- A Receiver pays away the yield on Receiver assets. Price movement remains. Net carry from the vault is about zero before fees.
+- A Payer keeps the yield on their own collateral and receives the Receiver pool's yield.
+
+On Payer capital the funding piece is about `y × R / P`. Adding the Payer's own collateral yield gives approximate carry:
+
+```text
+Payer carry ≈ y × (1 + R / P)
+```
+
+Example with collateral yield `y = 8%` and `R = 1,000`:
+
+| Payer `P` | Coverage | Funding on Payer capital | Payer carry (approx.) |
+| --------: | -------: | -----------------------: | --------------------: |
+|       200 |      20% |        `8% × 5 = 40%` |                  48% |
+|     1,000 |     100% |                     8% |                  16% |
+|     2,000 |     200% |                     4% |                  12% |
+
+Coverage does not flip the funding sign. It changes the short scale `R / P` and how the same Receiver yield lands per unit of Payer.
+
+<Info>
+These figures ignore fees, the 100% APR cap, the high-water mark, rounding, and any hedge you hold elsewhere. Funding is not guaranteed profit.
+</Info>
+
+## Funding is not a fee
+
+The transfer stays inside the market. It is not paid to Null. Entry and exit fees are separate. See [Fees](/concepts/fees).
+
+A hedge on another venue can have its own funding, basis, and liquidation costs. That external funding is not Null funding. See [Market making](/market-making/overview).

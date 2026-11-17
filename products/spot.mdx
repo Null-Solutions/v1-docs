@@ -1,0 +1,82 @@
+---
+title: "Spot"
+sidebarTitle: "Spot"
+description: "Buy or sell unlevered Receiver shares. Payer is available in Pro Mode."
+---
+
+**Spot** is an unlevered share of a Null pool. **Buy** Receiver to hold the oracle-tracked return. **Sell** to exit. There is no leverage slider and no liquidation price on Spot.
+
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/system-map-light.svg"
+    alt="Spot sits in the Receiver and Payer pools, which hold nmUSDC from the collateral vault."
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/system-map-dark.svg"
+    alt="Spot sits in the Receiver and Payer pools, which hold nmUSDC from the collateral vault."
+  />
+</Frame>
+
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/two-pool-market-light.svg"
+    alt="Spot buys a share of the Receiver or Payer pool. The market holds the collateral."
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/two-pool-market-dark.svg"
+    alt="Spot buys a share of the Receiver or Payer pool. The market holds the collateral."
+  />
+</Frame>
+
+## How it uses the primitive
+
+A Spot position is a percentage of one pool. Receiver takes the price return. Payer is a negative-size position in the Receiver pool, with the market's collateral inside that structure. Short scale is `R / P` and changes as the pools change.
+
+You do not borrow the tracked asset. You do not receive the real stock or token. Full mechanics: [The primitive](/concepts/the-primitive).
+
+## What you see
+
+- **Home → Spot** (`/?section=spot`) lists positions. An empty overview row reads **No spot yet**.
+- **Markets** (`/trade`) lists live markets from the indexer. Open a market for the slide-out.
+- The slide-out actions are **Buy**, **Sell**, and **Receive**. **Receive** shows your wallet address and a QR code so someone can send you assets on this chain. It does not open a position.
+- With **Pro Mode** on (account menu), the terminal also shows **Receiver** and **Payer** tabs, plus **Payer buy** and **Payer sell**.
+- The ticket is amount, then **Review**, then wallet confirmation. The fee line says the protocol fee is included in the purchase or sale.
+- Charts can show price, funding APR, and collateral APR when the indexer has the series.
+- Deep links look like `/trade/[address]?action=buy&side=receiver`.
+
+Under the ticket: **By trading you agree to the Terms of Service and Privacy Policy.** The risk line says you can lose all the money you invest.
+
+## Steps
+
+<Steps>
+  <Step title="Open a market">
+    Go to `/trade` and pick a market. Check price, collateral, collateral APR, and funding APR.
+  </Step>
+  <Step title="Choose a side">
+    **Buy** takes Receiver. Turn on **Pro Mode** if you want Payer.
+  </Step>
+  <Step title="Review">
+    Check amount, fee, and slippage, then confirm in your wallet.
+  </Step>
+  <Step title="Sell to exit">
+    **Sell** returns your share of that pool's collateral, after fees and settlement.
+  </Step>
+</Steps>
+
+## Rates and fees
+
+Receiver pays funding out of collateral yield and keeps the price return. Payer receives that funding and keeps their own collateral yield, scaled as in [Funding and yield](/concepts/funding-and-yield). The position **Net APR** column combines those.
+
+Entry and exit fees are charged on notional. See [Fees](/concepts/fees).
+
+## Risks
+
+Price, funding, oracle, and smart-contract risk all apply. Spot is not liquidated by Morpho. A Payer loss scales with `R / P`. Pool liquidity can be thin, so a preview can differ from execution.
+
+Leveraged exposure is [Margin](/products/margin), not a larger Spot trade.
+
+Next: [Position economics](/concepts/the-primitive) or [Market making](/market-making/overview).

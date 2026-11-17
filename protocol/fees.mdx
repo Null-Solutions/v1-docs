@@ -1,0 +1,37 @@
+---
+title: "Fees"
+sidebarTitle: "Fees"
+description: "Entry and exit fees are basis points on notional. The collateral fee cap is zero."
+---
+
+Fee constants live in `ConstantsLib`.
+
+| Constant | Value | Meaning |
+| --- | ---: | --- |
+| `DEFAULT_ENTRY_FEE` | 25 | 0.25% at market creation, unless `setFees` changes it |
+| `DEFAULT_EXIT_FEE` | 25 | 0.25% |
+| `MAX_ENTRY_FEE` | 250 | 2.50% cap |
+| `MAX_EXIT_FEE` | 250 | 2.50% cap |
+| `DEFAULT_COLLATERAL_FEE` | 0 | |
+| `MAX_COLLATERAL_FEE` | 0 | Collateral fee cannot be enabled |
+| `MAX_BASIS_POINTS` | 10000 | |
+
+The factory owner calls `market.setFees(entryFee, exitFee, collateralFee)`. Values above the caps revert.
+
+## Notional
+
+Entry and exit fees use a notional that grosses the deposit or redemption up to Receiver exposure, not the raw collateral amount. On a Receiver deposit the base includes the assets being added. On a Payer deposit the base is scaled by the current pool ratio, because Payer collateral backs a larger Receiver notional when `R > P`.
+
+The fee amount is `notional * feeBps / 10000`.
+
+## Who receives it
+
+`allowProtocolFees` is immutable on the factory and copied onto each market.
+
+- When it is false, the fee credits the other pool.
+- When it is true, the fee credits `protocolFees`.
+- If the other pool is at or below `MIN_POOL_ASSETS`, the fee is waived back to the caller.
+
+`sweepFees` sends accrued `protocolFees` to `factory.owner()`. Collateral-fee accruals and donations that land in `protocolFees` use the same sweep. With the collateral fee capped at 0, that bucket is empty unless something donates collateral while both pools are empty.
+
+Product wording: [Fees](/concepts/fees).

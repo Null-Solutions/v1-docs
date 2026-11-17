@@ -1,0 +1,59 @@
+---
+title: "Morpho integration"
+sidebarTitle: "Morpho integration"
+description: "NullV1MorphoRouter opens and closes Morpho Blue longs and shorts around a Null market."
+---
+
+Margin does not live in `NullV1Market`. `NullV1MorphoRouter` is stateless periphery around Morpho Blue and the Null pools.
+
+Product behavior: [Morpho markets](/concepts/morpho-markets). Call shapes: [Morpho router](/developers/morpho-router).
+
+## Books
+
+| Book | Loan token | Collateral token |
+| --- | --- | --- |
+| Long | Underlying of the Null collateral (USDC), or the collateral itself if it is not a vault | Receiver pool |
+| Short | Receiver pool | Null collateral (`nmUSDC`) |
+
+The router checks those token pairs. It does not check that the Null market is registered. Pass a market you resolved from the factory.
+
+## Long
+
+`open(market, marketParams, equity, debt, minCollateralShares, deadline, updateData)`
+
+- Pulls `equity` of the loan token from the caller.
+- If `debt` is 0, deposits equity into the Receiver pool and supplies the shares as Morpho collateral. No Morpho authorization.
+- If `debt` is greater than 0, flash-borrows the loan token, deposits equity plus debt into the Receiver pool, supplies the shares, and borrows on Morpho to repay the flash loan.
+
+`close` flash-repays borrow shares when the position has debt, withdraws collateral, redeems Receiver shares, and sends leftover loan tokens to the caller. `minAssetsOut` is the floor.
+
+`openWithPermit2` pulls equity through Permit2 instead of an ERC-20 allowance. The permit covers `equity` of the loan token, names the router as spender, and uses the same deadline.
+
+## Short
+
+`openShort(market, marketParams, equity, shortShares, minCollateral, deadline, updateData)`
+
+- Pulls `equity` of the loan asset. That asset is the vault underlying when collateral is an ERC-4626, otherwise the collateral itself.
+- Supplies `nmUSDC` (equity plus the collateral raised by selling shares) and borrows `shortShares` of the Receiver token.
+- Redeems those shares in the Receiver pool.
+
+`closeShort` repays through Morpho's repay callback. The callback withdraws collateral, deposits enough of it into the Receiver pool to receive the shares owed, and returns leftover assets to the caller. The close does not need idle Receiver shares sitting in the book.
+
+`openShortWithPermit2` is the Permit2 form. The permit covers equity of the loan asset.
+
+## Authorization
+
+Borrow and withdraw-collateral need `Morpho.setAuthorization(router, true)` from the position owner. Opens with `debt == 0` do not.
+
+## Oracles
+
+Morpho prices these books with Null oracles, not with the Chainlink oracle on the Null market.
+
+- **Long:** `NullV1MorphoOracle` quotes loan assets per Receiver share via `previewRedeem`, then unwraps the vault when collateral is an ERC-4626.
+- **Short:** `NullV1MorphoInverseOracle` quotes Receiver shares per collateral unit via `previewDeposit`.
+
+Both read the last settled Null state. Entry and exit fees are inside those previews. See [Morpho oracles](/contracts/oracles/morpho).
+
+## Liquidation
+
+Morpho liquidates when loan-to-value reaches the book's LLTV. Null pools do not. A liquidator needs to be able to seize collateral and repay debt under Morpho's rules. The router is not the liquidator.

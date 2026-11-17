@@ -1,0 +1,40 @@
+---
+title: "Navigating the app"
+sidebarTitle: "Navigating the app"
+description: "Home sections, Markets, Lending, and Points, and what each one is for."
+---
+
+The app is organized around **Home**. One wallet can hold Savings, Spot, Lending, and Margin without mixing them into one card.
+
+## Home sections
+
+On a large screen, section pills sit on Home. On a phone, the logo opens **Sections**. Overview is the first item.
+
+| Section | URL | What you see |
+| --- | --- | --- |
+| **Overview** | `/` | Portfolio, chart, and rows for Savings, Spot, Lending, Margin, and Cash |
+| **Savings** | `/?section=savings` | **Null Savings Vault**, **Add money**, **Withdraw** |
+| **Spot** | `/?section=spot` | Pool positions |
+| **Lending** | `/?section=lending` | Morpho supplies, and a link to the full book |
+| **Margin** | `/?section=margin` | The Margin desk |
+
+Empty overview rows read **No savings yet**, **No spot yet**, **No lending yet**, and **No margin yet**.
+
+**Invest** asks which product you want: add money to Savings, buy shares, lend, or open a margin position.
+
+The portfolio figure is invested value plus cash. **Invested** is the current value of open positions. **Cash value** is wallet USDC.
+
+## Other routes
+
+| Route | For |
+| --- | --- |
+| `/trade` | Spot markets. Open a row for **Buy**, **Sell**, and **Receive**. |
+| `/lending` | Full lending book. **Lend** and **Recall**. |
+| `/points` | Season 0. See [Points](/points). |
+| Docs | These pages. |
+
+Margin is only on Home → Margin. It is not on `/trade`.
+
+**Pro Mode**, in the account menu, shows Payer on Spot. Leave it off if you only want Receiver.
+
+Product detail: [Savings](/products/savings), [Spot](/products/spot), [Lending](/products/lending), [Margin](/products/margin).

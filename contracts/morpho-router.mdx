@@ -1,0 +1,84 @@
+---
+title: "NullV1MorphoRouter"
+sidebarTitle: "Morpho router"
+description: "Reference for long and short open and close on NullV1MorphoRouter."
+---
+
+Stateless helper. One deployment serves longs and shorts. The caller authorizes it on Morpho before any flow that borrows or withdraws collateral.
+
+## Long
+
+```solidity
+function open(
+    INullV1Market market,
+    MarketParams calldata marketParams,
+    uint256 equity,
+    uint256 debt,
+    uint256 minCollateralShares,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 collateralShares);
+
+function openWithPermit2(..., Permit2Signature calldata permit) external returns (uint256 collateralShares);
+
+function close(
+    INullV1Market market,
+    MarketParams calldata marketParams,
+    uint256 minAssetsOut,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 assetsOut);
+```
+
+Long `marketParams.collateralToken` must be the Receiver pool. `loanToken` must be the collateral's underlying, or the collateral itself when it is not a vault.
+
+## Short
+
+```solidity
+function openShort(
+    INullV1Market market,
+    MarketParams calldata marketParams,
+    uint256 equity,
+    uint256 shortShares,
+    uint256 minCollateral,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 collateral);
+
+function openShortWithPermit2(..., Permit2Signature calldata permit) external returns (uint256 collateral);
+
+function closeShort(
+    INullV1Market market,
+    MarketParams calldata marketParams,
+    uint256 minAssetsOut,
+    uint256 deadline,
+    bytes[] calldata updateData
+) external returns (uint256 assetsOut);
+```
+
+Short `marketParams.loanToken` must be the Receiver pool. `collateralToken` must be `market.collateral()`.
+
+## Events
+
+```solidity
+event LoopOpened(address indexed user, INullV1Market indexed market, uint256 equity, uint256 debt, uint256 collateralShares);
+event LoopClosed(address indexed user, INullV1Market indexed market, uint256 repaidAssets, uint256 collateralShares, uint256 assetsOut);
+event ShortOpened(address indexed user, INullV1Market indexed market, uint256 equity, uint256 shortShares, uint256 collateral);
+event ShortClosed(address indexed user, INullV1Market indexed market, uint256 repaidShares, uint256 collateral, uint256 assetsOut);
+```
+
+## Errors
+
+| Error | When |
+| --- | --- |
+| `NotMorpho` | Callback sender is not the Morpho singleton |
+| `UnexpectedCallback` | Callback data does not match the in-flight action |
+| `MarketMismatch` | Token pair is not the long or short shape for this Null market |
+| `ZeroEquity` | `equity` is zero |
+| `ZeroShort` | `shortShares` is zero |
+| `NoPosition` | Close with zero Morpho collateral |
+| `TransactionTooOld` | `block.timestamp > deadline` |
+
+Slippage reverts when Receiver shares or returned assets miss the caller's floor.
+
+Narrative and callback order: [Morpho integration](/protocol/morpho-integration).

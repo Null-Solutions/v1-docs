@@ -1,80 +1,26 @@
 ---
-title: "Oracle system overview"
-sidebarTitle: "Overview"
-description: "Learn about Null V1's supported Pyth and Chainlink Data Streams oracle implementations."
+title: "Oracles"
+sidebarTitle: "Oracles"
+description: "Chainlink Data Streams oracles for Null markets, plus the Morpho oracles used by Margin books."
 ---
 
-Null V1 markets read normalized prices through `INullV1Oracle`. The supported
-implementations are:
+A Null market stores one oracle address for its lifetime. Spot settlement calls `oracle.price()`, which returns a `1e36`-scaled price of the tracked asset.
 
-- `NullV1PythOracle`
-- `NullV1ChainlinkOracleV3` for crypto Data Streams feeds
-- `NullV1ChainlinkOracleV11` for RWA feeds with session routing
+The supported price oracles are Chainlink Data Streams:
 
-All three are pull oracles. An integration fetches signed data offchain and
-submits it before the market reads the price.
+- **V3** for a single 24/7 feed.
+- **V11** for session feeds (regular, extended, overnight) on assets that do not trade all week.
 
-## Price scale
+Both are pull oracles. The router calls `update(bytes[])` with a signed report before the market reads `price()`. The Chainlink update fee reported to the router is zero. Use `NullV1Router`. Do not send ETH with the call.
 
-Every implementation returns the price of one base asset in quote-asset units,
-scaled by `1e36`. For example, a price of 3,000 is returned as
-`3000 * 10^36`.
+Integration steps: [Chainlink Data Streams](/contracts/oracles/chainlink).
 
-Pyth applies its signed exponent:
+## Morpho oracles are separate
 
-```text
-normalized = pythPrice * 10^(36 + expo)
-```
+Margin books do not use the Chainlink oracle as their Morpho price source. They use [Morpho oracles](/contracts/oracles/morpho), which convert Receiver shares through the pool's previews.
 
-Chainlink multiplies the report value by `10^(36 - priceDecimals)`.
+## Freshness
 
-## Update routing
+If `price()` reverts, settlement reverts and the trade does not land. Pass a fresh `updateData` when the stored report is outside the oracle's accepted window. Pass `[]` only when the stored price is still valid. Never fabricate report bytes.
 
-The router must match the oracle's update interface:
-
-<CardGroup cols={2}>
-  <Card title="Pyth: payable" icon="satellite-dish">
-    Use `NullV1PayableRouter`. It calls `getUpdateFee(updateData)` and forwards
-    that amount to the payable oracle update. The owner-managed router must
-    already hold enough native currency; the user's call does not fund it.
-  </Card>
-  <Card title="Chainlink: nonpayable" icon="link">
-    Use `NullV1Router`. V3 and V11 implement the nonpayable update interface,
-    `getUpdateFee` returns zero, and the router forwards no native currency.
-  </Card>
-</CardGroup>
-
-Both routers skip the update when `updateData` is empty. A fresh update is
-normally required because market creation and pool operations read the oracle
-price.
-
-## Staleness
-
-In normal operation, `price()` accepts a timestamp from 60 seconds before
-through 60 seconds after the current block timestamp. A past timestamp that is
-more than 60 seconds but less than 10 days old reverts. At an age of exactly 10
-days, and afterward, the stale-price escape path returns the last valid positive
-price. A timestamp more than 60 seconds in the future reverts. This is an
-availability backstop, not a freshness guarantee.
-
-Update-time checks are stricter and implementation-specific: Pyth and
-Chainlink V3 reject future updates, while Chainlink V11 accepts reports up to
-60 seconds ahead. The escape path only affects reading a previously accepted
-price; it does not make stale update payloads acceptable.
-
-## Core interface
-
-```solidity
-interface INullV1Oracle {
-    function price() external returns (uint256);
-    function priceView() external view returns (uint256);
-    function baseName() external view returns (string memory);
-    function baseSymbol() external view returns (string memory);
-    function quoteName() external view returns (string memory);
-    function quoteSymbol() external view returns (string memory);
-}
-```
-
-The base and quote metadata is informational. See [Pyth](/contracts/oracles/pyth),
-[Chainlink](/contracts/oracles/chainlink), and the
-[market oracle guide](/markets/oracles) for implementation details.
+Market-creation and trade routing: [Oracles](/markets/oracles).

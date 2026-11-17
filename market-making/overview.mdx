@@ -1,0 +1,59 @@
+---
+title: "Market making"
+sidebarTitle: "Market making"
+description: "Payers back Receiver exposure and receive collateral yield. A hedge, if you want one, lives outside Null."
+---
+
+Market making on Null means holding **Payer**. You provide the collateral that backs Receiver. If the oracle price rises, Payer loses. If it falls, Payer gains. You also receive funding paid from Receiver-side collateral yield.
+
+Turn on **Pro Mode** to see **Payer buy** and **Payer sell**.
+
+## What you actually hold
+
+A Payer position is a negative-size position in the Receiver pool, with the market's collateral inside that structure. Your short notional is your position value times `R / P`. You do not pick that multiple. The pools set it, and it moves.
+
+```text
+short scale = R / P
+Payer short notional = p × R / P
+```
+
+Size the external hedge off that notional, and resize it when the pools move. A hedge entered at one scale is the wrong size after coverage changes.
+
+## What you earn
+
+Approximate Payer carry, before fees and hedge costs:
+
+```text
+y × (1 + R / P)
+```
+
+`y` is collateral yield. The `y` term is yield on your own collateral. The `y × R / P` term is funding received from Receivers. Worked numbers: [Funding and yield](/concepts/funding-and-yield).
+
+## The hedge is not Null funding
+
+Many Payers buy the tracked asset, or a perpetual, somewhere else so price risk offsets. What remains is Null funding, plus yield on Payer collateral, minus the cost of that hedge.
+
+External venues charge their own funding, fees, and maintenance margin. Those charges are not Funding APR. A positive Funding APR can still lose money after hedge funding and basis.
+
+Null does not open or manage that hedge for you.
+
+## Operating checklist
+
+<Steps>
+  <Step title="Read the pools">
+    Check `R`, `P`, collateral APR, and funding APR on the market before you buy Payer.
+  </Step>
+  <Step title="Buy Payer">
+    Use **Payer buy** in Pro Mode. The fee is on notional, so it scales with `R / P`.
+  </Step>
+  <Step title="Hedge outside, if you choose">
+    Match short notional `p × R / P`. Recheck after large pool flows.
+  </Step>
+  <Step title="Watch carry">
+    Compare Null funding and collateral yield with external funding and fees. Exit with **Payer sell** when the trade no longer pays.
+  </Step>
+</Steps>
+
+<Warning>
+Payer can lose most of its value when the oracle rises and coverage is thin. Funding does not cap that loss.
+</Warning>

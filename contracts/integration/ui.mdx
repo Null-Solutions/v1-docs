@@ -11,16 +11,15 @@ Use public contract interfaces for reads and writes:
 - ERC-20 and ERC-4626 pool functions for balances and quotes
 - the router matching the market's oracle fee model for writes
 
-| Oracle                       | Router                           |
-| ---------------------------- | -------------------------------- |
-| Chainlink (fee-less updates) | `NullV1Router`                   |
-| Pyth (native update fee)     | Pre-funded `NullV1PayableRouter` |
+| Oracle                       | Router         |
+| ---------------------------- | -------------- |
+| Chainlink (fee-less updates) | `NullV1Router` |
 
-Both routers expose the same market-operation signatures. Do not send ETH with user calls. Copy canonical addresses from [Ethereum deployments](/resources/addresses) and keep them as required typed inputs.
+The router exposes deposit and redeem with the same deadline and slippage arguments. Do not send ETH with user calls. Copy canonical addresses from [Deployments](/developers/addresses) and keep them as required typed inputs.
 
 ## Product copy
 
-The Spot app calls a pool deposit **Buy** and a pool redemption **Sell** (older copy said Mint / Burn):
+The Spot app calls a pool deposit **Buy** and a pool redemption **Sell**.
 
 | UI term            | Contract action | Meaning                                |
 | ------------------ | --------------- | -------------------------------------- |
@@ -84,7 +83,7 @@ Handle a zero Payer denominator when displaying `R/P`. That ratio is the Payer s
 
 **Product display:** treat funding as yield share of collateral APR paid by Receivers to Payers (never negative in app copy). Show Collateral APR and Funding APR as separate columns, then Net APR as side-adjusted carry. Do not invent a second external perpetual-style funding index. A zero collateral metric can mean unsupported or unavailable because Lens catches failures from those external reads. Verify the published Ethereum Lens ABI before relying on optional fields.
 
-App surfaces (Home sections, `/trade`, Margin desk): [Using the app](/private-beta/trading/using-the-app).
+App surfaces (Home sections, `/trade`, Margin desk): [Using the app](/get-started/navigating-the-app).
 
 ## Detect collateral units
 
@@ -119,7 +118,7 @@ Mirror this exact rule in approval and quote code. Do not identify vaults from t
 
 For ERC-4626 collateral, call the returned token `underlying` and the market collateral `collateralVault` in generic code. Use user-facing token labels only after reading and verifying their metadata.
 
-## Quote and submit Mint
+## Quote and submit Buy
 
 Quote the same pipeline the router executes:
 
@@ -141,7 +140,7 @@ function applySlippageFloor(quotedOutput: bigint): bigint {
 
 Set `minReceiverShares = applySlippageFloor(quotedReceiverShares)` and do the same for an active Payer quote. Then call `depositMarket`. Set an unused side's amount and minimum to `0n`. See [Depositing](/developers/depositing) for a complete viem example.
 
-## Quote and submit Burn
+## Quote and submit Sell
 
 Quote:
 
@@ -164,10 +163,9 @@ Do not pass underlying units directly to a pool preview. Pool ERC-4626 assets ar
 
 Use nonempty `updateData` when the oracle requires a fresh push update. Fetch it according to the oracle implementation:
 
-- [Pyth update data](/contracts/oracles/pyth#update-data)
 - [Chainlink update requirements](/contracts/oracles/chainlink#nonpayable-fee-zero-routing)
 
-Pass `[]` only when the stored price is usable. The payable router pays Pyth fees from its existing ETH balance and reverts with `InsufficientUpdateFeeBalance` when underfunded.
+Pass `[]` only when the stored price is usable.
 
 ## Error messages
 
@@ -178,12 +176,10 @@ import { BaseError, ContractFunctionRevertedError } from "viem";
 
 const errorMessages: Record<string, string> = {
   TransactionTooOld: "The quote expired. Refresh and try again.",
-  SlippageReceiverShares: "Receiver Mint output moved beyond your limit.",
-  SlippagePayerShares: "Payer Mint output moved beyond your limit.",
-  SlippageReceiverAssets: "Receiver Burn output moved beyond your limit.",
-  SlippagePayerAssets: "Payer Burn output moved beyond your limit.",
-  InsufficientUpdateFeeBalance:
-    "The Pyth router needs more ETH for the price update.",
+  SlippageReceiverShares: "Receiver output moved beyond your limit.",
+  SlippagePayerShares: "Payer output moved beyond your limit.",
+  SlippageReceiverAssets: "Receiver proceeds moved beyond your limit.",
+  SlippagePayerAssets: "Payer proceeds moved beyond your limit.",
   StalePrice: "Price data is stale. Refresh and try again.",
   ERC20InsufficientAllowance: "Approval is too low for this transaction.",
   ERC20InsufficientBalance: "Your token balance is too low.",

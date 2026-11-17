@@ -1,0 +1,69 @@
+---
+title: "Savings"
+sidebarTitle: "Savings"
+description: "Deposit USDC into the Null Savings Vault and earn the Morpho supply rate."
+---
+
+**Savings** is USDC you deposit into the **Null Savings Vault**. The vault lends that USDC on Morpho long books, where borrower collateral is a Null Receiver share. You earn the vault's supply rate. You do not take a price position.
+
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/system-map-light.svg"
+    alt="Savings deposits USDC into the vault, which lends it on Morpho long books."
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/system-map-dark.svg"
+    alt="Savings deposits USDC into the vault, which lends it on Morpho long books."
+  />
+</Frame>
+
+## How it uses the primitive
+
+The vault token is the same `nmUSDC` share Null markets use as collateral. In Savings you hold the vault itself. You do not hold Receiver or Payer shares, and funding does not apply to you.
+
+The vault allocates USDC to long books. Margin longs borrow that USDC. Your yield is the Morpho supply rate on those books, blended by how the vault allocates. Detail: [Vaults](/concepts/vaults).
+
+## What you see
+
+Open **Home**, then **Savings** (`/?section=savings`).
+
+- The balance is labeled **Null Savings Vault**.
+- The rate reads like `4.20% AER (variable)`, or **rate unavailable**. AER means what you would earn in a year at the current rate. It changes. The app shows two decimal places.
+- Actions are **Add money**, **Withdraw**, and **Info**.
+- The ledger columns are **Transaction**, **Date**, **Status**, **Account**, and **Amount**.
+- **Info** shows the rate, an **Allocation** table (collateral, share of vault, amount, APY), and a short FAQ.
+- An empty overview row reads **No savings yet**.
+
+There is no chart on the Savings section.
+
+## Steps
+
+<Steps>
+  <Step title="Sign in">
+    Connect the wallet that holds USDC. That balance is **Cash**.
+  </Step>
+  <Step title="Add money">
+    Enter a USDC amount, review, and confirm. You receive vault shares. Interest accrues in the share price.
+  </Step>
+  <Step title="Watch the rate">
+    AER and the allocation table move with Morpho borrow demand.
+  </Step>
+  <Step title="Withdraw">
+    Withdraw up to the free USDC in the vault. If the rest is lent out, the panel says how much you can take now.
+  </Step>
+</Steps>
+
+## Rates and fees
+
+You earn AER, not Funding APR and not Collateral APR. There is no Null entry or exit fee. You pay Ethereum gas.
+
+## Risks
+
+- The rate is variable and can fall.
+- A withdrawal larger than free USDC fails until borrowers repay or you take a smaller amount.
+- Vault share value can fall if the underlying Morpho books lose money.
+- This is not a bank deposit and it is not insured.
+
+Next: [Lending](/products/lending), which supplies the same books directly, or [Vaults](/concepts/vaults).

@@ -1,0 +1,31 @@
+---
+title: "NullV1YieldShareFundingRateModel"
+sidebarTitle: "Yield-share model"
+description: "Reference for the vault yield funding model."
+---
+
+```solidity
+function fundingRate(NullV1MarketParams memory marketParams, MarketState memory state) external returns (int256);
+
+function fundingRateView(NullV1MarketParams memory marketParams, MarketState memory state) external view returns (int256);
+
+function sharePrice(address collateral) external view returns (uint256);
+
+function marks(address market) external view returns (uint192 sharePrice, uint64 rate);
+```
+
+`fundingRate` must be called by the market. It stores the high-water mark under `msg.sender`. `fundingRateView` looks up the market with `factory.getMarket(collateral, oracle, address(this))`.
+
+The returned `int256` is a WAD APR, always from 0 to `1e18` inclusive. Positive means Receivers pay Payers, which is the only sign this model produces.
+
+`sharePrice` is `IERC4626(collateral).convertToAssets(1e36)`.
+
+Math, the high-water mark, and the empty-pool rule: [Funding-rate model](/protocol/funding-rate-model).
+
+## Errors
+
+| Error | When |
+| --- | --- |
+| `ZeroFactory` | Constructor factory is the zero address |
+
+The factory still has to `enableFrm` this address. `createMarket` reverts with `FrmNotEnabled` until then.

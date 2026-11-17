@@ -1,80 +1,33 @@
 ---
 title: "Oracles"
 sidebarTitle: "Oracles"
-description: "Pyth, Chainlink V3, and Chainlink V11 pull oracles: price scale, update routing, freshness, and the 10-day escape."
+description: "Chainlink Data Streams pull oracles: price scale, update routing, and freshness."
 ---
 
-Oracles supply the normalized price used when a market settles. Supported implementations are all **pull-based**:
+Spot settlement reads one oracle, stored on the market for its lifetime. The price is scaled to `1e36`.
 
-- Pyth
-- Chainlink Data Streams V3 (crypto)
-- Chainlink Data Streams V11 (RWA / session feeds)
+Supported market oracles are Chainlink Data Streams clones:
 
-## Price scale
-
-One base asset in quote units, scaled by `1e36`:
-
-```solidity
-uint256 price = oracle.price(); // 200 * 10^36 → 200 quote units
-```
-
-## Choose an implementation
-
-| Oracle | Router | Fee |
+| Oracle | Feeds | Router |
 | --- | --- | --- |
-| Pyth | `NullV1PayableRouter` | Native fee paid from router ETH |
-| Chainlink Data Streams V3 | `NullV1Router` | No native fee |
-| Chainlink Data Streams V11 | `NullV1Router` | No native fee |
+| `NullV1ChainlinkOracleV3` | One 24/7 report | `NullV1Router` |
+| `NullV1ChainlinkOracleV11` | Regular, extended, and overnight session reports | `NullV1Router` |
+
+The router calls `update(bytes[])` before `price()`. Chainlink's `getUpdateFee` on this integration is zero. Do not send ETH with `depositMarket`, `redeemMarket`, or `createMarket`.
 
 ## Update flow
 
-Fetch a signed payload offchain and pass it as `updateData` on router create, deposit, or redeem:
+1. Read `oracle.priceId()` (V11: the feed for the current session).
+2. Fetch the signed report from Chainlink Data Streams.
+3. Pass that payload as `updateData`. Use `[]` only when the stored price is still inside the oracle's freshness window.
+4. Submit through `NullV1Router`.
 
-- **Pyth:** fetch `binary.data` for `oracle.priceId()` from [Hermes](https://docs.pyth.network/price-feeds/core/fetch-price-updates). Each hex element becomes one `bytes` item.
-- **Chainlink V3:** fetch the signed report for `oracle.priceId()` from the [Data Streams API](https://docs.chain.link/data-streams/reference/data-streams-api).
-- **Chainlink V11:** fetch the signed report for the feed selected by the report's market status. The oracle exposes `priceId()` for regular hours, `extendedPriceId()` for pre/post-market, and `overnightPriceId()` for overnight. See the [Data Streams API reference](https://docs.chain.link/data-streams/reference/data-streams-api/interface-api).
+Never fabricate report bytes. If `price()` reverts, the market action reverts with it.
 
-Chainlink Data Streams API requests require credentials and authentication. Fetch payloads in a trusted backend. Do not expose the API secret in browser code.
+## Freshness
 
-```solidity
-router.depositMarket(
-    market,
-    receiverAssets,
-    payerAssets,
-    minReceiverShares,
-    minPayerShares,
-    deadline,
-    updateData
-);
-```
+Each oracle enforces its own timestamp window inside `update` and `price`. A stale report does not settle. V11 can accept a report slightly ahead of chain time (up to 60 seconds). That does not refresh a stored price by itself. You still submit the report.
 
-Callers never attach `msg.value` for Pyth. The payable router pays from its balance.
+Margin books use a different oracle, built on pool previews. See [Morpho oracles](/contracts/oracles/morpho).
 
-### Empty `updateData`
-
-Both routers skip the oracle update when `updateData.length === 0`, then continue to the market operation. This works only if the oracle's stored price is already accepted by `price()`.
-
-Passing `[]` directly to any supported oracle's `update(bytes[])` is different: it reverts with `UpdateDataEmpty()`. An empty router payload does not refresh a stale oracle and does not initialize an oracle that has no usable stored price.
-
-<Warning>
-Router type is part of the integration. The fee-less router cannot pay a Pyth update fee.
-</Warning>
-
-## Freshness and 10-day escape
-
-Normal freshness threshold: **60 seconds**.
-
-| Stored timestamp relative to `block.timestamp` | `price()` behavior |
-| --- | --- |
-| From 60 seconds old through 60 seconds in the future | Accepted |
-| More than 60 seconds in the future | Reverts with `StalePrice()` |
-| More than 60 seconds old but less than 10 days old | Reverts with `StalePrice()` |
-| At least 10 days old | Returns the last stored positive price |
-
-The escape lives in each oracle's `price()`. It is not a separate redemption mode and does not refresh the stored price. Update acceptance is narrower: Pyth and Chainlink V3 reject future updates, while Chainlink V11 accepts reports up to 60 seconds ahead. The escape does not make an old update payload acceptable.
-
-<Warning>
-The 10-day path restores liveness after prolonged outage. Treat the market as degraded and account for stale-price risk.
-</Warning>
-
-References: [Pyth](/contracts/oracles/pyth) · [Chainlink](/contracts/oracles/chainlink) · [Oracle overview](/contracts/oracles/overview)
+References: [Chainlink](/contracts/oracles/chainlink) · [Oracle overview](/contracts/oracles/overview).

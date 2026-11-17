@@ -1,0 +1,36 @@
+---
+title: "Fees"
+sidebarTitle: "Fees"
+description: "Entry and exit fees are charged on notional and usually stay in the market. Funding is not a fee."
+---
+
+The app shows the fee inside the trade preview. The line reads **Protocol fee included in this purchase** or **Protocol fee included in this sale**.
+
+## What you pay
+
+| Fee | When | Typical size | Where it goes |
+| --- | --- | --- | --- |
+| **Entry** | **Buy** | Set per market. The default is 0.25%. The cap is 2.50%. | The other pool, unless that market routes fees to the protocol. |
+| **Exit** | **Sell** | Same default and cap as entry. | Same as entry. |
+| **Collateral** | Each settlement | Disabled. The cap is 0. | Protocol, if it were ever enabled. |
+| **Gas** | Every transaction | Set by Ethereum | Validators, not Null. |
+
+Entry and exit are charged on **notional**, not on the raw collateral you type in. Notional is the Receiver exposure your deposit or redemption represents. On a Payer trade, notional is your collateral scaled by `R / P`. A small collateral amount can carry a larger fee when the short scale is high.
+
+If the other pool is at the minimum size, the fee is not charged to you.
+
+<Info>
+Funding is a transfer between Receiver and Payer. It is not a fee paid to Null. See [Funding and yield](/concepts/funding-and-yield).
+</Info>
+
+## Margin, Lending, and Savings
+
+- **Margin** uses the same entry and exit fees when the router buys or sells pool shares. Morpho also charges borrow interest on the book you use. The ticket separates **Fees** from the borrow.
+- **Lending** earns the Morpho **Lend rate**. Morpho takes its own fee from interest, according to that book's configuration. Null does not add a second lend fee in the app.
+- **Savings** has no Null entry or exit fee. You pay gas. Withdrawing more than free USDC can fail even when your balance is larger.
+
+## Reading a preview
+
+The preview is an estimate. Settlement, oracle updates, and other people's trades can move pool balances before your transaction lands. Set slippage in the trade settings if the terminal offers it. A failed transaction still costs gas.
+
+Onchain formulas: [Fees](/protocol/fees).

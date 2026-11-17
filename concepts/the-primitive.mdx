@@ -1,0 +1,137 @@
+---
+title: "The primitive"
+sidebarTitle: "The primitive"
+description: "Every Null market is two pools that share one collateral token and settle against an oracle price."
+---
+
+Null is a **two-pool market**. Every market has a Receiver pool and a Payer pool. Both pools use the same collateral token. The market holds that collateral and moves value between the pools when the oracle price changes.
+
+The protocol does not lend the tracked asset, open a Null margin account, or liquidate a Spot holder. [Savings](/products/savings), [Spot](/products/spot), [Lending](/products/lending), and [Margin](/products/margin) are all built on this market.
+
+<Frame>
+  <img
+    className="block dark:hidden"
+    src="/images/two-pool-market-light.svg"
+    alt="A Null market holds all collateral and settles value between its Receiver and Payer pools"
+  />
+  <img
+    className="hidden dark:block"
+    src="/images/two-pool-market-dark.svg"
+    alt="A Null market holds all collateral and settles value between its Receiver and Payer pools"
+  />
+</Frame>
+
+## Receiver and Payer
+
+Let `R` be Receiver pool assets and `P` be Payer pool assets.
+
+- When the accepted oracle price **rises**, value moves from Payer to Receiver.
+- When it **falls**, value moves from Receiver to Payer.
+- **Funding** moves vault yield from the Receiver pool to the Payer pool. It is paid from collateral yield. See [Funding and yield](/concepts/funding-and-yield).
+
+A position is your share of one pool. You deposit collateral and receive transferable ERC-4626 shares. Your position is a percentage of the pool, not a trade with a fixed counterparty or a private entry price.
+
+You do not own the tracked asset. A Receiver position does not include voting rights, dividends, or other ownership benefits unless the market's oracle return already reflects them.
+
+### Receiver
+
+Receiver follows the tracked price return. A 5% accepted price increase adds about 5% to Receiver assets. A 5% decrease reduces them by about 5%, before funding, fees, collateral changes, and settlement bounds.
+
+In the app this is **Spot**: **Buy** and **Sell** a Receiver share.
+
+### Payer
+
+Payer provides the backing for Receiver. Economically, a Payer is a **negative-size position in the Receiver pool**, with the market's collateral held inside that structure. It takes the opposite side of the price movement and receives funding paid from Receiver-side collateral yield.
+
+The short's notional relative to Payer capital scales with the pool ratio:
+
+```text
+short scale = R / P
+```
+
+That ratio is not chosen by you and is not fixed when you enter. It changes as the assets in either pool change. A Payer holder with current position value `p` has short notional:
+
+```text
+Payer short notional = p * R / P
+```
+
+As coverage `P / R` falls, `R / P` rises. The same Receiver-side transfer then has a larger impact on Payer share value. Payer trading in the app sits behind **Pro Mode**.
+
+## Worked examples
+
+These examples ignore funding, fees, collateral changes, rounding, and settlement bounds unless noted. Start from `R = 1,000` Receiver assets.
+
+### Price rises
+
+Suppose `P = 200` and the accepted oracle price rises by 2%. The price transfer is about 2% of Receiver assets, or 20 collateral units:
+
+```text
+Receiver: 1,000 → 1,020
+Payer:      200 →   180
+```
+
+Short scale is `R / P = 5`. Receiver increases by 2%. The same 20-unit transfer reduces the Payer pool by 10%:
+
+```text
+Payer return ≈ -price move × (R / P) ≈ -2% × 5 ≈ -10%
+```
+
+### Price falls
+
+Same pools, accepted oracle price falls by 2%:
+
+```text
+Receiver: 1,000 →   980
+Payer:      200 →   220
+```
+
+Receiver decreases by 2%. Payer receives the same 20-unit transfer and increases by about 10%.
+
+### Same move, different coverage
+
+A 2% accepted price rise always moves about `0.02 * R` from Payer to Receiver. Coverage changes how hard that hits Payer:
+
+| Payer `P` | Coverage `P/R` | Short scale `R/P` | Transfer | Receiver | Payer return |
+| --------: | -------------: | ----------------: | -------: | -------: | -----------: |
+|       500 |            50% |                2× |       20 |     +2% |         -4% |
+|       200 |            20% |                5× |       20 |     +2% |        -10% |
+|       100 |            10% |               10× |       20 |     +2% |        -20% |
+
+### Your share of a pool
+
+Pools are shared. If the Payer pool is `P = 200` and you hold `50` of it (25% of the pool), your position receives 25% of every Payer-side transfer.
+
+After the +2% price example above (`P: 200 → 180`):
+
+```text
+Your Payer claim: 50 → 45
+Your return:      -10%
+```
+
+When others enter or exit, the pool size and your percentage can change. Your share of the next transfer changes with it.
+
+## Settlement
+
+Settlement is interaction-driven. Deposits and redemptions settle the market before they continue. There is no separate public action that updates every block.
+
+During settlement the market reconciles collateral, reads the oracle, nets price movement with funding, and applies one transfer. The number of shares does not change. The collateral value each share represents does.
+
+If an accepted oracle move is larger than 20% in one settlement, the market skips that update's price transfer and records the new price as its next baseline. Funding can still settle. The skipped price movement is not deferred. See [Circuit breaker](/protocol/circuit-breaker).
+
+The transfer cannot debit a pool below a small minimum if the pool starts above that floor. That floor constrains one kind of transfer. It does not guarantee a fair price, liquidity, or capital protection.
+
+## What stays fixed
+
+Each market is uniquely identified by three dependency addresses:
+
+```text
+(collateral, oracle, funding-rate model)
+```
+
+Those dependencies and the two pool addresses are fixed for that market. A different tuple is a different market.
+
+<Warning>
+Receiver and Payer can lose most of their pool value.
+</Warning>
+
+Next: [Funding and yield](/concepts/funding-and-yield), [Vaults](/concepts/vaults), or [Spot](/products/spot).

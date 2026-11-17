@@ -1,0 +1,21 @@
+---
+title: "Circuit breaker"
+sidebarTitle: "Circuit breaker"
+description: "A single settlement that moves the oracle price by more than 20% skips price transfer and resets the baseline."
+---
+
+`MAX_ABS_CHANGE_BPS` is **2000**. `MAX_BASIS_POINTS` is **10000**. One settlement may apply at most a 20% price move.
+
+```text
+abs(newPrice - storedPrice) > storedPrice * 2000 / 10000
+```
+
+When that is true, `finalizeUpdate` sets `circuitBreakerFired` and skips the price transfer. It still writes `newPrice` into storage, so the next settlement measures from the new price. Skipped movement is not paid later.
+
+Funding still runs on that settlement, subject to the pool floor and the funding model.
+
+The check is not scaled by elapsed time. A 20% move over a minute and a 20% move over a day are treated the same. Two accepted moves of 19% settle in full, one after the other. Size for a path of accepted moves, not only for the single-tick cap.
+
+A zero oracle price reverts before this check. If `oracle.price()` itself reverts, settlement reverts and the market does not update.
+
+`UpdateState` includes the boolean so indexers can show that a tick was skipped.

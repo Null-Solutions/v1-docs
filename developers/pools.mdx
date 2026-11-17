@@ -69,7 +69,7 @@ Notional is `assets × settleableR / ownAssets` for both pools. In practical ter
 
 The previews use the last settled state. Funding, price PnL, collateral fees, balance reconciliation, or other transactions can move the execution rate. Use `NullV1Lens.previewMarket` for a settlement projection and a router minimum for execution protection.
 
-Fees credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/developers/fees).
+Fees credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/protocol/fees).
 
 <Warning>
 `maxDeposit` and `maxMint` always return `type(uint256).max`. Never use them to size inputs. `maxWithdraw` is net of the exit fee but reads the last settled state, so a full exit via `withdraw(maxWithdraw(owner))` can revert once execution settles the market. Exit fully with `redeem(balanceOf(owner))` instead. See [Max functions](/contracts/pool#max-functions).

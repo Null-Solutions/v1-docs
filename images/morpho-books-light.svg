@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" role="img" aria-label="The long Morpho book lends USDC against Receiver shares. The short book lends Receiver shares against nmUSDC.">
+  <title>Morpho long and short books</title>
+  <rect x="36" y="36" width="300" height="200" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="186" y="72" text-anchor="middle" fill="#2d2c2c" font-size="15" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Long book</text>
+  <text x="186" y="100" text-anchor="middle" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Loan: USDC</text>
+  <text x="186" y="122" text-anchor="middle" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral: Receiver shares</text>
+  <text x="186" y="156" text-anchor="middle" fill="#2d2c2c" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Savings and lenders supply</text>
+  <text x="186" y="178" text-anchor="middle" fill="#2d2c2c" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Margin longs borrow</text>
+  <line x1="70" y1="196" x2="302" y2="196" stroke="#2e8afa" stroke-width="1.5"/>
+
+  <rect x="384" y="36" width="300" height="200" rx="12" fill="#ffffff" stroke="#dee6ee"/>
+  <text x="534" y="72" text-anchor="middle" fill="#2d2c2c" font-size="15" font-weight="600" font-family="Inter, system-ui, -apple-system, sans-serif">Short book</text>
+  <text x="534" y="100" text-anchor="middle" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Loan: Receiver shares</text>
+  <text x="534" y="122" text-anchor="middle" fill="#6e6e6e" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Collateral: nmUSDC</text>
+  <text x="534" y="156" text-anchor="middle" fill="#2d2c2c" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Lenders supply shares</text>
+  <text x="534" y="178" text-anchor="middle" fill="#2d2c2c" font-size="12" font-family="Inter, system-ui, -apple-system, sans-serif">Margin shorts borrow</text>
+  <line x1="418" y1="196" x2="650" y2="196" stroke="#2e8afa" stroke-width="1.5"/>
+</svg>

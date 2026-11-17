@@ -1,0 +1,58 @@
+---
+title: "Protocol overview"
+sidebarTitle: "Overview"
+description: "How a Null V1 market settles: two ERC-4626 pools, one collateral token, yield-share funding."
+---
+
+A Null market is a pooled total-return swap. The **Receiver** pool takes the oracle return. The **Payer** pool is the reserve on the other side. Each pool issues fungible ERC-4626 shares.
+
+This page is the contract view. The product explanation is [The primitive](/concepts/the-primitive).
+
+A market is uniquely identified by:
+
+```text
+(collateral, oracle, frm)
+```
+
+- `collateral`: ERC-20 deposited into both pools. On the current stack this is a Morpho Vault V2 share (`nmUSDC`).
+- `oracle`: tracked asset price, scaled to `1e36`.
+- `frm`: funding-rate model. The factory owner must enable it before `createMarket`.
+
+The market redistributes collateral it already holds. Spot does not lend the tracked asset or liquidate users. Leveraged positions are [Morpho](/protocol/morpho-integration) periphery.
+
+## Price transfer
+
+For an ordinary settled move, value goes from Payer to Receiver when price rises, and from Receiver to Payer when price falls. The transfer is the price change times settleable Receiver assets, converted through the `1e36` price scale.
+
+Payer's percentage move is that transfer divided by Payer assets. Economically, a Payer is a negative-size position in the Receiver pool. Short scale versus Payer capital is `R / P`.
+
+## Funding
+
+`NullV1YieldShareFundingRateModel` sets funding from vault share-price growth. Receivers pay that yield to Payers. The rate is never negative, uses a high-water mark, and is capped at 100% APR for one interval. See [Funding-rate model](/protocol/funding-rate-model).
+
+## Settlement order
+
+Each pool `deposit` or `redeem` calls `updateState` first, unless you are reading a view.
+
+1. Read `oracle.price()`. A zero price reverts.
+2. Reconcile `collateral.balanceOf(market)` into the two pools and protocol fees.
+3. Accrue the collateral fee. The cap is 0, so this step is idle.
+4. Call `frm.fundingRate` on the prepared state.
+5. If either pool is at or below `MIN_POOL_ASSETS` (`1e6` raw units), skip price and funding.
+6. Otherwise compute price movement on settleable Receiver assets. If the absolute move exceeds 20% of the stored price, skip price movement and still store the new price.
+7. Add funding on settleable Receiver assets, net it with price movement, and cap the debit at settleable assets on the paying side.
+8. Store the new price and timestamp.
+
+Detail: [Settlement](/protocol/settlement).
+
+## Accounting identity
+
+```text
+receiverPool + payerPool + protocolFees == collateral.balanceOf(market)
+```
+
+The floor limits the funding and price debit. Reconciliation, fees, and withdrawals are separate and can leave a pool under the floor.
+
+## Shares
+
+Each share is a percentage of one pool's assets, not a private entry price. The app calls Spot entry and exit **Buy** and **Sell**. Onchain those are `deposit` and `redeem`. `mint` and `withdraw` on the pool are not implemented.

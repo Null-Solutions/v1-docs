@@ -1,0 +1,101 @@
+---
+title: "Morpho router"
+sidebarTitle: "Morpho router"
+description: "Open and close a Morpho long or short with NullV1MorphoRouter."
+---
+
+`NullV1MorphoRouter` is the write path for Margin. Reads (LLTV, rates, position health) come from Morpho and from `NullV1Lens` loop helpers. This page shows the write path with `viem`.
+
+Confirm the router address from [Deployments](/developers/addresses) before you ship. Do not hardcode an address from an example.
+
+## Authorize the router
+
+Borrow and collateral withdrawal require the user to authorize the router on Morpho. Do this once per wallet.
+
+```ts
+await walletClient.writeContract({
+  account,
+  address: morpho,
+  abi: morphoAbi,
+  functionName: "setAuthorization",
+  args: [router, true],
+});
+```
+
+A long open with `debt = 0n` only supplies collateral and does not need this authorization.
+
+## Open a long
+
+`equity` and `debt` are loan-token amounts (USDC). `minCollateralShares` is the Receiver-share floor for the whole deposit.
+
+```ts
+await walletClient.writeContract({
+  account,
+  address: router,
+  abi: morphoRouterAbi,
+  functionName: "open",
+  args: [
+    nullMarket,
+    marketParams,
+    equity,
+    debt,
+    minCollateralShares,
+    deadline,
+    updateData,
+  ],
+});
+```
+
+`marketParams` is the Morpho Blue tuple `{ loanToken, collateralToken, oracle, irm, lltv }`. For a long, `collateralToken` is the Receiver pool and `loanToken` is USDC.
+
+## Close a long
+
+`close` unwinds the caller's whole position on that book. `minAssetsOut` is the minimum USDC the caller will accept.
+
+```ts
+await walletClient.writeContract({
+  account,
+  address: router,
+  abi: morphoRouterAbi,
+  functionName: "close",
+  args: [nullMarket, marketParams, minAssetsOut, deadline, updateData],
+});
+```
+
+## Open and close a short
+
+`equity` is in the loan asset (USDC when collateral is a vault). `shortShares` is the Receiver shares to borrow and sell. `minCollateral` is the minimum `nmUSDC` the position will post.
+
+```ts
+await walletClient.writeContract({
+  account,
+  address: router,
+  abi: morphoRouterAbi,
+  functionName: "openShort",
+  args: [
+    nullMarket,
+    shortMarketParams,
+    equity,
+    shortShares,
+    minCollateral,
+    deadline,
+    updateData,
+  ],
+});
+```
+
+`closeShort` uses the same argument order as `close`. The router buys Receiver shares inside the repay callback, so the short book does not need idle shares to exit.
+
+Permit2 variants are `openWithPermit2` and `openShortWithPermit2`. The permit amount is `equity`, the spender is the router, and the permit deadline is the same `deadline` argument.
+
+## Failures
+
+| Condition | What you see |
+| --- | --- |
+| Deadline passed | `TransactionTooOld` |
+| Long book tokens do not match | The router rejects the pair |
+| Caller has no Morpho collateral | `NoPosition` on close |
+| Share floor missed | Slippage-style revert from the router |
+| Oracle payload required and missing | Oracle revert before the pool call |
+
+Book layout and liquidation: [Morpho integration](/protocol/morpho-integration).
