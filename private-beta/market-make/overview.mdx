@@ -30,19 +30,19 @@ Let:
 - `P` be total Payer pool assets; and
 - `S` be the tracked asset's oracle price.
 
-`R`, `P`, and `p` come from the current onchain pool state and your Payer share ownership. `S` comes from the market's configured oracle. Payer's instantaneous leverage is:
+`R`, `P`, and `p` come from the current onchain pool state and your Payer share ownership. `S` comes from the market's configured oracle. A Payer is a negative-size position in the Receiver pool, with the market's collateral held inside that structure. The short scale relative to Payer capital is:
 
 ```text
-L = R / P
+R / P
 ```
 
-`L` is determined by the current pool balances. It is not a trader-selected setting and changes as either pool changes.
+That ratio is determined by the current pool balances. It is not a trader-selected setting and changes as either pool changes.
 
 The required external long is:
 
 ```text
-h = p * L / S = p * (R / P) / S tracked-asset units
-H = h * S = p * L                  external notional
+h = p * (R / P) / S tracked-asset units
+H = h * S = p * (R / P)             external notional
 ```
 
 Equivalently, if you own the fraction `p / P` of the Payer pool, you hedge that fraction of Receiver's total asset exposure `R / S`.
@@ -61,7 +61,7 @@ Oracle price S   = $105
 Then:
 
 ```text
-L = 1,050 / 150 = 7
+R / P = 1,050 / 150 = 7
 h = 7.50 * 7 / 105 = 0.50 units
 H = 0.50 * 105 = $52.50
 ```
@@ -116,8 +116,8 @@ Hedging can reduce directional price exposure, but it does not guarantee a profi
 Let:
 
 - `p` be your current Payer position value;
-- `L = R / P` be Payer's instantaneous leverage;
-- `H = pL` be the external hedge notional;
+- `R / P` be the Payer short scale (negative Receiver size vs Payer capital);
+- `H = p × R / P` be the external hedge notional;
 - `f` be Null funding APR paid by Receivers to Payers from collateral yield (product model: `f ≈ s * y`, never negative for the Null leg);
 - `f_ext` be external funding, where positive means the external long pays; and
 - `y` be the collateral yield rate on Payer capital.
@@ -127,10 +127,10 @@ Null funding       =  H * f
 Collateral yield   =  p * y
 External funding   = -H * f_ext
 
-Net carry          =  p * [y + L * (f - f_ext)]
+Net carry          =  p * [y + (R / P) * (f - f_ext)]
 ```
 
-Null funding applies to exposure notional `H = pL` because funding is charged on Receiver notional and spreads across Payer. Collateral yield applies to the Payer position value `p`. See [Funding and carry](/learn/funding-and-carry).
+Null funding applies to exposure notional `H = p × R / P` because funding is charged on Receiver notional and spreads across Payer. Collateral yield applies to the Payer position value `p`. See [Funding and carry](/learn/funding-and-carry).
 
 ### Carry example
 
@@ -138,7 +138,7 @@ Assume:
 
 ```text
 Payer position p         = $100
-Instantaneous leverage L = 5
+Short scale R / P        = 5
 Null funding f           = 1.5%
 External long funding    = 1%
 Collateral yield y       = 5%
@@ -153,7 +153,7 @@ External funding   = $500 * 1%   = -$5.00
 Net carry                            $7.50
 ```
 
-If external funding rises to `3%`, projected annual net carry becomes `-$2.50`. Higher leverage magnifies a negative funding spread just as readily as a positive one.
+If external funding rises to `3%`, projected annual net carry becomes `-$2.50`. A larger short scale magnifies a negative funding spread just as readily as a positive one.
 
 ### Screen the opportunity
 

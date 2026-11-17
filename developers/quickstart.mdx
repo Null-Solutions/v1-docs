@@ -173,17 +173,17 @@ const coverageWad =
   receiverPoolAssets === 0n
     ? undefined
     : (payerPoolAssets * 10n ** 18n) / receiverPoolAssets; // P/R
-const payerInstantaneousLeverageWad =
+const payerShortScaleWad =
   payerPoolAssets === 0n
     ? undefined
-    : (receiverPoolAssets * 10n ** 18n) / payerPoolAssets; // L = R/P
+    : (receiverPoolAssets * 10n ** 18n) / payerPoolAssets; // R/P: Payer short scale vs capital
 
 const router =
   config.oracleKind === "pyth" ? config.payableRouter : config.router;
 const updateData: Hex[] = []; // Only while the stored oracle price is usable.
 ```
 
-Coverage is `P/R`. `L = R/P` is the leverage Payer has at this market state. It is not a funding rate. Each ratio is undefined when its denominator is zero.
+Coverage is `P/R`. `R/P` is the magnitude of Payer's negative Receiver size relative to Payer capital at this market state. It is not a funding rate. Each ratio is undefined when its denominator is zero.
 
 For a fresh update, fetch signed payloads before submitting. Follow [Oracle update flow](/markets/oracles#update-flow) and the implementation-specific [Pyth](/contracts/oracles/pyth#update-data) or [Chainlink](/contracts/oracles/chainlink) instructions. Never fabricate payload bytes.
 

@@ -82,11 +82,11 @@ For how Savings and market collateral relate, see [Vaults](/learn/vaults).
 
 Market makers who hold Payer and hedge the tracked asset elsewhere care about net carry after hedge costs. With yield-share funding, the funding leg they earn is driven by vault APR and `R / P`, not by an imbalance target.
 
-Let a market maker own `p` collateral units of a Payer pool whose total assets are `P`. With instantaneous leverage `L = R / P` and oracle price `S`:
+Let a market maker own `p` collateral units of a Payer pool whose total assets are `P`. A Payer is a negative-size position in the Receiver pool (market collateral inside that structure), so the short notional scales with `R / P`. With oracle price `S`:
 
 ```text
-h = pL / S = (p / P) * (R / S) base units
-H = hS = pL = pR / P quote notional
+h = p(R / P) / S = (p / P) * (R / S) base units
+H = hS = pR / P quote notional
 ```
 
 The hedge is optional and external. See [Market making](/private-beta/market-make/overview).

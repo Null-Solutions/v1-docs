@@ -9,7 +9,7 @@ Null uses assets on Ethereum mainnet. Receiver and Payer Spot positions can lose
 ## Position risk
 
 - **Receiver** follows the tracked oracle return, so its position value can fall when the tracked price falls.
-- **Payer** takes the opposite side of the price transfer at current leverage `L = R / P`. Lower Payer coverage means higher leverage and larger percentage changes in Payer share value.
+- **Payer** is a negative-size position in the Receiver pool (market collateral inside). It takes the opposite price transfer. Lower Payer coverage means a larger short relative to Payer capital (`R / P`) and larger percentage changes in Payer share value.
 - Funding is paid from collateral APR and varies with vault yield. The rate you see now is not guaranteed for the life of the position.
 - **Margin** adds Morpho borrow risk and LLTV liquidation risk on top of Null pool risk.
 

@@ -16,7 +16,7 @@ When you buy, you deposit collateral into your selected pool and receive pool sh
 | Question | Receiver | Payer |
 | --- | --- | --- |
 | What price exposure do I take? | Value rises when the tracked price rises and falls when it falls, subject to settlement limits. | Opposite side: value falls when the tracked price rises and rises when it falls. |
-| How large can the price effect be? | Generally follows the tracked move before funding, fees, and other effects. | Payer leverage is `L = R / P`. Lower coverage means higher leverage. |
+| How large can the price effect be? | Generally follows the tracked move before funding, fees, and other effects. | Negative-size position in the Receiver pool; short scale `R / P`. Lower coverage means a larger percentage move on Payer. |
 | How does funding work? | Pays funding equal to a share of collateral APR on Receiver notional (product model: full vault APR). Never receives funding from Payers. | Receives that funding, scaled across the Payer pool (`× R / P` per unit). Also earns collateral yield on its own shares. |
 | Do I own the tracked asset? | No. You own ERC-4626 Receiver pool shares. | No. You own ERC-4626 Payer pool shares. |
 | What do I receive when I exit? | Your share of Receiver pool collateral after the exit fee. | Your share of Payer pool collateral after the exit fee. |

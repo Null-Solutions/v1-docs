@@ -8,9 +8,9 @@ Null V1 is fully collateralized, but every position can lose value. Full collate
 
 ## Directional and reserve risk
 
-Receiver gains from an ordinary settled price increase and loses from a decrease. Signed funding can add to or offset that return. With the standard script parameters, Receiver pays funding when Payer coverage is below `P = R` and receives it above that target.
+Receiver gains from an ordinary settled price increase and loses from a decrease. Funding is paid from collateral APR: Receivers pay vault yield on Receiver notional to Payers, which can add to or offset Receiver's price return.
 
-Payer takes the opposite price transfer at instantaneous leverage `L = R / P`. When the Payer pool is small relative to Receiver, leverage is higher and sustained price increases can consume a larger fraction of its assets. Moves inside the circuit-breaker threshold settle in full. Thin Payer coverage also caps how much Receiver can collect from an increase.
+Payer is a negative-size position in the Receiver pool, with the market's collateral held inside that structure. It takes the opposite price transfer. When the Payer pool is small relative to Receiver, the same transfer consumes a larger fraction of Payer assets. Moves inside the circuit-breaker threshold settle in full. Thin Payer coverage also caps how much Receiver can collect from an increase.
 
 There is no liquidity backstop. A redemption pays the pool's current assets according to ERC-4626 share accounting, not a guaranteed principal amount.
 

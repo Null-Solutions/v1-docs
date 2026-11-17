@@ -33,7 +33,7 @@ Receiver is synthetic exposure, not ownership of the tracked asset.
 
 ## Payer
 
-Payer supplies the reserve that keeps Receiver fully collateralized. Its instantaneous leverage is `L = R / P`. When the Payer pool is smaller than Receiver, leverage is higher and the same collateral transfer produces a larger percentage change in Payer share value.
+Payer supplies the reserve that keeps Receiver fully collateralized. Economically, a Payer is a **negative-size position in the Receiver pool**, with the market's collateral held inside that structure. When the Payer pool is smaller than Receiver, the same collateral transfer is a larger fraction of Payer assets, so Payer share value moves more in percentage terms.
 
 Payers receive funding from Receiver-side vault yield and also earn collateral yield on their own shares. A Payer can keep directional exposure or hedge externally.
 

@@ -27,7 +27,7 @@ notional = your assets × settleable Receiver assets / your pool's assets
 ```
 
 - **Receiver.** When the Receiver pool is above the minimum floor, notional is roughly equal to the collateral you mint or burn. At a 0.25% fee rate, 1,000 units of collateral results in a fee of about 2.49 units.
-- **Payer.** Notional increases with leverage `R/P`. At 5× leverage, 1,000 units of collateral represents about 5,000 units of notional, so the same 0.25% rate results in a fee of about 12.47 units.
+- **Payer.** Notional scales with short scale `R/P` (negative Receiver size vs Payer capital). At `R/P = 5`, 1,000 units of collateral represents about 5,000 units of notional, so the same 0.25% rate results in a fee of about 12.47 units.
 
 If Receiver is at the minimum floor, or Payer cannot settle when you mint, entry notional is 0 and no entry fee applies. Burns may still have an exit fee.
 
@@ -58,7 +58,7 @@ estimated exit fee ≈ 1,000 × 0.25 / 100.25
 estimated collateral returned ≈ 997.51 units
 ```
 
-Your final output can change because the market settles before your shares are burned. At high Payer leverage, the exit fee can be as large as the full redemption amount.
+Your final output can change because the market settles before your shares are burned. At a high Payer short scale (`R / P`), the exit fee can be as large as the full redemption amount.
 
 ## Collateral fee
 

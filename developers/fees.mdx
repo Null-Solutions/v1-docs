@@ -29,7 +29,7 @@ notional = assets × settleableR / ownAssets
 | Side | `ownAssets` | What the fee tracks |
 | --- | --- | --- |
 | Receiver | R after a deposit, or R on exit | `(assets / R) × settleableR`. When R is well above the floor this is about `assets`. |
-| Payer | P after a deposit, or P on exit | `assets × settleableR / P`. Scales with leverage `R/P`. |
+| Payer | P after a deposit, or P on exit | `assets × settleableR / P`. Scales with short scale `R/P`. |
 
 If settleable R is 0, notional is 0 on both sides and the fee is 0. Deposit notional is also 0 while settleable P is 0, so first entry is free until both sides can settle. Exits still charge so the latency option stays priced.
 

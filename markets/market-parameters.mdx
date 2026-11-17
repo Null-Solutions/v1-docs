@@ -66,7 +66,7 @@ annual funding transfer = f * R    (Receiver → Payer)
 ```
 
 - Funding is never negative in the product model (Payers do not pay Receivers).
-- Coverage still sets Payer leverage `L = R / P` and scales how funding lands per unit of Payer.
+- Coverage still sets the Payer short scale `R / P` (negative Receiver size vs Payer capital) and scales how funding lands per unit of Payer.
 - Lens returns both `fundingRate` and `collateralRate` for display.
 
 Historical `NullV1ImbalanceFundingRateModel` deployments used a signed coverage curve. Do not document that curve as current product behavior. Always identify `market.frm()` onchain and prefer Lens projections plus [Funding and carry](/learn/funding-and-carry).

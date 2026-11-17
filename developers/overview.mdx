@@ -40,10 +40,10 @@ A market is uniquely identified by an immutable tuple:
 For market-level metrics, let `R` be Receiver pool assets and `P` be Payer pool assets:
 
 - **Coverage** is `P/R`: backing relative to Receiver assets.
-- **Payer instantaneous leverage** is `L = R/P` at that market state: Receiver assets backed per unit of Payer assets.
+- A **Payer** is a negative-size position in the Receiver pool, with the market's collateral held inside that structure. The magnitude of that short relative to Payer capital is `R/P` at the current market state (inverse of coverage).
 
 Handle a zero denominator explicitly. Neither ratio is defined when its denominator is zero.
-`L` is not a funding rate. It is the leverage Payer has at that moment. Product funding is yield share of collateral APR paid on Receiver notional; see [Funding and carry](/learn/funding-and-carry).
+`R/P` is not a funding rate. Product funding is yield share of collateral APR paid on Receiver notional; see [Funding and carry](/learn/funding-and-carry).
 
 ## Architecture
 

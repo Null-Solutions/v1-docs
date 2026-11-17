@@ -30,15 +30,15 @@ Null Spot does not use an order book. Capacity comes from collateral already in 
 
 ```text
 Payer coverage = Payer pool assets / Receiver pool assets
-Payer leverage L = R / P
+Payer short scale = R / P
 ```
 
 - **Market size** is both pools combined.
 - **Receiver liquidity** is collateral on the Receiver side.
 - **Payer liquidity** is collateral backing that side.
-- Lower coverage raises Payer leverage, so the same price transfer hits Payer harder in percentage terms.
+- A Payer is a negative-size position in the Receiver pool, with the market's collateral held inside. Lower coverage raises `R / P`, so the same price transfer hits Payer harder in percentage terms.
 
-Funding no longer flips with coverage the way a signed imbalance curve would. Coverage still matters for Payer leverage and for how funding on Receiver notional spreads across the Payer pool (`f × R / P` per unit of Payer).
+Funding no longer flips with coverage the way a signed imbalance curve would. Coverage still matters for that short scale and for how funding on Receiver notional spreads across the Payer pool (`f × R / P` per unit of Payer).
 
 <Warning>
 A visible market is not always tradable. **Closed** markets cannot be traded. **No Payer funds** blocks Receiver operation until the Payer pool has assets. Missing or invalid oracle data can also block a transaction. Margin requires a separate Morpho long/short config; see [Morpho](/learn/morpho).

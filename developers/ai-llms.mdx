@@ -41,7 +41,7 @@ Use these pages as source context when asking an assistant to reason about or ge
 | **Receiver** | Pool that receives positive reference-asset returns; pays funding from collateral APR |
 | **Payer** | Pool that backs Receiver; opposite price risk; other side of funding |
 | **Coverage `P/R`** | Payer assets ÷ Receiver assets |
-| **Payer instantaneous leverage `L = R/P`** | Receiver assets ÷ Payer assets at that market state; inverse of coverage |
+| **Payer as negative Receiver size** | Payer is a negative-size position in the Receiver pool (market collateral inside); short scale vs Payer capital is `R/P` (inverse of coverage) |
 | **FRM** | Immutable funding-rate model dependency |
 | **Funding** | Yield share of collateral APR paid by Receiver to Payer (product model; never negative) |
 | **Price settlement** | Value transfer from oracle price movement |
@@ -54,7 +54,7 @@ Use these pages as source context when asking an assistant to reason about or ge
 
 - Discover markets by `(collateral, oracle, frm)`. Do not invent pool addresses
 - Read pool addresses from the market or `CreateMarket`
-- Keep the ratios distinct: coverage is `P/R`; `L = R/P` is the leverage Payer has at that market state, not a funding rate
+- Keep the ratios distinct: coverage is `P/R`; `R/P` is the Payer short's scale vs Payer capital at that market state, not a funding rate. Do not call it instantaneous leverage.
 - Handle zero denominators explicitly; do not report either ratio as finite when its denominator is zero
 - Treat shares as ERC-4626; share decimals = collateral decimals + 10
 - Assume every pool write settles the market first

@@ -48,21 +48,21 @@ Receiver follows the tracked price return. A 5% accepted price increase adds abo
 
 ### Payer
 
-Payer provides the backing for Receiver. It takes the opposite side of the price movement and receives funding paid from Receiver-side collateral yield.
+Payer provides the backing for Receiver. Economically, a Payer is a **negative-size position in the Receiver pool**, with the market's collateral held inside that structure. It takes the opposite side of the price movement and receives funding paid from Receiver-side collateral yield.
 
-Payer's **instantaneous leverage** is:
-
-```text
-L = R / P
-```
-
-`L` is not chosen by the user or fixed when they enter. It changes as the assets in either pool change. A Payer holder with current position value `p` has notional:
+The short's notional relative to Payer capital scales with the pool ratio:
 
 ```text
-Payer notional = p * L = p * R / P
+short scale = R / P
 ```
 
-As coverage falls, Payer leverage rises. This means the same Receiver-side transfer has a larger impact on Payer share value.
+That ratio is not chosen by the user or fixed when they enter. It changes as the assets in either pool change. A Payer holder with current position value `p` has short notional:
+
+```text
+Payer short notional = p * R / P
+```
+
+As coverage falls, `|R / P|` rises. The same Receiver-side transfer then has a larger impact on Payer share value.
 
 ## Worked examples
 
@@ -77,10 +77,10 @@ Receiver: 1,000 → 1,020
 Payer:      200 →   180
 ```
 
-Payer leverage is `L = 1,000 / 200 = 5×`. Receiver increases by 2%. The same 20-unit transfer reduces the Payer pool by 10%:
+Short scale is `R / P = 1,000 / 200 = 5`. Receiver increases by 2%. The same 20-unit transfer reduces the Payer pool by 10%:
 
 ```text
-Payer return ≈ -price move * L ≈ -2% * 5 ≈ -10%
+Payer return ≈ -price move × (R / P) ≈ -2% × 5 ≈ -10%
 ```
 
 ### Price falls
@@ -92,19 +92,19 @@ Receiver: 1,000 →   980
 Payer:      200 →   220
 ```
 
-Receiver decreases by 2%. Payer receives the same 20-unit transfer, increasing the pool by about 10% at `5×` leverage.
+Receiver decreases by 2%. Payer receives the same 20-unit transfer, increasing the pool by about 10% at short scale `5`.
 
 ### Same move, different coverage
 
 A 2% accepted price rise always moves about `0.02 * R` from Payer to Receiver. Coverage changes how hard that hits Payer:
 
-| Payer `P` | Coverage `P/R` | Leverage `L` | Transfer | Receiver | Payer return |
-| --------: | -------------: | -----------: | -------: | -------: | -----------: |
-|       500 |            50% |          2× |       20 |     +2% |         -4% |
-|       200 |            20% |          5× |       20 |     +2% |        -10% |
-|       100 |            10% |         10× |       20 |     +2% |        -20% |
+| Payer `P` | Coverage `P/R` | Short scale `R/P` | Transfer | Receiver | Payer return |
+| --------: | -------------: | ----------------: | -------: | -------: | -----------: |
+|       500 |            50% |                2× |       20 |     +2% |         -4% |
+|       200 |            20% |                5× |       20 |     +2% |        -10% |
+|       100 |            10% |               10× |       20 |     +2% |        -20% |
 
-Lower coverage means higher Payer leverage, so the same oracle move has a larger percentage impact on the Payer.
+Lower coverage means a larger negative Receiver size relative to Payer capital, so the same oracle move has a larger percentage impact on the Payer.
 
 ### Your share of a pool
 
@@ -131,7 +131,7 @@ Example with collateral APR `y = 8%`, full yield share `s = 1`, and `R = 1,000`:
 |     1,000 |     100% |             8% |              80 | `80 / 1,000 = 8%` |
 |     2,000 |     200% |             8% |              80 | `80 / 2,000 = 4%` |
 
-Coverage no longer flips the funding sign. It still changes how the same Receiver-notional transfer lands per unit of Payer (`f × R / P`), and it still sets price leverage `L = R / P`.
+Coverage no longer flips the funding sign. It still changes how the same Receiver-notional transfer lands per unit of Payer (`f × R / P`), and it still sets the Payer short scale `R / P`.
 
 Funding varies with vault yield. It is not guaranteed profit after hedge costs. Full write-up: [Funding and carry](/learn/funding-and-carry).
 
@@ -142,7 +142,7 @@ Funding varies with vault yield. It is not guaranteed profit after hedge costs. 
     Check the tracked price, collateral, oracle, pool sizes, collateral APR, funding APR, fees, and circuit-breaker behavior.
   </Step>
   <Step title="Choose a pool">
-    Choose Receiver for the tracked return, or Payer for the opposite return at the current leverage `L = R / P`.
+    Choose Receiver for the tracked return, or Payer for a negative-size position in the Receiver pool (short scale `R / P`).
   </Step>
   <Step title="Receive shares">
     Deposit collateral and receive ERC-4626 shares in that pool.

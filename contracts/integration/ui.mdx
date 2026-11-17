@@ -76,11 +76,11 @@ Keep values as `bigint` for calculations and round only for display. Lens fields
 funding APR %       = fundingRate / 1e18 × 100
 collateral APR %    = collateralRate / 1e18 × 100
 vault share value   = collateralSharePrice / 1e18 underlying units
-Payer leverage L    = projectedReceiverAssets / projectedPayerAssets
+Payer short scale   = projectedReceiverAssets / projectedPayerAssets
 annual funding flow = fundingRate × projectedReceiverAssets / 1e18
 ```
 
-Handle a zero Payer denominator when displaying `L`. `L = R/P` is the leverage Payer has at that projected market state, not a funding rate.
+Handle a zero Payer denominator when displaying `R/P`. That ratio is the Payer short's scale vs Payer capital at the projected market state (negative-size Receiver position), not a funding rate.
 
 **Product display:** treat funding as yield share of collateral APR paid by Receivers to Payers (never negative in app copy). Show Collateral APR and Funding APR as separate columns, then Net APR as side-adjusted carry. Do not invent a second external perpetual-style funding index. A zero collateral metric can mean unsupported or unavailable because Lens catches failures from those external reads. Verify the published Ethereum Lens ABI before relying on optional fields.
 
