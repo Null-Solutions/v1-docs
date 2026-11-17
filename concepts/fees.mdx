@@ -1,36 +1,88 @@
 ---
 title: "Fees"
 sidebarTitle: "Fees"
-description: "Entry and exit fees are charged on notional and usually stay in the market. Funding is not a fee."
+description: "What a trade costs: a fee when you enter or exit a pool, plus gas. Holding a position has no Null fee."
 ---
 
-The app shows the fee inside the trade preview. The line reads **Protocol fee included in this purchase** or **Protocol fee included in this sale**.
+There are three different costs in Null, and the app shows them separately for a reason:
 
-## What you pay
+1. **A trading fee** when you enter or leave a Null market.
+2. **A carrying cost** while you hold a position. Funding on Spot, borrow interest on Margin.
+3. **Gas** to Ethereum, on every transaction.
 
-| Fee | When | Typical size | Where it goes |
-| --- | --- | --- | --- |
-| **Entry** | **Buy** | Set per market. The default is 0.25%. The cap is 2.50%. | The other pool, unless that market routes fees to the protocol. |
-| **Exit** | **Sell** | Same default and cap as entry. | Same as entry. |
-| **Collateral** | Each settlement | Disabled. The cap is 0. | Protocol, if it were ever enabled. |
-| **Gas** | Every transaction | Set by Ethereum | Validators, not Null. |
+Only the first one is a fee charged by the market. This page is about that fee, and about what is not one.
 
-Entry and exit are charged on **notional**, not on the raw collateral you type in. Notional is the Receiver exposure your deposit or redemption represents. On a Payer trade, notional is your collateral scaled by `R / P`. A small collateral amount can carry a larger fee when the short scale is high.
+## The short version
 
-If the other pool is at the minimum size, the fee is not charged to you.
+A market can charge a fee on the way in and a fee on the way out. The app's market information calls these **Entry fee** and **Exit fee**.
 
-<Info>
-Funding is a transfer between Receiver and Payer. It is not a fee paid to Null. See [Funding and yield](/concepts/funding-and-yield).
-</Info>
+Three facts about them:
 
-## Margin, Lending, and Savings
+- **Each market sets its own.** Read the live values in the market information. They can be zero. Nothing on this page can tell you the number for the market you are about to trade.
+- **They are capped.** Neither fee can be above 2.50% of notional.
+- **They are included, not added.** The review screen says **Protocol fee included in this purchase**. That means the fee comes out of the amount you put in. You receive fewer shares. It is not a second charge on top, and the same applies on the way out: you receive less collateral.
 
-- **Margin** uses the same entry and exit fees when the router buys or sells pool shares. Morpho also charges borrow interest on the book you use. The ticket separates **Fees** from the borrow.
-- **Lending** earns the Morpho **Lend rate**. Morpho takes its own fee from interest, according to that book's configuration. Null does not add a second lend fee in the app.
-- **Savings** has no Null entry or exit fee. You pay gas. Withdrawing more than free USDC can fail even when your balance is larger.
+## Why the fee is not a percentage of what you typed
 
-## Reading a preview
+The fee is a percentage of **notional**: the size of the position, not the cash you posted.
 
-The preview is an estimate. Settlement, oracle updates, and other people's trades can move pool balances before your transaction lands. Set slippage in the trade settings if the terminal offers it. A failed transaction still costs gas.
+For Receiver the two are about the same. Buy with 1,000 USDC and your position is about 1,000 of exposure.
 
-Onchain formulas: [Fees](/protocol/fees).
+For Payer they are not. Payer is a negative-size position in the Receiver pool, so the position is larger than the collateral behind it, by the ratio `R / P`. See [The primitive](/concepts/the-primitive).
+
+| You post | Side | Pool ratio `R / P` | Notional | Fee at 0.25% |
+| -------: | --- | -----------------: | -------: | -----------: |
+|    1,000 | Receiver | any | about 1,000 | about 2.50 |
+|    1,000 | Payer | 1 | about 1,000 | about 2.50 |
+|    1,000 | Payer | 5 | about 5,000 | about 12.50 |
+|    1,000 | Payer | 10 | about 10,000 | about 25.00 |
+
+That is not a surcharge for using Payer. The fee is the same percentage of a bigger position. It also means a thin Payer pool makes entering and leaving more expensive in cash terms, even at an unchanged fee rate. Check the fee amount in the review, not just the rate.
+
+## A round trip, with no price movement
+
+Buy 1,000 of Receiver in a market charging 0.25% in and 0.25% out, then sell while the price, the pools, and funding have not moved:
+
+```text
+In:    1,000 arrives, a fee of about 2.49 comes out, 997.51 goes into the pool
+Out:   you sell your claim on 997.51, a fee of about 2.49 comes out
+Back:  about 995.02, before gas
+```
+
+Entering and leaving cost about 0.50% here. A market with zero fees costs nothing on this measure. A market at the cap would cost about 5% for the same round trip. That is why the live rate, and not the cap, is the number that matters.
+
+Where the money goes: on most markets the fee is credited to the **other** pool. A Receiver buyer pays the Payer pool; a Payer buyer pays the Receiver pool. A few deployments route the fee to the protocol instead, which the market's factory setting decides. Either way it leaves your position once, at the moment you trade.
+
+## There is no fee for holding
+
+No charge accrues for keeping a position open:
+
+- Null does not add an ongoing holding charge to a pool position.
+- Leaving a pool position is the exit fee above, and nothing else from the market.
+- You pay gas again when you transact, including when you only withdraw from Savings.
+
+What a position costs while you hold it is carrying cost, and it is shown as a rate rather than collected as a fee:
+
+- **Receiver** gives up the collateral yield on its pool. That yield is paid to Payers as funding.
+- **Payer** receives that funding, on top of yield on its own collateral.
+- **Margin** pays borrow interest to the lenders on whichever Morpho book it used, for as long as it is open.
+
+Funding and interest are described in [Funding and yield](/concepts/funding-and-yield) and [Margin](/products/margin). Neither is paid to Null as a fee.
+
+## Fees in the other products
+
+Nothing extra is charged by the app for Lending or Savings, but their rates are not fee-free in the way "no fee" might suggest:
+
+- **Savings.** You receive the vault's supply rate, shown as **AER**. That rate is what lenders actually earn on the Morpho books after the vault allocates and borrowers pay. You pay gas to **Add money** and to **Withdraw**.
+- **Lending.** You receive the **Lend rate** on the book you supply. Borrowers pay that interest. There is no separate Null cut taken from your supply in the app, and **Recall** costs gas.
+- **Margin.** You pay both layers: the market's entry fee when the router buys Receiver shares, its exit fee when it sells them, and Morpho borrow interest in between. The ticket lists **Fees** and **Liquidation price** separately from the borrow amount.
+
+## Before you confirm
+
+Read the review screen from top to bottom:
+
+- The **Entry fee** or **Exit fee** rate for this market, and the amount after the fee. That after-fee amount is the size you are really opening or closing.
+- The minimum you will accept. Settlement runs inside your transaction, so pool balances can have moved since the preview. If the result would be worse than your minimum, the transaction fails and you pay gas.
+- The leveraged alternative. If you are about to pay a high fee to enter a large Payer position, compare [Margin](/products/margin), where the same direction is available with a fee on a USDC equity amount plus borrow interest.
+
+Contract detail, including the exact fee formula and the caps, is in [Fees](/protocol/fees).
