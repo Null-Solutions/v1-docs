@@ -20,14 +20,14 @@ Both routers expose the same market-operation signatures. Do not send ETH with u
 
 ## Product copy
 
-The app calls a pool deposit **Mint** and a pool redemption **Burn**:
+The Spot app calls a pool deposit **Buy** and a pool redemption **Sell** (older copy said Mint / Burn):
 
-| UI term             | Contract action | Meaning                                |
-| ------------------- | --------------- | -------------------------------------- |
-| Mint Receiver/Payer | `depositMarket` | Deposit assets and receive pool shares |
-| Burn Receiver/Payer | `redeemMarket`  | Redeem pool shares and receive assets  |
+| UI term            | Contract action | Meaning                                |
+| ------------------ | --------------- | -------------------------------------- |
+| Buy Receiver/Payer | `depositMarket` | Deposit assets and receive pool shares |
+| Sell Receiver/Payer | `redeemMarket` | Redeem pool shares and receive assets  |
 
-Do not imply that Mint creates the tracked asset or that Burn destroys market collateral. Receiver and Payer are ERC-4626 share positions.
+Do not imply that Buy creates the tracked asset or that Sell destroys market collateral. Receiver and Payer are ERC-4626 share positions.
 
 ## Read a market
 
@@ -80,7 +80,11 @@ Payer leverage L    = projectedReceiverAssets / projectedPayerAssets
 annual funding flow = fundingRate × projectedReceiverAssets / 1e18
 ```
 
-Handle a zero Payer denominator when displaying `L`. `L = R/P` is the leverage Payer has at that projected market state, not a funding rate. Positive `fundingRate` means Receiver pays Payer; negative means Payer pays Receiver. Apply it to Receiver notional; do not multiply it into another displayed rate. A zero collateral metric can mean unsupported or unavailable because Lens catches failures from those external reads. Verify the published Ethereum Lens ABI before relying on optional fields.
+Handle a zero Payer denominator when displaying `L`. `L = R/P` is the leverage Payer has at that projected market state, not a funding rate.
+
+**Product display:** treat funding as yield share of collateral APR paid by Receivers to Payers (never negative in app copy). Show Collateral APR and Funding APR as separate columns, then Net APR as side-adjusted carry. Do not invent a second external perpetual-style funding index. A zero collateral metric can mean unsupported or unavailable because Lens catches failures from those external reads. Verify the published Ethereum Lens ABI before relying on optional fields.
+
+App surfaces (Home sections, `/trade`, Margin desk): [Using the app](/private-beta/trading/using-the-app).
 
 ## Detect collateral units
 

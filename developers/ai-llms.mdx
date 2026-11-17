@@ -13,6 +13,8 @@ Use these pages as source context when asking an assistant to reason about or ge
 - [Protocol overview](/learn/overview)
 - [Settlement](/developers/settlement)
 - [Funding and carry](/learn/funding-and-carry)
+- [Vaults](/learn/vaults)
+- [Morpho](/learn/morpho)
 - [Market parameters](/markets/market-parameters)
 - [Fees](/developers/fees)
 - [Risks and parameters](/learn/risks-and-parameters)
@@ -36,15 +38,17 @@ Use these pages as source context when asking an assistant to reason about or ge
 
 | Term | Meaning |
 | --- | --- |
-| **Receiver** | Pool that receives positive reference-asset returns; other side of signed funding |
+| **Receiver** | Pool that receives positive reference-asset returns; pays funding from collateral APR |
 | **Payer** | Pool that backs Receiver; opposite price risk; other side of funding |
 | **Coverage `P/R`** | Payer assets ÷ Receiver assets |
 | **Payer instantaneous leverage `L = R/P`** | Receiver assets ÷ Payer assets at that market state; inverse of coverage |
 | **FRM** | Immutable funding-rate model dependency |
-| **Funding** | Signed transfer between pools; positive `f` ⇒ Receiver pays Payer |
+| **Funding** | Yield share of collateral APR paid by Receiver to Payer (product model; never negative) |
 | **Price settlement** | Value transfer from oracle price movement |
 | **Solvency bound** | Cap on net funding+price debit at `max(pool − MIN_POOL_ASSETS, 0)` |
-| **Mint / Burn (app)** | Product copy for deposit / redeem |
+| **Buy / Sell (app)** | Spot product copy for deposit / redeem |
+| **Null Savings Vault** | Morpho Vault V2 deposit product; allocates to Morpho long markets |
+| **Margin** | Morpho long/short loops via `NullV1MorphoRouter` |
 
 ## Guardrails for generated code
 

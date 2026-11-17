@@ -1,158 +1,98 @@
 ---
 title: "Funding and carry"
-description: "Understand Null V1's signed funding curve, collateral yield, and the external hedge for Payer positions."
+description: "How Null pays funding from collateral yield: Receivers share vault APR with Payers."
 sidebarTitle: "Funding and carry"
 ---
 
-Funding is the market's capital-allocation signal. It moves value toward the side that is scarce relative to the funding-rate model's target.
+Funding on Null is not a separate rate that floats against an external perpetual index. **Collateral APR is the funding source.** Receivers earn the vault yield on their pool collateral, then pay a fixed share of that yield to Payers as funding. Payers do not pay funding back the other way.
 
-## Signed funding rate
+In the app, that share is treated as the full collateral APR on the Receiver pool (`s = 1`): Receivers keep price exposure and Payers receive the Receiver pool's collateral yield as funding, scaled by how large Receiver is relative to Payer.
 
-For the standard `NullV1ImbalanceFundingRateModel`, let:
+## What you see in the app
 
-- `R` be the prepared Receiver pool assets;
-- `P` be the prepared Payer pool assets;
-- `c` be the target Payer coverage ratio;
-- `mu` be the model sensitivity.
+| Label | Meaning |
+| --- | --- |
+| **Collateral APR** | Estimated annualized yield of the Morpho vault share used as market collateral. Both pools accrue it through reconciliation. |
+| **Funding APR** | The share of Receiver-side collateral yield paid to Payers. In current product copy it equals Collateral APR when the vault yield is positive, and is never negative. |
+| **Net APR** | Side-adjusted carry: collateral yield plus funding received, or minus funding paid. On Payer, funding is scaled by `R / P`. |
 
-```text
-f = mu * (cR - P) / (cR + P)
-```
+Hover copy in the markets UI matches this model: both sides accrue collateral yield; Receivers pay part of it to Payers as funding.
 
-`f` is a signed, WAD-scaled annual percentage rate. Its sign describes the flow from Receiver to Payer:
+## How the transfer works
 
-- `f > 0`: Receiver pays Payer.
-- `f < 0`: Payer pays Receiver.
-- `f = 0`: no funding transfer.
+Let:
 
-The standard deployment script uses `c = 1` and `mu = 1`. For that FRM deployment, the zero crossing is `P = R` (100% Payer coverage). Other enabled FRM addresses can use different immutable parameters or different logic, so read the selected FRM before quoting a rate.
+- `y` be the collateral (vault) APR;
+- `s` be the yield share paid as funding (`0 ≤ s ≤ 1`; the app uses `s = 1`);
+- `R` be Receiver pool assets;
+- `P` be Payer pool assets.
 
-Because `|(cR - P) / (cR + P)| <= 1`, the model guarantees `|f| <= mu` by construction. There is no separate runtime funding cap. If either pool is empty, the model explicitly returns zero.
-
-## Read the funding curve
-
-Divide the model by Receiver assets and define coverage `q = P / R`:
+Then:
 
 ```text
-f(q) = mu * (c - q) / (c + q)
+funding APR f = s * y     (never negative in the product model)
+annual funding transfer = f * R   (Receiver → Payer)
 ```
 
-This form makes the market behavior explicit:
-
-- **Below target (`q < c`)**: Payer backing is scarce, so `f` is positive and Receiver pays Payer.
-- **At target (`q = c`)**: the numerator is zero, so no funding moves.
-- **Above target (`q > c`)**: Payer backing is abundant, so `f` is negative and Payer pays Receiver.
-- **Near zero coverage**: the curve approaches `+mu` as `q` approaches zero from above.
-- **Very high coverage**: the curve approaches `-mu` as `q` grows.
-
-For the standard deployment, `c = 1` and `mu = 1`:
-
-<Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/funding-rate-vs-coverage-light.svg"
-    alt="Funding rate versus Payer coverage: positive below the 100% target, zero at target, and negative above it"
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/funding-rate-vs-coverage-dark.svg"
-    alt="Funding rate versus Payer coverage: positive below the 100% target, zero at target, and negative above it"
-  />
-</Frame>
-
-`c` moves the zero crossing horizontally. `mu` scales the curve vertically without changing the target. The curve becomes flatter as coverage rises:
+Ignoring price PnL and fees:
 
 ```text
-df/dq = -2 * mu * c / (c + q)^2
+Receiver net carry ≈ y - f = (1 - s) * y
+Payer net carry    ≈ y + f * (R / P)
 ```
 
-The curve shows the formula's limiting value as coverage approaches zero. The contract has a one-sided-market exception: if `P = 0` or `R = 0`, it returns `f = 0` and settlement applies no funding or price PnL.
-
-## Funding notional and transfer
-
-Funding accrues on Receiver assets in either direction:
-
-```text
-annual funding transfer = f * R
-```
+With `s = 1`, Receivers keep price exposure but do not keep the vault yield on their notional; that yield is the funding Payers earn. Payers still also earn collateral yield on their own pool shares.
 
 <Note>
-  Positive `f` means Receiver pays Payer. Negative `f` means Payer pays
-  Receiver.
+  Funding is variable because vault yield is variable. It is not a fixed coupon
+  and it is not a promise of profit after hedge costs.
 </Note>
 
-The whole Payer pool takes the opposite side of Receiver notional `R`. At the current market state, Payer's instantaneous leverage is `L = R / P`. A Payer holder with current position value `p` therefore has:
+## Worked example
+
+Suppose collateral APR `y = 8%`, `s = 1`, `R = 1,000`, and `P = 200`:
 
 ```text
-holder notional         = p * L = p * R / P
-holder funding transfer = holder notional * f
+f = 8%
+annual funding transfer = 8% × 1,000 = 80   (Receiver → Payer)
+
+Receiver net carry ≈ 8% - 8% = 0%   (before price PnL)
+Payer net carry    ≈ 8% + 8% × (1,000 / 200) = 8% + 40% = 48%
 ```
 
-`L` changes as either pool changes. It determines the holder's current notional; it does not change the funding rate.
+A Payer holder with position value `p = 50` (25% of the Payer pool) receives 25% of the Payer-side funding transfer, so about `20` annualized before elapsed-time prorating and settlement caps.
 
-## Simplified worked examples
+## Settlement still uses an FRM address
 
-The following examples use the standard script parameters, show annualized values, ignore the settlement solvency cap and integer rounding, and round to the nearest whole unit or percentage point. Let `R = 1,000`, `c = 1`, and `mu = 1`:
+Each market identity still includes an `frm` address: `(collateral, oracle, frm)`. Settlement asks that contract for a rate, then applies funding on settleable Receiver notional together with price PnL.
 
-| Payer pool `P` | Coverage `P/R` | Funding APR `f` | Annual transfer |
-| -------------: | -------------: | --------------: | --------------- |
-|             10 |             1% |          +98.0% | 980 R → P       |
-|             50 |             5% |          +90.5% | 905 R → P       |
-|            100 |            10% |          +81.8% | 818 R → P       |
-|            200 |            20% |          +66.7% | 667 R → P       |
-|            500 |            50% |          +33.3% | 333 R → P       |
-|          1,000 |           100% |              0% | 0               |
-|          2,000 |           200% |          -33.3% | 333 P → R       |
-|          3,000 |           300% |          -50.0% | 500 P → R       |
+For product and UI purposes, treat funding as **yield share of collateral APR**, not as a separate signed imbalance curve that can flip so Payers pay Receivers. Lens still returns both `fundingRate` and `collateralRate` so integrators can display them separately.
 
-At `P = 200`, for example:
+See [Settlement](/developers/settlement) for order of operations, and [Frontend integration](/contracts/integration/ui) for display formulas.
 
-```text
-f = (1,000 - 200) / (1,000 + 200) = 2/3 = 66.7%
-annual transfer = 66.7% * 1,000 = 667
-```
+## Collateral yield vs funding
 
-The annualized transfer is calculated on Receiver notional and can exceed the current Payer pool. Actual settlement prorates the amount by elapsed time, nets funding with price PnL, and then limits the paying pool's debit to `max(pool assets - MIN_POOL_ASSETS, 0)`. The cap applies to the signed net transfer, not to the displayed funding rate.
+Yield-bearing collateral (typically a Morpho Vault V2 share such as `nmUSDC`) appreciates as Morpho Blue borrowers pay interest. Reconciliation lifts both pools when the market's external collateral balance grows.
 
-## Reading the current rate
+Funding is how part of the **Receiver** pool's claim on that yield is transferred to the **Payer** pool. It is not a second external yield source.
 
-Settlement calls `fundingRate` after reconciliation and the collateral fee. Offchain callers should use `fundingRateView` with the same prepared `MarketState`; do not calculate a quote from stale stored pool balances.
-
-`NullV1Lens.previewMarket` performs that preparation and calls `fundingRateView` for you. Use the Lens result for UI and indexer projections when available. `fundingRateView` is the read-only counterpart because an FRM is allowed to keep state in `fundingRate`.
-
-## Collateral yield
-
-Yield-bearing collateral is separate from funding. Rebases and donations change the market's external token balance and are reconciled pro rata across both pools. For appreciating vault-share collateral, each collateral token becomes redeemable for more underlying even if the market's token count does not change.
-
-Ignoring price PnL and hedge costs, whole-pool annualized flows are:
-
-```text
-Receiver funding transfer = -f * R
-Payer funding transfer    = +f * R
-```
-
-A Payer holder receives or pays fraction `p / P` of the Payer transfer and separately earns the collateral yield attributable to its pool shares. These expressions remain valid when `f` is negative: the funding leg simply changes direction.
+For how Savings and market collateral relate, see [Vaults](/learn/vaults).
 
 ## Payer hedging
 
-Let a market maker own `p` collateral units of a Payer pool whose total assets are `P`. With instantaneous leverage `L = R / P` and oracle price `S` in quote units per base unit, the external long hedge is:
+Market makers who hold Payer and hedge the tracked asset elsewhere care about net carry after hedge costs. With yield-share funding, the funding leg they earn is driven by vault APR and `R / P`, not by an imbalance target.
+
+Let a market maker own `p` collateral units of a Payer pool whose total assets are `P`. With instantaneous leverage `L = R / P` and oracle price `S`:
 
 ```text
 h = pL / S = (p / P) * (R / S) base units
 H = hS = pL = pR / P quote notional
 ```
 
-In this simplified example, if `p = 10`, `P = 200`, `R = 1,000`, and `S = 25`:
+The hedge is optional and external. See [Market making](/private-beta/market-make/overview).
 
-```text
-h = (10 / 200) * (1,000 / 25) = 2 base units
-H = 2 * 25 = 50 quote units
-```
+## Related
 
-The hedge is optional and external. Price settlement approximately preserves the hedge target because `R` and `S` move together while the Payer ownership fraction `p/P` remains unchanged. Deposits, withdrawals, funding drift, fees, and circuit-breaker events can still require rebalancing.
-
-## Model calibration
-
-For `NullV1ImbalanceFundingRateModel`, `c` sets the target Payer coverage where funding is zero. `mu` scales the curve without moving that zero crossing. Its constructor requires both values to be greater than zero and no greater than `1e18`. Both are immutable parameters of that FRM deployment; markets reference the FRM address rather than storing their own `c` or `mu`.
-
-See [Market parameters](/markets/market-parameters) for deployment and onchain access details, and [Settlement](/developers/settlement) for settlement order.
+- [Vaults](/learn/vaults): collateral vault vs Null Savings Vault
+- [Morpho](/learn/morpho): long and short Morpho markets around Null pools
+- [Market parameters](/markets/market-parameters): market identity and fees

@@ -44,7 +44,7 @@ The circuit breaker compares the absolute price change with a time-scaled limit:
 allowed delta = previous price * 700 * elapsed / (10,000 * 1 hour)
 ```
 
-If the move is larger, settlement skips price PnL for that update. It does not revert: signed funding still accrues, and the new oracle price is stored as the next anchor. The skipped amount is neither clamped nor deferred. This limits a single abnormal update but does not protect against gradual moves that remain inside the bound or repeated resets from successively higher anchors. See [Circuit breaker](/security/circuit-breaker).
+If the move is larger, settlement skips price PnL for that update. It does not revert: funding still accrues, and the new oracle price is stored as the next anchor. The skipped amount is neither clamped nor deferred. This limits a single abnormal update but does not protect against gradual moves that remain inside the bound or repeated resets from successively higher anchors. See [Circuit breaker](/security/circuit-breaker).
 
 ## Collateral risk
 
@@ -86,25 +86,22 @@ Each market is unique by:
 
 The dependencies cannot be changed after creation. The factory owner must enable an FRM before anyone can create a market with it, and enabled FRMs cannot be disabled.
 
-For the standard imbalance FRM:
+Product funding is yield share of collateral APR paid by Receivers to Payers. Selecting another enabled FRM can change onchain rate behavior; always read `market.frm()` and prefer Lens projections. See [Funding and carry](/learn/funding-and-carry).
 
-```text
-f = mu * (cR - P) / (cR + P)
-```
-
-`c` controls the zero-funding coverage target, while `mu` controls sensitivity and bounds `|f|`. The standard deployment script uses `c = 1` and `mu = 1`, but these values belong to that FRM deployment, not to the market contract or every possible FRM. Selecting another enabled FRM can change the parameters or funding behavior.
+Margin Morpho positions add LLTV liquidation risk that Spot pools do not have. See [Morpho](/learn/morpho).
 
 ## Evaluation checklist
 
 Before using a market, check:
 
-- collateral address and token behavior;
+- collateral address and token behavior (including Morpho vault / Savings relationship);
 - oracle address, price source, and liveness policy;
-- FRM address, formula, `c`, and `mu`;
+- FRM address and how the app maps funding to collateral APR;
 - Receiver and Payer liquidity;
-- current signed funding rate and the Receiver exposure notional allocated to Payer shares;
+- current collateral APR, funding APR, and `R / P`;
 - entry, exit, and collateral fees;
 - circuit-breaker behavior and the `MIN_POOL_ASSETS` floor;
+- for Margin: Morpho long/short market ids, LLTV, and borrow rates;
 - contract addresses, liquidity depth, and execution slippage.
 
 Read [Market parameters](/markets/market-parameters) for the onchain fields and [Funding and carry](/learn/funding-and-carry) for worked funding examples.

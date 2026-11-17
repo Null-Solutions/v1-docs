@@ -1,18 +1,16 @@
 ---
-title: "Private beta overview"
+title: "Overview"
 sidebarTitle: "Overview"
-description: "Get on-chain price exposure to stocks and shares through ERC-20 tokens. Market makers provide the backing and earn funding."
+description: "Hold onchain price exposure with yield-bearing collateral. Market makers back Receivers and earn funding from vault yield."
 ---
 
 Null lets you hold **ERC-20 tokens designed to track the price of stocks and shares** in your wallet.
 
-You deposit collateral, mint, and get a token that tracks the stock. You do not buy the real share. You do not borrow it.
+You deposit collateral, buy a pool share, and get a token that tracks the stock. You do not buy the real share. You do not borrow it for Spot. The token sits in yield-bearing collateral, and **funding** moves a share of that vault yield from Receivers to the market makers who back them.
 
-On the other side are **Market Makers**. They provide the backing that makes Receiver positions possible and earn **funding** for doing it.
+## Two sides (Spot)
 
-## Two sides
-
-Every Null market has two sides: **Receivers**, who want price exposure, and **Payers**, who provide the backing for it.
+Every Null market has two sides: **Receivers**, who want price exposure, and **Payers**, who provide the backing.
 
 ### Receiver: get price exposure
 
@@ -20,8 +18,8 @@ Choose **Receiver** if you want exposure to the asset's price through an ERC-20 
 
 - You get an ERC-20 designed to track the price of the underlying stock or share.
 - If the asset's price goes up, the token's value goes up. If it goes down, the token's value goes down.
-- There is no leverage setting and no liquidation of your Receiver account.
-- Burn the token when you want your collateral back.
+- Spot Receiver has no leverage setting and no Null-account liquidation.
+- Sell (burn) the token when you want your collateral back.
 
 <Info>
   This is not the real stock. You do not get voting rights or dividends unless
@@ -32,53 +30,55 @@ Choose **Receiver** if you want exposure to the asset's price through an ERC-20 
 
 Choose **Payer** if you want to provide backing for Receiver tokens and earn funding.
 
-Receivers need someone on the other side. Payers provide collateral to back the Receiver's tokens. If the stock goes up, Payers lose. If it goes down, they gain.
+Receivers need someone on the other side. Payers provide collateral to back Receiver tokens. If the stock goes up, Payers lose. If it goes down, they gain.
 
-You get paid **funding** for providing that backing, especially when there is not enough of it. Many Payers also buy the underlying real stock elsewhere to help offset price risk. What remains is funding, plus any yield on the collateral, minus the cost of the hedge.
+**Funding is paid from collateral APR.** Receivers pay vault yield on the Receiver pool to Payers. Payers do not pay funding the other way. Many Payers also buy the underlying elsewhere to offset price risk. What remains is funding, plus yield on their own collateral, minus hedge costs.
 
-Funding can flip sign. The hedge can cost more than it returns. During the private beta, Payers manage this strategy themselves. Null does not offer a one-click hedging strategy.
+Funding yield is variable. The hedge can cost more than it returns. Null does not offer a one-click hedging strategy; market makers manage hedges themselves. See [Market making](/private-beta/market-make/overview).
 
-## How the app works
+## What the app includes
+
+Beyond Spot Receiver / Payer, the app has:
+
+| Area | Role |
+| --- | --- |
+| **Savings** | Deposit USDC into the **Null Savings Vault** (Morpho). Earn Morpho supply yield from long-market lending. |
+| **Spot** | Unlevered Null pool shares. Trade from `/trade` slide-outs. |
+| **Lending** | Supply USDC or receiver shares into Morpho books around Null. |
+| **Margin** | Morpho **Long** / **Short** loops via `NullV1MorphoRouter` (LLTV liquidations apply on Morpho). |
+| **Points** | Season 0 monitors normal trading activity toward points. |
+
+Walkthrough: [Using the app](/private-beta/trading/using-the-app). Vault roles: [Vaults](/learn/vaults). Morpho loops: [Morpho](/learn/morpho).
+
+## How Spot works in five steps
 
 <Steps>
   <Step title="Browse markets">
-    Pick a stock or share. Check the price, collateral, pool sizes, funding, and fees.
+    Open `/trade`. Check price, collateral APR, funding APR, pools, and fees.
   </Step>
   <Step title="Choose Receiver or Payer">
-    Receiver: get price exposure. Payer: provide backing and earn funding.
+    Receiver: price exposure. Payer: backing and funding from vault yield.
   </Step>
-  <Step title="Mint">
+  <Step title="Buy">
     Deposit collateral. Receiver gets the stock token. Payer gets the backing token.
   </Step>
   <Step title="Watch the position">
-    Price, funding, and collateral can all move the value. Payers also watch their hedge.
+    Price, funding, and collateral can all move value. Payers also watch any external hedge.
   </Step>
-  <Step title="Burn to exit">
-    Burn the token to get collateral back from that pool.
+  <Step title="Sell to exit">
+    Redeem the token for collateral from that pool.
   </Step>
 </Steps>
 
 ## What sits in your wallet
 
-The ERC-20 sits in your wallet. The collateral sits in the market contracts.
+The ERC-20 sits in your wallet. The collateral sits in the market contracts (or in Morpho when you use Margin / Lending).
 
-A Receiver token is designed to track the price of the underlying stock or share. It is not the underlying asset. Its value can also be affected by funding, fees, and the collateral used by the market.
-
-## Private beta access
-
-The private beta is invitation-only and runs on Ethereum mainnet. It is a limited technical test, not a public launch, and may end at any time.
-
-Approved participants can:
-
-- [apply with a wallet](/private-beta/getting-started/null-private-beta) and complete the participation agreement;
-- [fund that wallet](/private-beta/getting-started/fund-your-account) with supported collateral and ETH for gas;
-- [mint or burn a position](/private-beta/trading/placing-a-position);
-- [operate a hedged Payer position](/private-beta/market-make/overview); and
-- view [Points and referrals](/private-beta/status-and-points/points-and-referrals).
+A Receiver token is designed to track the underlying price. Its value can also move with funding, fees, and the collateral vault.
 
 <Warning>
   You can lose some or all of the assets you put in. Check the collateral in
   the app against the [addresses page](/resources/addresses) before you transact.
 </Warning>
 
-Next: [The primitive](/private-beta/about-null/the-primitive), [Position types](/private-beta/trading/position-types), [market making](/private-beta/market-make/overview), or the [FAQ](/private-beta/faq). Read [Risks](/private-beta/getting-started/before-you-trade) and the [Private beta notices](/private-beta/legal/private-beta-notices) first.
+Next: [The primitive](/private-beta/about-null/the-primitive), [Using the app](/private-beta/trading/using-the-app), [Position types](/private-beta/trading/position-types), or the [FAQ](/private-beta/faq). Read [Risks](/private-beta/getting-started/before-you-trade) and the [Legal notices](/private-beta/legal/private-beta-notices) first.

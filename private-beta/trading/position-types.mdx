@@ -1,26 +1,25 @@
 ---
 title: "Position types"
 sidebarTitle: "Position types"
-description: "Understand Receiver and Payer positions in the Null app."
+description: "Understand Receiver and Payer Spot positions, and how Margin differs."
 ---
 
-Every Null market has two pools:
+Every Null Spot market has two pools:
 
 - **Receiver** follows the tracked asset's price return.
 - **Payer** provides the backing for Receiver and takes the opposite side of the price movement.
 
-When you mint, you deposit collateral into your selected pool and receive pool shares. When you burn, you redeem those shares for the collateral available from that pool.
+When you buy, you deposit collateral into your selected pool and receive pool shares. When you sell, you redeem those shares for collateral from that pool.
 
-## Compare the two sides
+## Compare the two Spot sides
 
 | Question | Receiver | Payer |
 | --- | --- | --- |
-| What price exposure do I take? | Position value increases when the tracked price rises and decreases when it falls, subject to settlement limits. | Takes the opposite side: position value decreases when the tracked price rises and increases when it falls, subject to settlement limits. |
-| How large can the price effect be? | Receiver's price return generally follows the tracked price move before funding, fees, and other effects. | Payer leverage is `L = R / P`. Lower coverage means higher leverage, so the same price move has a larger percentage impact on Payer share value. |
-| How does funding work? | Pays when the signed funding rate is positive. Receives when it is negative. | Receives funding when the rate is positive and pays when it is negative. Each holder receives or pays a proportional share based on their Payer position. |
+| What price exposure do I take? | Value rises when the tracked price rises and falls when it falls, subject to settlement limits. | Opposite side: value falls when the tracked price rises and rises when it falls. |
+| How large can the price effect be? | Generally follows the tracked move before funding, fees, and other effects. | Payer leverage is `L = R / P`. Lower coverage means higher leverage. |
+| How does funding work? | Pays funding equal to a share of collateral APR on Receiver notional (product model: full vault APR). Never receives funding from Payers. | Receives that funding, scaled across the Payer pool (`× R / P` per unit). Also earns collateral yield on its own shares. |
 | Do I own the tracked asset? | No. You own ERC-4626 Receiver pool shares. | No. You own ERC-4626 Payer pool shares. |
-| What do I receive when I exit? | Your share of the collateral available in the Receiver pool, after the exit fee. | Your share of the collateral available in the Payer pool, after the exit fee. |
-| What should I check first? | Oracle, price direction, funding, collateral, fees, and both pool balances. | Payer coverage, funding, collateral, fees, and how a price move could affect the Payer pool. |
+| What do I receive when I exit? | Your share of Receiver pool collateral after the exit fee. | Your share of Payer pool collateral after the exit fee. |
 
 ## Worked price example
 
@@ -33,24 +32,26 @@ Receiver: 1,000 → 1,020  (+2%)
 Payer:      200 →   180  (-10%)
 ```
 
-The same 20 units move between the pools. The percentage impact is larger on Payer because its pool is smaller. If the tracked price fell by 2%, the transfer would normally run in the other direction.
-
-This example excludes funding, fees, collateral yield, reconciliation, and settlement bounds. It shows how price exposure works, not a guaranteed outcome.
+This example excludes funding, fees, collateral yield, and settlement bounds.
 
 ## Add funding to the decision
 
-Funding accrues between market updates and is combined with price movement when the market settles.
+Funding is paid from **collateral APR**, not from a separate signed imbalance rate.
 
-- A **positive** funding rate transfers value from Receiver to Payer.
-- A **negative** funding rate transfers value from Payer to Receiver.
-- If either pool is empty, the standard model applies neither funding nor price movement.
+- Receivers pay Payers a share of the vault yield that accrues on Receiver notional.
+- Payers do not pay funding back when coverage is high.
+- If either pool is empty, settlement applies neither funding nor price movement.
 
-Funding can reduce or increase the impact of price movement. It is variable, not fixed yield. The protocol applies the funding rate to Receiver notional, then distributes the transfer proportionally across Payer shares.
+Funding is variable with vault yield. It is not fixed coupon income. See [Funding and carry](/learn/funding-and-carry).
 
-Your final result can also be affected by collateral performance, entry and exit fees, liquidity, oracle behavior, and pool state.
+## Margin is different
+
+**Margin** Long / Short positions use Morpho Blue around the same Null pools. They can be liquidated when Morpho LTV reaches LLTV. That is separate from Spot Receiver / Payer pool shares.
+
+See [Morpho](/learn/morpho) and [Using the app](/private-beta/trading/using-the-app).
 
 <Warning>
-Receiver and Payer are pool positions, not conventional order-book orders. The app does not offer a user-selected leverage setting.
+Spot Receiver and Payer are pool positions, not order-book orders. The Spot UI does not offer a user-selected leverage setting. Margin leverage is a Morpho loop.
 </Warning>
 
-Review the market and [Fees](/private-beta/trading/fees), then follow [Placing a position](/private-beta/trading/placing-a-position).
+Review [Fees](/private-beta/trading/fees), then [Placing a position](/private-beta/trading/placing-a-position).

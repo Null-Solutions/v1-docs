@@ -55,7 +55,7 @@
     },
     {
       "source": "/private-beta/trading",
-      "destination": "/private-beta/trading/placing-a-position"
+      "destination": "/private-beta/trading/using-the-app"
     },
     {
       "source": "/private-beta/portfolio",
@@ -167,7 +167,7 @@
     },
     {
       "source": "/private-beta/status-and-points/home-dashboard",
-      "destination": "/private-beta/about-null/overview"
+      "destination": "/private-beta/trading/using-the-app"
     },
     {
       "source": "/private-beta/status-and-points/how-to-earn-points",
@@ -181,7 +181,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Private Beta",
+        "tab": "App",
         "groups": [
           {
             "group": "About Null",
@@ -200,8 +200,9 @@
             ]
           },
           {
-            "group": "Trading",
+            "group": "Using Null",
             "pages": [
+              "private-beta/trading/using-the-app",
               "private-beta/trading/markets",
               "private-beta/trading/position-types",
               "private-beta/trading/placing-a-position",
@@ -210,7 +211,7 @@
             ]
           },
           {
-            "group": "Points and referrals",
+            "group": "Points",
             "pages": [
               "private-beta/status-and-points/points-and-referrals"
             ]
@@ -251,6 +252,8 @@
             "pages": [
               "learn/overview",
               "learn/funding-and-carry",
+              "learn/vaults",
+              "learn/morpho",
               "developers/settlement",
               "developers/fees",
               "learn/risks-and-parameters",

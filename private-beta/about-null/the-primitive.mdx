@@ -30,9 +30,9 @@ Let `R` be Receiver pool assets and `P` be Payer pool assets.
 
 - When the accepted oracle price **rises**, value normally moves from Payer → Receiver.
 - When it **falls**, value normally moves from Receiver → Payer.
-- **Funding** also moves between the pools based on how much Payer coverage exists (`P / R`).
+- **Funding** moves vault yield from the Receiver pool to the Payer pool. It is paid from collateral APR, not from a separate signed imbalance rate.
 
-Settlement only moves collateral already held by the market, subject to a minimum-pool floor. The tracked asset is never borrowed.
+Settlement only moves collateral already held by the market, subject to a minimum-pool floor. The tracked asset is never borrowed for Spot. Leveraged Margin uses Morpho separately; see [Morpho](/learn/morpho).
 
 <Info>
 You do not own or receive the tracked asset. A Receiver position does not include voting rights, dividends, or other ownership benefits unless the market's oracle return explicitly reflects them.
@@ -48,7 +48,7 @@ Receiver follows the tracked price return. A 5% accepted price increase adds abo
 
 ### Payer
 
-Payer provides the backing for Receiver. It takes the opposite side of the price movement and earns or pays funding based on coverage.
+Payer provides the backing for Receiver. It takes the opposite side of the price movement and receives funding paid from Receiver-side collateral yield.
 
 Payer's **instantaneous leverage** is:
 
@@ -119,72 +119,27 @@ Your return:      -10%  (same as the pool)
 
 When others mint or burn, the pool size and your percentage can change. Your share of the next transfer changes with it.
 
-### Funding at different coverage
+### Funding from collateral APR
 
-Using the standard model (`c = 1`, `mu = 1`) and `R = 1,000`. Values are annualized before time prorating:
+Funding is a share of the collateral vault's APR. Receivers pay that yield on Receiver notional to Payers. Payers do not pay funding back.
 
-| Payer `P` | Coverage | Funding APR `f` | Annual transfer | Direction |
-| --------: | -------: | --------------: | --------------: | --------- |
-|       200 |      20% |          +66.7% |             667 | Receiver → Payer |
-|     1,000 |     100% |              0% |               0 | None |
-|     2,000 |     200% |          -33.3% |             333 | Payer → Receiver |
+Example with collateral APR `y = 8%`, full yield share `s = 1`, and `R = 1,000`:
 
-At `P = 200`, a Payer holder with `p = 50` (25% of the pool) has notional `p * L = 50 * 5 = 250`, so their annualized funding receipt is about `250 * 66.7% ≈ 167` before settlement caps and elapsed-time prorating.
+| Payer `P` | Coverage | Funding APR `f` | Annual transfer | Payer carry from funding (approx.) |
+| --------: | -------: | --------------: | --------------: | --- |
+|       200 |      20% |             8% |              80 | `80 / 200 = 40%` on Payer capital |
+|     1,000 |     100% |             8% |              80 | `80 / 1,000 = 8%` |
+|     2,000 |     200% |             8% |              80 | `80 / 2,000 = 4%` |
 
-Funding can reverse as coverage moves through the 100% target. It is not guaranteed yield.
+Coverage no longer flips the funding sign. It still changes how the same Receiver-notional transfer lands per unit of Payer (`f × R / P`), and it still sets price leverage `L = R / P`.
 
-## Funding and coverage
-
-The funding-rate model is designed to move the market toward a target level of Payer coverage:
-
-- below target coverage, funding can flow from Receiver to Payer;
-- above target coverage, funding can flow from Payer to Receiver; and
-- at target coverage, the standard model's funding rate is zero.
-
-Define Payer coverage as `q = P / R`. The standard model calculates:
-
-```text
-f = mu * (c - q) / (c + q)
-```
-
-`c` is the target coverage and `mu` controls the curve's maximum magnitude. The standard deployment uses `c = 1` and `mu = 1`:
-
-<Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/funding-rate-vs-coverage-light.svg"
-    alt="Funding rate versus Payer coverage: positive below the 100% target, zero at target, negative above it"
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/funding-rate-vs-coverage-dark.svg"
-    alt="Funding rate versus Payer coverage: positive below the 100% target, zero at target, negative above it"
-  />
-</Frame>
-
-Funding is positive below 100% coverage, zero at 100%, and negative above 100%. The curve is annualized and bounded by `-mu` and `+mu`. If either pool is empty, funding and price PnL are both zero.
-
-If `f` is the signed market funding APR, it applies to Receiver notional:
-
-```text
-annual funding transfer = R * f
-```
-
-A Payer holder with position value `p` has instantaneous notional `pL`, so their annualized funding transfer is:
-
-```text
-holder funding transfer = p * L * f
-```
-
-Positive `f` means funding moves from Receiver to Payer. Negative `f` means it moves from Payer to Receiver. Funding is variable, can reverse, and is not guaranteed yield.
-
-For the normalized curve and worked transfers, see [Funding and carry](/learn/funding-and-carry).
+Funding varies with vault yield. It is not guaranteed profit after hedge costs. Full write-up: [Funding and carry](/learn/funding-and-carry).
 
 ## Entering and exiting a position
 
 <Steps>
   <Step title="Review the market">
-    Check the tracked price, collateral, oracle, funding-rate model, pool sizes, current funding, fees, and circuit-breaker behavior.
+    Check the tracked price, collateral, oracle, pool sizes, collateral APR, funding APR, fees, and circuit-breaker behavior.
   </Step>
   <Step title="Choose a pool">
     Choose Receiver for the tracked return, or Payer for the opposite return at the current leverage `L = R / P`.
@@ -200,13 +155,13 @@ For the normalized curve and worked transfers, see [Funding and carry](/learn/fu
   </Step>
 </Steps>
 
-Pool shares are transferable, but that does not guarantee an active secondary market or a particular redemption value. If the market uses yield-bearing collateral, collateral yield can also move both pools. It is separate from funding and price PnL.
+Pool shares are transferable, but that does not guarantee an active secondary market or a particular redemption value. Yield-bearing collateral moves both pools through reconciliation. Funding then transfers Receiver-side vault yield to Payers.
 
 ## Settlement
 
 Settlement is interaction-driven. Deposits, mints, withdrawals, and redemptions settle the market before continuing. There is no separate public keeper action that updates every block.
 
-During settlement, the market reconciles collateral, accrues fees, reads the oracle and funding-rate model, and nets price PnL with funding. It then updates each pool's collateral balance. The number of shares does not change, but the collateral value each share represents does.
+During settlement, the market reconciles collateral, accrues fees, reads the oracle and funding-rate model, and nets price PnL with funding. Product funding is driven by collateral yield paid to Payers. The number of shares does not change, but the collateral value each share represents does.
 
 If an accepted oracle move exceeds the time-adjusted circuit-breaker threshold, the market skips that update's price transfer and records the new price as its next baseline. Funding can still settle. The skipped price PnL is not deferred.
 

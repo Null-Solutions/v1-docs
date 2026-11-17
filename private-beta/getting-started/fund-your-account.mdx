@@ -1,53 +1,46 @@
 ---
 title: "Fund your account"
 sidebarTitle: "Fund your account"
-description: "Prepare your wallet with supported collateral and ETH for Null's Ethereum mainnet private beta."
+description: "Prepare your wallet with USDC (or the market's collateral) and ETH for gas."
 ---
 
-Fund your approved wallet with the collateral supported by your selected market. You'll also need ETH in the same wallet to pay for gas on Ethereum mainnet.
+Fund your connected wallet with the assets you need. Adding assets to your wallet does not open a position.
 
-Adding assets to your wallet does not open a position.
+## Cash, Savings, and market collateral
 
-## Verify the collateral
+| Need | Asset |
+| --- | --- |
+| **Cash** in the app | USDC in your wallet |
+| **Savings** | USDC to deposit into the Null Savings Vault |
+| **Spot / Payer** | The market's collateral (often USDC wrapped to a Morpho vault share by the router) |
+| **Gas** | ETH on Ethereum |
 
-Supported collateral can differ by market, so check your selected market's collateral in the app before funding your wallet.
-
-Always verify the collateral's contract address (CA) against the canonical [addresses page](/resources/addresses). Don't rely solely on a token's name or symbol.
+Always verify contract addresses against the [addresses page](/resources/addresses). Do not rely only on a token name or symbol.
 
 <Steps>
-  <Step title="Connect the approved wallet">
-    Sign in with the account used for your beta application. Confirm that the connected wallet is the approved wallet.
+  <Step title="Connect the wallet">
+    Sign in and confirm the connected wallet is the one you will fund.
   </Step>
-  <Step title="Check the selected market">
-    In the app, check which collateral is supported by the market you want to use.
+  <Step title="Check the product you want">
+    Savings uses USDC. Spot markets show their collateral in the app. Margin and Lending may need USDC and/or pool shares.
   </Step>
   <Step title="Verify the address">
-    Match the collateral contract to the canonical address before obtaining or transferring the asset.
+    Match each token to the canonical address before transferring.
   </Step>
   <Step title="Fund the wallet">
-    Transfer enough supported collateral for your position, plus enough ETH for gas, to your approved wallet on Ethereum mainnet.
+    Transfer enough tokens for the action, plus enough ETH for gas.
   </Step>
-  <Step title="Confirm the balances">
-    Wait for the transfers to confirm, then check the collateral and ETH balances before minting.
+  <Step title="Confirm balances">
+    Wait for confirmations, then check balances in the wallet and in Home.
   </Step>
 </Steps>
 
 ## Prepare for gas
 
-Ethereum mainnet transactions require ETH for gas. Keep enough ETH in your approved wallet for approvals, mints, burns, and other transactions. Your collateral and ETH balances are separate.
-
-## Before minting
-
-Confirm that:
-
-- your wallet is the wallet approved for beta access;
-- your wallet is connected to Ethereum mainnet;
-- the collateral matches the market and the canonical address;
-- the wallet holds enough collateral for the position; and
-- the wallet holds enough ETH for gas.
+Keep enough ETH for approvals, deposits, redeems, Morpho opens/closes, and other transactions. Collateral and ETH balances are separate.
 
 <Warning>
-Ethereum mainnet assets have real value. Always verify the network, contract address, amount, and connected wallet before confirming a transfer or transaction.
+Onchain assets have real value. Verify the network, contract address, amount, and connected wallet before confirming a transfer.
 </Warning>
 
-Next, review [Risks](/private-beta/getting-started/before-you-trade), browse [Markets](/private-beta/trading/markets), and compare [Position types](/private-beta/trading/position-types) before [Placing a position](/private-beta/trading/placing-a-position).
+Next: [Risks](/private-beta/getting-started/before-you-trade), [Using the app](/private-beta/trading/using-the-app), and [Markets](/private-beta/trading/markets).

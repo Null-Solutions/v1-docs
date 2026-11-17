@@ -5,15 +5,19 @@
 - Mintlify docs site for Null V1
 - Pages are MDX with YAML frontmatter
 - Configuration lives in `docs.json`
-- Three nav tabs: **Private Beta** (product/app), **Developers** (protocol/contracts), and **Support**
+- Three nav tabs: **App** (product/UX), **Developers** (protocol/contracts), and **Support**
+- Paths under `private-beta/` are legacy URL prefixes; do not reintroduce "private beta" product language
 
 ## Terminology
 
 - **Receiver** / **Payer**: the two ERC-4626 pools in a market
 - **Market identity**: `(collateral, oracle, frm)`
-- **FRM**: funding-rate model
+- **FRM**: funding-rate model address still bound at market creation; **product funding** is yield share of **collateral APR** paid by Receivers to Payers (never negative in app copy)
+- **Collateral vault**: Morpho Vault V2 share used as Null market collateral (e.g. `nmUSDC`)
+- **Null Savings Vault**: same Morpho vault as a Savings product; allocates USDC to Morpho Blue long markets
+- **Margin**: Morpho long/short loops via `NullV1MorphoRouter` (LLTV liquidations)
 - **deposit / redeem**: onchain and developer docs language
-- **Mint / Burn**: private-beta app copy for the same flows
+- **Buy / Sell**: app Spot copy for the same flows (older docs said Mint / Burn)
 - **Settlement**: market update before pool actions (not a separate public poke)
 - Target **Ethereum mainnet**; do not publish deployment addresses until the addresses page has verified mainnet values
 - Prefer **contracts-first**; do not document a published Null SDK or partner trading API unless one ships
@@ -46,8 +50,9 @@
 
 ## Content boundaries
 
-- Developers tab: protocol mechanics, integration, market setup, deployments, contract reference
-- Private Beta tab: app UX, access, trading, market making, and points (note when features are unavailable)
+- App tab: Home sections, Savings, Spot, Lending, Margin, market making, Points Season 0, legal notices
+- Developers tab: protocol mechanics, vaults, Morpho, integration, market setup, deployments, contract reference
 - Support tab: troubleshooting, audit status, and brand assets
+- Leave `liquidation-compare/` intact as an offline Morpho LLTV vs perps note; cross-link from Morpho docs when useful
 - Do not invent SDK packages, API keys, webhooks, order books, or mainnet addresses
 - Empty legacy stubs under `resources/` (faq, whitepapers, etc.) are not part of the Developers nav. Prefer deleting or filling over linking

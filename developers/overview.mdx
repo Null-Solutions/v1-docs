@@ -13,7 +13,7 @@ Hosted-product access is separate from this contracts-first integration guide. D
 </Note>
 
 <Note>
-The private-beta app uses Mint / Burn language for the same deposit and redeem flows. Onchain and in these docs, use ERC-4626 `deposit` / `redeem` (and router `depositMarket` / `redeemMarket`).
+The app uses Buy / Sell for Spot deposit and redeem flows. Onchain and in these docs, use ERC-4626 `deposit` / `redeem` (and router `depositMarket` / `redeemMarket`).
 </Note>
 
 ## What you are integrating
@@ -23,9 +23,9 @@ A Null market is a fully collateralized pooled total-return swap. Users deposit 
 | Side | Role |
 | --- | --- |
 | **Receiver** | Synthetic long on the oracle-tracked price |
-| **Payer** | Backs Receiver; takes the opposite price exposure and the other side of signed funding |
+| **Payer** | Backs Receiver; takes the opposite price exposure and receives funding paid from collateral APR |
 
-There are no loans, margin accounts, liquidations, or undercollateralized claims. Settlement redistributes collateral the market already holds.
+Spot has no Null-native loans, margin accounts, or undercollateralized claims. Settlement redistributes collateral the market already holds. Leveraged Morpho loops are separate periphery; see [Morpho](/learn/morpho).
 
 A market is uniquely identified by an immutable tuple:
 
@@ -43,7 +43,7 @@ For market-level metrics, let `R` be Receiver pool assets and `P` be Payer pool 
 - **Payer instantaneous leverage** is `L = R/P` at that market state: Receiver assets backed per unit of Payer assets.
 
 Handle a zero denominator explicitly. Neither ratio is defined when its denominator is zero.
-`L` is not a funding rate. It is the leverage Payer has at that moment; funding is computed separately by the market's FRM.
+`L` is not a funding rate. It is the leverage Payer has at that moment. Product funding is yield share of collateral APR paid on Receiver notional; see [Funding and carry](/learn/funding-and-carry).
 
 ## Architecture
 

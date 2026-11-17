@@ -4,7 +4,7 @@ sidebarTitle: "Smart contracts"
 description: "A high-level look at Null's contract structure: factory, market, pools, and supporting contracts."
 ---
 
-Null's private beta runs on Ethereum mainnet smart contracts. This page gives a structural overview. For ABIs, functions, and integration details, see the [Developers](/developers/overview) docs.
+Null runs on Ethereum mainnet smart contracts. This page gives a structural overview. For ABIs, functions, and integration details, see the [Developers](/developers/overview) docs.
 
 ## Structure
 
@@ -48,9 +48,10 @@ Each market has two `NullV1Pool` contracts: Receiver and Payer. Both issue trans
 | Contract | Role |
 | --- | --- |
 | **Oracle** | Reports the tracked price used at settlement. The tracked asset never enters Null. |
-| **Funding-rate model (FRM)** | Returns the signed funding rate between Receiver and Payer. Fixed at market creation. |
+| **Funding-rate model (FRM)** | Queried at settlement. Product funding is yield share of collateral APR paid to Payers. Fixed at market creation. |
 | **Router** | Combines deposits, redemptions, deadlines, slippage checks, and optional oracle updates. |
-| **Lens / Multicall** | Settlement-aware previews and batched reads. |
+| **NullV1MorphoRouter** | Opens and closes Morpho long/short loops around Null pools. |
+| **Lens / Multicall** | Settlement-aware previews and batched reads (`fundingRate`, `collateralRate`). |
 
 ## What stays fixed vs owner-controlled
 

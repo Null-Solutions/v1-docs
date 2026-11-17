@@ -31,8 +31,8 @@ struct SimulateResponse {
 - `state` is the projected settled state.
 - `totalAssets` is the collateral token balance held by the market before projection.
 - `receiverTotalSupply` and `payerTotalSupply` are the current pool share supplies.
-- `fundingRate` is the signed annualized FRM rate, WAD-scaled. Positive means receivers pay payers; negative means payers pay receivers.
-- `collateralRate` is the WAD-scaled supply APR computed for Morpho Vault V2 collateral.
+- `fundingRate` is the annualized funding APR from the market's FRM, WAD-scaled. Product copy treats this as yield share of collateral APR paid by receivers to payers.
+- `collateralRate` is the WAD-scaled supply APR computed for Morpho Vault V2 collateral (the vault yield that funds that product model).
 - `collateralSharePrice` is the WAD-scaled underlying-equivalent value of one collateral vault share.
 
 Within `simulateMarket`, each collateral metric is best-effort: a failed external walk produces zero for that field rather than reverting the whole response. Zero can therefore mean unavailable, not necessarily an economic value of zero.

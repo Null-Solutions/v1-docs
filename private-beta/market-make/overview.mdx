@@ -118,9 +118,9 @@ Let:
 - `p` be your current Payer position value;
 - `L = R / P` be Payer's instantaneous leverage;
 - `H = pL` be the external hedge notional;
-- `f` be Null's signed funding APR, where positive means Receiver pays Payer;
+- `f` be Null funding APR paid by Receivers to Payers from collateral yield (product model: `f ≈ s * y`, never negative for the Null leg);
 - `f_ext` be external funding, where positive means the external long pays; and
-- `y` be the collateral yield rate.
+- `y` be the collateral yield rate on Payer capital.
 
 ```text
 Null funding       =  H * f
@@ -130,7 +130,7 @@ External funding   = -H * f_ext
 Net carry          =  p * [y + L * (f - f_ext)]
 ```
 
-Null and external funding apply to the same exposure notional `H`. Collateral yield applies to the Payer position value `p`.
+Null funding applies to exposure notional `H = pL` because funding is charged on Receiver notional and spreads across Payer. Collateral yield applies to the Payer position value `p`. See [Funding and carry](/learn/funding-and-carry).
 
 ### Carry example
 
@@ -169,7 +169,7 @@ Review:
 - Payer liquidity and venue depth; and
 - the external equity needed to maintain a conservative liquidation buffer.
 
-Do not open solely because one funding snapshot looks attractive. Either funding rate can change sign.
+Do not open solely because one funding snapshot looks attractive. Vault yield and external funding both move.
 
 ## Understand basis PnL
 

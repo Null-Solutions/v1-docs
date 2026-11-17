@@ -6,6 +6,8 @@ description: "How Null V1 markets use ERC-20 collateral, reconcile balances, and
 
 Each market uses one ERC-20 as collateral. The market and both pools account in units of that token.
 
+On the Morpho loop stack that token is typically a Morpho Vault V2 share (`nmUSDC`): the **collateral vault** role described in [Vaults](/learn/vaults). The same vault is the **Null Savings Vault** in the app. Older markets may use another ERC-4626 vault (for example `steakUSDC`).
+
 ## Assumptions
 
 The factory only checks that the collateral address is nonzero. Documented assumptions are stronger: transfers should be non-reentrant, and sender/receiver balances should change by exactly the requested amount. Passing the factory check does **not** mean the token is safe.

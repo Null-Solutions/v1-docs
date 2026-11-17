@@ -4,13 +4,14 @@ sidebarTitle: "Risks"
 description: "Review the main risks of Receiver and Payer positions before using real assets."
 ---
 
-Null's private beta uses assets on Ethereum mainnet. Receiver and Payer positions can lose most of their value. Review the market, contracts, and transaction preview before you mint.
+Null uses assets on Ethereum mainnet. Receiver and Payer Spot positions can lose most of their value. Margin Morpho positions can also be liquidated at LLTV. Review the market, contracts, and transaction preview before you deposit.
 
 ## Position risk
 
 - **Receiver** follows the tracked oracle return, so its position value can fall when the tracked price falls.
 - **Payer** takes the opposite side of the price transfer at current leverage `L = R / P`. Lower Payer coverage means higher leverage and larger percentage changes in Payer share value.
-- Funding can change direction. The rate you see now is not guaranteed for the life of the position.
+- Funding is paid from collateral APR and varies with vault yield. The rate you see now is not guaranteed for the life of the position.
+- **Margin** adds Morpho borrow risk and LLTV liquidation risk on top of Null pool risk.
 
 Read [The primitive](/private-beta/about-null/the-primitive) and [Position types](/private-beta/trading/position-types) before choosing a side.
 

@@ -1,66 +1,63 @@
 ---
 title: "FAQ"
 sidebarTitle: "FAQ"
-description: "Answers to common questions about Null, yield, positions, risk, and the private beta."
+description: "Answers to common questions about Null, yield, funding, vaults, Morpho, and the app."
 ---
 
 ## What Null is
 
 <AccordionGroup>
   <Accordion title="What is Null?">
-    Null lets you hold onchain price exposure to assets while your collateral can continue earning DeFi yield. It is synthetic spot, built for holding rather than short-term trading.
+    Null lets you hold onchain price exposure to assets while your collateral can continue earning DeFi yield. Spot is synthetic exposure through pooled Receiver and Payer shares. The app also includes Savings, Lending, and Morpho Margin.
   </Accordion>
   <Accordion title="How is this different from a perps DEX?">
-    Perps are built for leveraged trading. Null is built for holding price exposure. Positions are pooled, with no account leverage to configure, no margin calls, no order book, and no stop orders. If you want 10x for a week, use a perp. If you want longer-term price exposure while your collateral can earn yield, use Null.
+    Perps are built for leveraged trading with margin accounts. Null Spot is built for holding price exposure in fully collateralized pools: no account leverage to configure, no margin calls on Spot, no order book. If you want leveraged Null exposure, use **Margin** (Morpho loops) instead of Spot.
   </Accordion>
-  <Accordion title="How does it work?">
-    Every market has two pools connected to the same price feed. Receivers deposit collateral for price exposure. Payers provide the backing and take the other side. Funding moves between the two based on Payer coverage. See [The primitive](/private-beta/about-null/the-primitive).
+  <Accordion title="How does Spot work?">
+    Every market has two pools on the same price feed. Receivers deposit for price exposure. Payers provide backing. Funding moves vault yield from Receivers to Payers. See [The primitive](/private-beta/about-null/the-primitive).
   </Accordion>
   <Accordion title="What do I actually hold?">
-    You hold an ERC-4626 vault share representing your position in the pool. Because it is a standard token, it can be used across compatible DeFi protocols. See [Position types](/private-beta/trading/position-types).
+    Spot positions are ERC-4626 vault shares for a Receiver or Payer pool. Savings holds Morpho vault shares (`nmUSDC`). Margin holds a Morpho Blue position around those pools. See [Position types](/private-beta/trading/position-types) and [Using the app](/private-beta/trading/using-the-app).
   </Accordion>
   <Accordion title="Do I own the underlying asset?">
-    No. Null gives you synthetic exposure. Your position tracks the reference price through collateralized pools, but the referenced asset itself is not held for you. See [The primitive](/private-beta/about-null/the-primitive).
-  </Accordion>
-  <Accordion title="How is this different from tokenized assets (RWAs)?">
-    Tokenized securities typically represent an underlying asset held or issued through a third party. Null doesn't hold the underlying asset. Instead, your position is a wallet-held claim on an onchain pool designed to track its price.
-  </Accordion>
-  <Accordion title="What is the bigger picture?">
-    The bigger idea is simple: bring more of the world's price exposure onchain in a form that can be held and used across DeFi. Because Null positions are standard tokens, other protocols can build on them. Null is a primitive, not just an app. The beta starts small to test the mechanism in practice.
+    No. Null gives you synthetic exposure. Your Spot position tracks the reference price through collateralized pools, but the referenced asset itself is not held for you.
   </Accordion>
 </AccordionGroup>
 
-## Yield and funding
+## Yield, funding, and vaults
 
 <AccordionGroup>
   <Accordion title="Where does the yield come from?">
-    Yield comes from the collateral backing your position when that collateral is yield-bearing. Your final return also depends on funding, the tracked asset's price movement, fees, and other market effects. See [Funding and carry](/learn/funding-and-carry).
+    Yield comes from the Morpho vault used as market collateral and as the Null Savings Vault. Borrowers on Morpho Blue pay interest; that supply rate is Collateral APR / Savings AER. Spot funding pays Receiver-side vault yield to Payers. See [Vaults](/learn/vaults) and [Funding and carry](/learn/funding-and-carry).
   </Accordion>
-  <Accordion title="Do I pay funding?">
-    It depends. Funding moves between the pools based on the signed funding rate. When positive, Receivers pay Payers. When negative, Payers pay Receivers. Your net carry can be positive or negative depending on funding and collateral yield. See [Funding and carry](/learn/funding-and-carry).
+  <Accordion title="Is funding a separate rate?">
+    No. There is no separate floating funding rate against an external index. Funding is the collateral APR (or a fixed share of it) paid by Receivers to Payers. Payers do not pay funding the other way.
   </Accordion>
-  <Accordion title="Why would anyone take the other side?">
-    When funding is positive, Payers can earn it for providing the backing Receiver positions need. They can also hedge their price exposure elsewhere, creating a market-neutral strategy designed to capture the remaining carry. See [Market making](/private-beta/market-make/overview).
+  <Accordion title="What is the Null Savings Vault?">
+    Savings is USDC deposited into a Morpho Vault V2 (`nmUSDC`). That vault allocates USDC to Morpho Blue **long** markets that lend against Null receiver shares. It is the same vault share Null markets use as collateral on the Morpho loop stack.
+  </Accordion>
+  <Accordion title="Why would anyone take the Payer side?">
+    Payers earn funding from Receiver-side vault yield and can hedge price exposure elsewhere. See [Market making](/private-beta/market-make/overview).
   </Accordion>
 </AccordionGroup>
 
 ## Using Null
 
 <AccordionGroup>
-  <Accordion title="Is there slippage on large deposits?">
-    Null doesn't use an order book, so minting doesn't move through bids or asks. Your exposure tracks the oracle, but large deposits can affect pool coverage and funding. The market also settles before your transaction converts, so the final output can differ from the preview. See [Placing a position](/private-beta/trading/placing-a-position).
+  <Accordion title="Where do I trade Spot?">
+    Open `/trade` for the markets list and slide-out trade terminal. Home → Spot shows your Spot positions. See [Using the app](/private-beta/trading/using-the-app).
   </Accordion>
-  <Accordion title="How do I exit?">
-    Burn your position to redeem your share of the collateral available in that pool. As with minting, the market settles first, so the confirmed output can differ from the preview. See [Placing a position](/private-beta/trading/placing-a-position).
+  <Accordion title="What is Margin?">
+    Margin opens Morpho long or short loops on configured Null markets via `NullV1MorphoRouter`. Morpho can liquidate at LLTV. See [Morpho](/learn/morpho).
   </Accordion>
-  <Accordion title="What is live right now?">
-    The private beta starts with S&P 500 exposure (State Street S&P 500 reference), using USDC in the Steakhouse USDC vault as collateral on Ethereum mainnet. Additional markets can be added over time. See [Markets](/private-beta/trading/markets).
+  <Accordion title="How do I exit Spot?">
+    Sell (redeem) your pool shares. The market settles first, so the confirmed output can differ from the preview.
   </Accordion>
   <Accordion title="What are the fees?">
-    Markets can charge an entry fee when you mint and an exit fee when you burn, set per market and charged on notional. An annualized collateral fee exists but is disabled. Entry and exit fees usually go to the other pool rather than to Null. Check the live transaction preview for the selected market's rates. See [Trading fees](/private-beta/trading/fees).
+    Markets can charge entry and exit fees on notional. An annualized collateral fee exists but is disabled. Check the live preview. See [Trading fees](/private-beta/trading/fees).
   </Accordion>
   <Accordion title="Do I need to complete KYC?">
-    No. There is no identity-document verification. Connect your own wallet, or sign in with a third-party login like Google and a wallet is set up for you. During the private beta, access is still gated. See [Apply for beta](/private-beta/getting-started/null-private-beta).
+    There is no identity-document verification in the documented flow. Connect your own wallet, or sign in with a supported login. Eligibility can still be restricted by jurisdiction. See [Get started](/private-beta/getting-started/null-private-beta).
   </Accordion>
 </AccordionGroup>
 
@@ -68,23 +65,20 @@ description: "Answers to common questions about Null, yield, positions, risk, an
 
 <AccordionGroup>
   <Accordion title="Can I be liquidated?">
-    Receiver positions do not have user-selected leverage, margin calls, or individual liquidations. Risk sits at the pool level instead. See [What are the risks?](/private-beta/getting-started/before-you-trade).
+    Spot Receiver and Payer positions do not have user-selected leverage or individual Null liquidations. **Margin** Morpho positions can be liquidated when LTV reaches LLTV. See [Morpho](/learn/morpho) and [Risks](/private-beta/getting-started/before-you-trade).
   </Accordion>
   <Accordion title="What are the risks?">
-    Risks include substantial position losses, smart-contract risk, oracle risk, collateral and vault risk, tracking error, liquidity, and pool solvency. In extreme moves, the paying side can be depleted, which can affect settlement. Read the risk pages before depositing. See [Risks](/private-beta/getting-started/before-you-trade).
+    Risks include position losses, smart-contract risk, oracle risk, collateral and vault risk, Morpho liquidation (Margin), tracking error, liquidity, and pool solvency. Read the risk pages before depositing.
   </Accordion>
   <Accordion title="Has Null been audited?">
-    Yes. Nethermind Security completed a review of the Null V1 contracts (final report August 2026): five findings, all fixed, none critical or high. An audit does not guarantee safety. Read the risk pages alongside it. See [Audits](/private-beta/support/audits).
+    Nethermind Security completed a review of the Null V1 contracts (final report August 2026): five findings, all fixed, none critical or high. An audit does not guarantee safety. See [Audits](/private-beta/support/audits).
   </Accordion>
 </AccordionGroup>
 
-## Beta
+## Points
 
 <AccordionGroup>
-  <Accordion title="How do I join the beta?">
-    Apply in the app: sign in, add your details, complete the Beta Participation Agreement, and wait for your wallet to be approved onchain. The beta is invitation-only, time-limited, and not offered in the UK. See [Apply for beta](/private-beta/getting-started/null-private-beta).
-  </Accordion>
-  <Accordion title="What are Points?">
-    Non-transferable accounting entries that measure beta participation and referrals. They are not money, yield, or a promise of any token, allocation, or payout. See [Points and referrals](/private-beta/status-and-points/points-and-referrals).
+  <Accordion title="What is Season 0?">
+    Season 0 has started. Normal trading activity is monitored and counts toward points on `/points`. Points are not money, yield, or a promise of any token or payout. See [Points and referrals](/private-beta/status-and-points/points-and-referrals).
   </Accordion>
 </AccordionGroup>

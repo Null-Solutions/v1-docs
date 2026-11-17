@@ -1,0 +1,87 @@
+---
+title: "Using the app"
+sidebarTitle: "Using the app"
+description: "Home sections, Spot trade terminal, Margin desk, Savings, Lending, and Points Season 0."
+---
+
+The Null app is organized around **Home** and a few dedicated routes. Home uses section tabs so one account can show Savings, Spot, Lending, and Margin without mixing them into a dashboard of unrelated cards.
+
+## Home sections
+
+Open `/` and use the section pills (desktop) or section menu (mobile):
+
+| Section | URL | What you see |
+| --- | --- | --- |
+| **Overview** | `/` | Portfolio summary, chart, and product groups: Savings, Spot, Lending, Margin, plus Cash |
+| **Savings** | `/?section=savings` | Null Savings Vault balance, add / withdraw, allocation context |
+| **Spot** | `/?section=spot` | Spot positions (Receiver / Payer pool shares), markets rail |
+| **Lending** | `/?section=lending` | Morpho lending positions and a path to the full lending book |
+| **Margin** | `/?section=margin` | Full **Margin desk** for Morpho long / short loops |
+
+**Cash** is the USDC in your connected wallet. There is no separate custodial cash balance.
+
+From Overview, empty states read as "No savings yet", "No spot yet", "No margin yet". Savings rows open as **Null Savings Vault**. Margin rows show **Long** / **Short**.
+
+## Savings
+
+Savings deposits USDC into the **Null Savings Vault** (Morpho Vault V2 `nmUSDC`). Slide-outs cover product info, **Add money**, and **Withdraw**. Interest accrues in share value. The displayed rate is the Morpho vault supply AER.
+
+Details: [Vaults](/learn/vaults).
+
+## Spot and the trade terminal
+
+Spot is unlevered Null pool exposure.
+
+- Browse markets at `/trade` (legacy `/markets` redirects here).
+- Open a market to get a **slide-out** stack: market detail, then a trade panel for amount → review → progress.
+- Primary actions are **Buy** / **Sell** on the Receiver side. Pro mode can trade Payer as well.
+- Deep links look like `/trade/[address]?action=buy|sell&side=receiver|payer`.
+
+Charts can show price, funding APR, and collateral APR history when the indexer provides series.
+
+Market list fields and APR definitions: [Markets](/private-beta/trading/markets).
+
+## Lending
+
+Lending supplies assets into Morpho Blue markets that sit around Null:
+
+- USDC into **long** markets (loan USDC, collateral = receiver shares)
+- Receiver shares into **short** markets (loan shares, collateral = `nmUSDC`)
+
+Home Lending summarizes your positions. `/lending` is the full book (`?id=` focuses a row). Pair labels look like `AAPL | nmUSDC` when a share is lent against the vault.
+
+## Margin desk
+
+Margin is only on **Home → Margin** (not on `/trade`). The desk includes:
+
+- Market picker for Null markets that have loop / short config
+- **Long** / **Short** direction tabs
+- Tickets (`LoopTerminal` / `ShortTerminal`) for open and close
+- Charts: price, pools, borrow rate, collateral APR
+- **My Positions** and **My Activity**
+- Stats including long/short Morpho market ids and borrow APRs
+
+Empty copy appears when a market cannot be margined yet or has no long/short book.
+
+Mechanics: [Morpho](/learn/morpho).
+
+## Points (Season 0)
+
+`/points` shows **Season 0 has started**. Normal trading activity is monitored and counts toward points on that page. The detailed rewards UI may expand later; referrals currently redirect to `/points`.
+
+See [Points and referrals](/private-beta/status-and-points/points-and-referrals).
+
+## Navigation cheat sheet
+
+| Go here | For |
+| --- | --- |
+| `/` | Home / Overview |
+| `/?section=savings` | Savings |
+| `/?section=spot` | Spot portfolio |
+| `/?section=lending` | Lending summary |
+| `/?section=margin` | Margin desk |
+| `/trade` | Spot markets terminal |
+| `/lending` | Full lending book |
+| `/points` | Season 0 points |
+
+Next: [Markets](/private-beta/trading/markets), [Position types](/private-beta/trading/position-types), or [Morpho](/learn/morpho).

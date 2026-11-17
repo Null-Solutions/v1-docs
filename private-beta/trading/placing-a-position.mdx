@@ -1,82 +1,58 @@
 ---
 title: "Placing a position"
 sidebarTitle: "Placing a position"
-description: "Open or exit a Receiver or Payer position by minting or burning in a Null market."
+description: "Open or exit a Spot Receiver or Payer position from the /trade terminal."
 ---
 
-In Null, **Mint** opens a Receiver or Payer position, while **Burn** exits it.
+In the Spot UI, **Buy** opens a Receiver or Payer position and **Sell** exits it. Onchain those are ERC-4626 deposit and redeem (router `depositMarket` / `redeemMarket`).
 
 Before submitting, review the selected market's [fees](/private-beta/trading/fees). Use the current preview for live values. Examples in the docs are illustrative only.
 
-## Mint a position
+## Buy a Spot position
 
 <Steps>
   <Step title="Choose a market">
-    Open `/markets` and select a market. Check its status, oracle price, collateral, Receiver and Payer liquidity, funding, and fees.
+    Open `/trade` and select a market. Check its status, oracle price, collateral, Receiver and Payer liquidity, collateral APR, funding APR, and fees.
   </Step>
   <Step title="Choose Receiver or Payer">
-    Choose the side that matches the price exposure you want. Read [Position types](/private-beta/trading/position-types) before continuing.
+    Choose the side that matches the price exposure you want. Read [Position types](/private-beta/trading/position-types) before continuing. Primary UI actions target Receiver; Pro mode can trade Payer.
   </Step>
-  <Step title="Select Mint and enter collateral">
-    Choose **Mint** and enter the collateral amount to deposit. If your wallet does not hold enough collateral, fund it before continuing.
+  <Step title="Select Buy and enter amount">
+    Choose **Buy** and enter the amount to deposit. If your wallet does not hold enough Cash / collateral, fund it before continuing.
   </Step>
   <Step title="Review the preview">
-    Check your selected side, current and next balance, estimated pool shares, position size, Payer bias when applicable, entry fee, and market status. Expand **Advanced details** to verify the market, pool, network, price, liquidity, and fee rate.
+    Check your selected side, estimated pool shares, fees, and market status. Expand advanced details when available to verify market, pool, network, and price.
   </Step>
-  <Step title="Approve collateral">
-    If prompted, approve the router to use the required collateral. This only gives permission to spend the collateral; it does not mint your position. If the approval is rejected or fails, the mint will not continue.
+  <Step title="Approve if prompted">
+    If prompted, approve the router to spend the required token. Approval alone does not open the position.
   </Step>
-  <Step title="Submit the mint">
-    Confirm the transaction in your wallet. The market settles first, then your collateral is deposited and pool shares are minted. Wait for onchain confirmation before treating the displayed position as final.
+  <Step title="Submit">
+    Confirm in your wallet. The market settles first, then collateral is deposited and pool shares are minted. Wait for onchain confirmation.
   </Step>
 </Steps>
 
-## Burn a position
+## Sell a Spot position
 
 <Steps>
   <Step title="Open your position">
-    Open the same market from `/markets`. Connect the wallet that holds the pool shares.
+    Open the same market from `/trade` or Home → Spot. Connect the wallet that holds the pool shares.
   </Step>
-  <Step title="Select the side and Burn">
-    Choose the Receiver or Payer position you want to exit, then select **Burn**.
+  <Step title="Select Sell">
+    Choose **Sell** for the side you hold and enter the share amount (or max).
   </Step>
-  <Step title="Enter the amount">
-    Enter how much of the position you want to redeem, up to your available balance.
-  </Step>
-  <Step title="Review the preview">
-    Check the shares to burn, estimated collateral output, next position and balance, exit fee, market status, and advanced details.
-  </Step>
-  <Step title="Approve shares">
-    If prompted, approve the router to spend the selected pool shares. This approval is separate from a collateral approval used to mint.
-  </Step>
-  <Step title="Submit the burn">
-    Confirm the transaction. The market settles first, then your shares are burned and the resulting collateral is returned to your wallet.
+  <Step title="Review and submit">
+    Check the preview, confirm in your wallet, and wait for settlement plus redemption to complete.
   </Step>
 </Steps>
 
-## Why the confirmed result can differ
+## After the transaction
 
-The preview includes the relevant entry or exit fee, but it is based on the latest available state. The market settles again when your mint or burn executes. Price movement, funding, collateral performance, fees, and other transactions can change the final share conversion before confirmation.
-
-Estimated output and position value may change before confirmation. Review the final wallet and pool-share balances after confirmation.
-
-## Common failure modes
-
-| Message or symptom | What to check |
-| --- | --- |
-| Market is closed or unavailable | Confirm the current market status. A visible market is not necessarily open for transactions. |
-| No Payer funds | The market needs collateral in the Payer pool before Receiver exposure can operate. If available, add Payer collateral; otherwise choose another market or wait for liquidity. |
-| Price unavailable or oracle update fails | Wait for valid price data and retry. A stale, zero, or invalid oracle price can block settlement. |
-| Insufficient collateral | Lower the mint amount or add more of the market's supported collateral to your connected wallet. |
-| Insufficient pool shares | Lower the burn amount and confirm that the connected wallet owns shares on the selected side. |
-| Allowance too low | Complete the required collateral or pool-share approval, then try the transaction again. |
-| Slippage exceeded | Refresh the preview. The market moved beyond the transaction's allowed slippage. |
-| Transaction deadline expired | Refresh and submit a new transaction. |
-| Insufficient network funds | Add enough ETH to cover gas and any required oracle update fee. |
-| Wallet request rejected | Start the transaction again and approve each required wallet request. |
-
-For additional recovery steps and the information to include when requesting help, see [Trading support](/private-beta/support/trading).
+- Spot positions appear under Home → Spot and in the market panel.
+- Funding and price continue to settle on later interactions.
+- For leveraged exposure, use Home → Margin instead; see [Morpho](/learn/morpho).
 
 <Warning>
-Null does not currently present an order book, limit orders, stop orders, or a configurable leverage control. Do not assume those behaviors apply.
+Previews are not guarantees. Settlement, fees, oracle updates, and pool state can change the final output.
 </Warning>
+
+Next: [Fees](/private-beta/trading/fees), [Using the app](/private-beta/trading/using-the-app), or [Market making](/private-beta/market-make/overview).

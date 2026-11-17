@@ -1,7 +1,7 @@
 ---
 title: "Market parameters"
 sidebarTitle: "Market parameters"
-description: "Immutable (collateral, oracle, frm) identity, pools, fees, and standard imbalance FRM parameters."
+description: "Immutable (collateral, oracle, frm) identity, pools, fees, and funding-model notes."
 ---
 
 A market is uniquely identified by three dependency addresses fixed during initialization:
@@ -11,6 +11,8 @@ A market is uniquely identified by three dependency addresses fixed during initi
 ```
 
 The factory creates at most one market per tuple. A live market has no setter for any dependency. To use different collateral, oracle, or FRM, create a new tuple and therefore a new market.
+
+Product funding is **yield share of collateral APR** (Receivers pay Payers; never the reverse in the app model). The `frm` address remains part of market identity and is still queried at settlement.
 
 ## Immutable identity
 
@@ -23,11 +25,11 @@ The factory creates at most one market per tuple. A live market has no setter fo
 </ParamField>
 
 <ParamField path="frm" type="INullV1FundingRateModel" required>
-  Funding-rate model queried every settlement. The factory must enable it before market creation.
+  Funding-rate model queried every settlement. The factory must enable it before market creation. Product economics treat funding as a share of collateral APR paid to Payers; see [Funding and carry](/learn/funding-and-carry).
 </ParamField>
 
 <Warning>
-A market has no `asset()` or `mu()` identity accessor. Read `market.collateral()` for its collateral token. Each Receiver and Payer pool implements ERC-4626, so `pool.asset()` returns that same market collateral. Funding parameters such as `mu` live on the FRM.
+A market has no `asset()` identity accessor. Read `market.collateral()` for its collateral token. Each Receiver and Payer pool implements ERC-4626, so `pool.asset()` returns that same market collateral. Read `market.frm()` before interpreting onchain rate calls.
 </Warning>
 
 The factory has no FRM disable function. Even if factory governance enables another FRM later, the `frm()` of an existing market does not change.
@@ -54,29 +56,20 @@ Factory owner can set three fees. Entry and exit default to 25 bps and are cappe
 
 Entry and exit credit the opposite pool unless the factory was deployed with `allowProtocolFees`. `sweepFees()` settles first, then pays the factory owner any `protocolFees`. Details: [Fees](/developers/fees).
 
-## Standard imbalance FRM
+## Funding model (product)
 
-`NullV1ImbalanceFundingRateModel` constructor params (WAD):
-
-<ParamField path="mu" type="uint256" required>
-  Sensitivity and absolute rate bound. `0 < mu <= 1e18`. Default deployment: `1e18` (`mu = 1`).
-</ParamField>
-
-<ParamField path="targetCoverage" type="uint256" required>
-  Target Payer coverage `c = P/R`. `0 < targetCoverage <= 1e18`. Default: `1e18` (`c = 1`, equilibrium when `P = R`).
-</ParamField>
+For UI and carry math, treat funding as:
 
 ```text
-f = mu * (cR - P) / (cR + P)
+f = s * collateral APR    (s = yield share; app uses s = 1)
+annual funding transfer = f * R    (Receiver → Payer)
 ```
 
-- Positive `f` → Receiver pays Payer
-- Negative `f` → Payer pays Receiver
-- Zero at `P = cR` or if either pool is empty
-- `|f| <= mu` by construction
-- Annual funding transfer across the pools = `f * R`
+- Funding is never negative in the product model (Payers do not pay Receivers).
+- Coverage still sets Payer leverage `L = R / P` and scales how funding lands per unit of Payer.
+- Lens returns both `fundingRate` and `collateralRate` for display.
 
-The standard imbalance FRM is stateless. A different enabled `INullV1FundingRateModel` can be used only when creating another market; it cannot replace the FRM on a live market. Always identify `market.frm()` before interpreting rates. Worked tables: [Funding and carry](/learn/funding-and-carry).
+Historical `NullV1ImbalanceFundingRateModel` deployments used a signed coverage curve. Do not document that curve as current product behavior. Always identify `market.frm()` onchain and prefer Lens projections plus [Funding and carry](/learn/funding-and-carry).
 
 ## Read onchain
 
@@ -91,9 +84,6 @@ address payerPool    = address(market.payerPool());
 uint16 entryFee      = market.entryFee();
 uint16 exitFee       = market.exitFee();
 uint16 collateralFee = market.collateralFee();
-
-uint256 mu = NullV1ImbalanceFundingRateModel(frm).mu();
-uint256 targetCoverage = NullV1ImbalanceFundingRateModel(frm).targetCoverage();
 ```
 
-Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/developers/settlement).
+Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/developers/settlement). Morpho periphery: [Morpho](/learn/morpho).
