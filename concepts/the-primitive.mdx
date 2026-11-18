@@ -7,7 +7,8 @@ description: "Every Null market has two pools. Receivers follow the price. Payer
 Receivers get the price return of an asset, such as the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
 
 <Frame>
-  <img src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
+  <img className="block dark:hidden" src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
+  <img className="hidden dark:block" src="/images/two-pools-dark.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
 </Frame>
 
 Both pools hold the same collateral: nUSDC, a share of the [Null Collateral Vault](/concepts/vaults). When the price moves, the market moves collateral from one pool to the other. Nobody borrows the asset and nobody holds it for you.
@@ -26,7 +27,8 @@ You never own the asset. A Receiver Pool share is a claim on collateral in the p
 A Receiver deposits $100. A Payer deposits $50 to back it. The asset rises 10%, so $10 moves from the Payer pool to the Receiver pool. The Receiver now has $110 and the Payer $40.
 
 <Frame caption="Each dot is $1. Fees not included.">
-  <img src="/images/price-move.svg" alt="A Receiver deposits 100 dollars and a Payer 50. The price rises 10 percent, so 10 dollars move from the Payer pool to the Receiver pool. The Receiver ends with 110 dollars and the Payer with 40." />
+  <img className="block dark:hidden" src="/images/price-move.svg" alt="A Receiver deposits 100 dollars and a Payer 50. The price rises 10 percent, so 10 dollars move from the Payer pool to the Receiver pool. The Receiver ends with 110 dollars and the Payer with 40." />
+  <img className="hidden dark:block" src="/images/price-move-dark.svg" alt="A Receiver deposits 100 dollars and a Payer 50. The price rises 10 percent, so 10 dollars move from the Payer pool to the Receiver pool. The Receiver ends with 110 dollars and the Payer with 40." />
 </Frame>
 
 If the asset falls, money moves the other way. A Receiver can never gain more than the Payers have deposited.

@@ -9,7 +9,8 @@ Settlement is how a market catches up with the world. Between interactions, the 
 That design has a quiet consequence worth understanding. A market that nobody touches does not settle, however far the price travels in the meantime. The whole move, whether it takes a minute or a month, arrives in a single settlement for whoever interacts next, subject to the breaker described below. Read only previews through `NullV1Lens` follow the same path in simulation, so what a preview shows is what an actual deposit or redemption would do.
 
 <Frame>
-  <img src="/images/settlement-pipeline.svg" alt="Settlement reconciles collateral, reads the oracle and funding model, then nets one bounded transfer" />
+  <img className="block dark:hidden" src="/images/settlement-pipeline.svg" alt="Settlement reconciles collateral, reads the oracle and funding model, then nets one bounded transfer" />
+  <img className="hidden dark:block" src="/images/settlement-pipeline-dark.svg" alt="Settlement reconciles collateral, reads the oracle and funding model, then nets one bounded transfer" />
 </Frame>
 
 ## First, agree on what the market holds

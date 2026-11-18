@@ -7,7 +7,8 @@ description: "Every synthetic has two Morpho markets. The long market lends nUSD
 A Spot position never borrows, so it can never be liquidated. Leverage needs somewhere to borrow from. On Null, that is two Morpho markets beside every synthetic: one for going long, one for going short.
 
 <Frame>
-  <img src="/images/long-short-markets.svg" alt="Each synthetic, such as rAAPL, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market rAAPL | nUSDC, where Leverage Long traders borrow it against rAAPL. rAAPL holders lend into the short market nUSDC | rAAPL, where Leverage Short traders borrow rAAPL against nUSDC." />
+  <img className="block dark:hidden" src="/images/long-short-markets.svg" alt="Each synthetic, such as rAAPL, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market rAAPL | nUSDC, where Leverage Long traders borrow it against rAAPL. rAAPL holders lend into the short market nUSDC | rAAPL, where Leverage Short traders borrow rAAPL against nUSDC." />
+  <img className="hidden dark:block" src="/images/long-short-markets-dark.svg" alt="Each synthetic, such as rAAPL, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market rAAPL | nUSDC, where Leverage Long traders borrow it against rAAPL. rAAPL holders lend into the short market nUSDC | rAAPL, where Leverage Short traders borrow rAAPL against nUSDC." />
 </Frame>
 
 Markets are written collateral first, then the asset being lent.

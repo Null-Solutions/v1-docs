@@ -292,7 +292,6 @@ img.nav-logo {
 
 #content-area .frame img,
 #content-area [data-component-part="frame"] img {
-  display: block;
   width: 100%;
 }
 
