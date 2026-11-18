@@ -457,8 +457,18 @@ img.nav-logo {
 
 /* Steps: green markers, hairline spine. */
 #content-area [data-component-part="step-number"] {
+  background: transparent !important;
+}
+
+#content-area [data-component-part="step-indicator"] {
+  border-radius: 999px !important;
   background: var(--null-green) !important;
   color: var(--null-sage) !important;
+}
+
+.dark #content-area [data-component-part="step-indicator"] {
+  background: var(--null-sage) !important;
+  color: #26241d !important;
 }
 
 #content-area [data-component-part="step-line"] {
