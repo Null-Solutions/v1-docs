@@ -17,13 +17,27 @@ Every dollar that enters Null goes into the Null Collateral Vault first. You dep
 
 You rarely touch nUSDC directly. When you **Buy** on Spot or open a Margin trade, your USDC becomes nUSDC on the way in. When you leave, it comes back as USDC.
 
+## Where the USDC goes
+
+nUSDC backs every market, so the Collateral Vault is curated for safety first and interest second. It lends USDC only to established, low-risk places where loans are overcollateralised and you can get money back quickly. It does not chase high rates.
+
+| Kind of allocation | Example | Why it's considered safe |
+| --- | --- | --- |
+| Blue-chip crypto loans | USDC lent on Morpho against ETH, wstETH or wrapped bitcoin | Borrowers post more than they borrow, and liquid collateral can be sold quickly if prices fall. |
+| Established lending pools | USDC supplied to long-running money markets such as Aave | Deep liquidity and a long track record. |
+| Tokenised Treasuries | USDC lent against tokenised short-term US government debt | Collateral backed by short-dated government bonds, with steady prices. |
+
+These are examples of the kind of place the vault lends to, not a fixed list. The curator sets the actual allocations and caps, and they change over time. You can see them onchain at any moment.
+
+Safe is not the same as risk-free. Each allocation has its own smart contract, collateral and liquidity risks, and the vault inherits all of them.
+
 ## Who gets the interest
 
 It depends on what your nUSDC is doing.
 
 | Your nUSDC is | The interest goes to |
 | --- | --- |
-| In a Receiver pool | Payers. That is what following a price costs. See [How Payers earn](/concepts/funding-and-yield). |
+| In a Receiver pool | Payers. That is what following a price costs. See [Payers earn the interest](/concepts/funding-and-yield). |
 | In a Payer pool | You, plus the Receivers' interest. |
 | In the Savings Vault | You, plus what borrowers on the long markets pay. |
 | Posted as Margin collateral | You. It keeps earning while it sits in Morpho. |

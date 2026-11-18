@@ -16,7 +16,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 3. **nUSDC backs two pools** (`concepts/the-primitive`): layer 2. Each market splits nUSDC into a Receiver Pool and a Payer Pool.
 4. **Payers earn the interest** (`concepts/funding-and-yield`): Receivers hand their interest to Payers.
 5. **Receivers hold synthetics** (`concepts/building-block`): the Receiver Pool share as a token (rAAPL etc.), and what it can build.
-6. **Synthetics get markets** (`concepts/morpho-markets`): layer 3. Two Morpho markets per synthetic.
+6. **Synthetics go on Morpho** (`concepts/morpho-markets`): layer 3. Two Morpho markets per synthetic.
 7. **Savers lend to the longs** (`concepts/savings-vault`): layer 4. Lends nUSDC into every long market.
 8. Then fees, risks, products and Payers.
 
