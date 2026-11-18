@@ -7,8 +7,8 @@ description: "Leverage Long or Leverage Short on any synthetic, by borrowing on 
 Margin is for when a view no longer fits inside your cash. You borrow, so a given price move matters more than it would on Spot. That cuts both ways, which is why Margin has its own desk and the one thing Spot never has: a liquidation price.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/long-short-markets.svg" alt="Leverage Long borrows nUSDC from the long market, rAAPL | nUSDC, posting rAAPL. Leverage Short borrows rAAPL from the short market, nUSDC | rAAPL, posting nUSDC." />
-  <img className="hidden dark:block" src="/images/long-short-markets-dark.svg" alt="Leverage Long borrows nUSDC from the long market, rAAPL | nUSDC, posting rAAPL. Leverage Short borrows rAAPL from the short market, nUSDC | rAAPL, posting nUSDC." />
+  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="With 1,000 USDC of equity, a flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at the market's LLTV, for example 86 percent, a price drop of about 22 percent. The borrow rate adds to the loan over time." />
+  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="With 1,000 USDC of equity, a flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at the market's LLTV, for example 86 percent, a price drop of about 22 percent. The borrow rate adds to the loan over time." />
 </Frame>
 
 ## How it works
@@ -22,6 +22,21 @@ Margin is for when a view no longer fits inside your cash. You borrow, so a give
 | You pay | **Long borrow APR** | **Short borrow APR** |
 
 Underneath, the price exposure is the same Receiver Pool share as on [Spot](/products/spot). Margin just borrows against it. It is usually cheaper than a perp, because USDC borrow rates tend to run below perp DEX funding.
+
+## How the loop works
+
+The desk opens a leveraged position in one transaction, using a flash loan: money borrowed and repaid inside the same transaction.
+
+| Step | What happens, at 3× on 1,000 USDC |
+| --- | --- |
+| Flash loan | The router borrows 2,000 nUSDC for a moment. |
+| Buy | Your 1,000 plus the 2,000 buys 3,000 of rAAPL in the Receiver Pool. |
+| Post | The rAAPL is posted as collateral on the long market. |
+| Borrow and repay | The long market lends 2,000 nUSDC, which repays the flash loan. |
+
+You end with 3,000 of exposure and a 2,000 nUSDC loan. Closing runs the same loop in reverse. A short works the same way on the short market: you post nUSDC, borrow rAAPL and sell it.
+
+The borrow rate is what holding costs. You pay it on the whole loan for as long as the position is open, it adds to the debt, and it rises when borrowers use more of the market. Leverage only pays if the price move beats it.
 
 ## Using the desk
 
