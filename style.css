@@ -718,6 +718,7 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   }
 
   #content-area {
+    max-width: 52rem !important;
     margin-left: 2.5rem !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
