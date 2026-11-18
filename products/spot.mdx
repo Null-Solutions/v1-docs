@@ -1,61 +1,51 @@
 ---
 title: "Spot"
 sidebarTitle: "Spot"
-description: "Buy or sell unlevered Receiver shares. Payer is available in Pro Mode."
+description: "Buy a token that follows a price. No leverage, no debt and no liquidation price. Payer is in Pro Mode."
 ---
 
-Spot is Null in its simplest form, and for most people it is the right place to start. You think a price is going up, or you think it is going down, and you want that view in your wallet without borrowing anything or watching a liquidation level. Spot gives you the view and nothing else. There is no leverage to manage and no debt accruing quietly in the background while you sleep.
-
-That simplicity is deliberate. Null can express the same market through borrowed, leveraged positions in [Margin](/products/margin), but leverage changes the question from whether you were right to whether you survived being early. Spot keeps the question clean: you own a share of a pool, its value moves, and you sell when you are done.
+Spot is Null in its simplest form. You want a price in your wallet, without borrowing and without watching a liquidation level. Spot gives you that and nothing else.
 
 <Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/two-pool-market-light.svg"
-    alt="Spot buys a share of the Receiver or Payer pool. The market holds the collateral."
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/two-pool-market-dark.svg"
-    alt="Spot buys a share of the Receiver or Payer pool. The market holds the collateral."
-  />
+  <img src="/images/two-pools.svg" alt="Spot buys a share of the Receiver Pool, which gains when the price rises, or of the Payer Pool, which gains when it falls." />
 </Frame>
 
-## Why this exists
+## What you're buying
 
-A conventional spot purchase ties up the full price of the asset and gives you the asset itself, with custody, settlement, and market hours attached. Null markets exist so that the return of an asset can be held as an onchain position instead. You get exposure to the oracle tracked return, in a share you can buy or sell at any time, without taking delivery of the underlying thing.
+**Buy** puts you in a market's Receiver pool. You get a Receiver Pool share, a synthetic such as rAAPL, that rises and falls with the asset. You don't own the asset itself, and nobody holds it for you. [Two pools](/concepts/the-primitive) explains the machinery.
 
-The default version of that idea is the Receiver. Buying Receiver is the natural long: as the tracked price rises, the pool's return accrues to your share. The short side exists too, but it is a stranger instrument, so Null puts it behind **Pro Mode** for people who have read enough to want it specifically. More on that below.
-
-## How it connects to the primitive
-
-Every Null market has two pools, and [the primitive](/concepts/the-primitive) explains the machinery in full. The short version is this. The Receiver pool holds the price return of the asset. The Payer pool is a negative size position inside that Receiver pool, with the market's collateral held within the structure, and its scale set by `R / P`, the ratio of the two pools. When the pools grow or shrink, that scale moves, which is why Payer behaves less like a simple mirror image than newcomers expect.
-
-What you are buying on Spot is a percentage of one of those pools, not the tracked asset and not a loan of it. Collateral sits behind the position, and funding flows between the pools as collateral yield that Receivers pay to Payers, never dropping below zero. That last point shapes your returns even on an unlevered trade, so [Funding and yield](/concepts/funding-and-yield) is worth reading before you hold anything overnight. Your position can drift from the pure price return, and funding is usually the reason why.
+Holding has one ongoing cost: the interest your deposit earns goes to Payers. On a perp you would pay funding on your whole position instead.
 
 ## Using Spot
 
-Live markets are listed at `/trade`, and your existing positions are summarised under **Home** and then **Spot**. Opening a market brings up a slide-out ticket, and the flow never asks you to decide very much at once.
+Markets are listed at `/trade`. Your positions are under **Home** and then **Spot**.
 
 <Steps>
   <Step title="Pick a market">
-    Browse `/trade` and open the market you want. Spend a moment on the price and the rates attached to it, because two markets on the same asset can carry quite different funding.
+    Open a market on `/trade`. Check its price and rates first. Two markets on similar assets can carry different rates.
   </Step>
-  <Step title="Buy, sell, or receive">
-    Use **Buy** to open a Receiver position or **Sell** to reduce one. **Receive** is not a trade at all: it shows your wallet address and a QR code so someone can send assets to you on this chain.
+  <Step title="Buy or sell">
+    **Buy** opens or adds to a Receiver position. **Sell** reduces it. **Receive** is not a trade: it shows your wallet address and a QR code so someone can send you assets.
   </Step>
-  <Step title="Review before you confirm">
-    Every trade passes through a review step before your wallet signs. Read it. The fee is included in the purchase or sale you are reviewing, rather than appearing as a surprise afterwards.
+  <Step title="Review, then confirm">
+    Every trade has a review step before your wallet signs. The fee is included in the amount you see.
   </Step>
-  <Step title="Turn on Pro Mode for Payer">
-    If you want the short side, open the account menu and enable **Pro Mode**. The slide-out then offers **Payer buy** and **Payer sell** alongside the Receiver actions, with the same review step before anything executes.
+  <Step title="Want the other side? Turn on Pro Mode">
+    In the account menu, turn on **Pro Mode**. The ticket then adds **Payer buy** and **Payer sell**. Read [Payers](/market-making/overview) first.
   </Step>
 </Steps>
 
-Selling is the whole exit. There is no expiry to manage, no debt to repay, and no margin clerk waiting for the price to touch a line. You sell your share back to the pool and receive its collateral value, which makes Spot positions easy to hold for an afternoon or for a season.
+Selling is the whole exit. There is no expiry, no debt to repay and nothing waiting for the price to touch a line.
 
-## What it costs and what can go wrong
+## Make it earn
 
-The explicit cost is the trading fee described in [Fees](/concepts/fees), and the app folds it into the reviewed trade so the number you approve is the number that settles. The quieter cost is funding. Receivers pay it out of collateral yield and Payers receive it, which means a long held through an expensive funding period can underperform the headline price move, and a Payer position can earn carry that softens a small adverse move. Neither effect is a malfunction. Both are the design working as intended.
+Once you hold a synthetic, you can lend it into its short market through [Lending](/products/lending). You keep the price exposure and earn interest on top.
 
-The risks are the honest ones for any market exposure, and [Risks](/concepts/risks) covers them properly. Prices fall as well as rise, and a Payer position's loss scales with `R / P`, so it can move faster than the underlying price in percentage terms. Oracles can misbehave, contracts carry smart contract risk, and a thin pool can execute at a worse price than the preview suggested. If the money behind your view would sit better earning a lending rate instead, [Savings](/products/savings) is the calmer home for it, and [Lending](/products/lending) is the direct version of the same idea.
+## Costs and risks
+
+| | |
+| --- | --- |
+| Fees | The market's entry and exit fee, folded into the amount you review. See [Fees](/concepts/fees). |
+| Interest | As a Receiver you give up your deposit's interest. Your position can drift slightly from the pure price move because of it. |
+| Price | Prices fall as well as rise. A Payer position moves faster than the price, scaled by `R / P`. |
+| Feeds and contracts | Oracles can misbehave and contracts carry risk. See [Risks](/concepts/risks). |

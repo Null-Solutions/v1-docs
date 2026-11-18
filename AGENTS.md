@@ -4,16 +4,31 @@
 
 - Mintlify docs site for Null V1 on Ethereum mainnet
 - Pages are MDX with YAML frontmatter
-- Configuration lives in `docs.json`
+- Configuration lives in `docs.json`; the brand layer lives in `style.css`
 - Three nav tabs: **Guides** (product), **Developers** (protocol and contracts), and **Support**
+
+## How the docs explain Null
+
+Guides follow the product overview and deck: one idea per page, explained so a first-time reader understands it.
+
+1. **Two pools** (`concepts/the-primitive`): every market has a Receiver Pool and a Payer Pool.
+2. **How Payers earn** (`concepts/funding-and-yield`): Receivers hand their deposits' interest to Payers.
+3. **One building block** (`concepts/building-block`): a Receiver Pool share is a price, a position, collateral and settlement in one token.
+4. **The everything app** (`concepts/everything-app`): Null Collateral Vault → synthetics → long and short Morpho markets → Null Savings Vault.
+5. Then the vaults, the long and short markets, fees, risks, products and Payers.
 
 ## Terminology
 
-- **Receiver** / **Payer**: the two ERC-4626 pools in a market
+- **Receiver** / **Payer**: the two ERC-4626 pools in a market. The token a Receiver holds is a **Receiver Pool share** (never "pool shares" on their own).
+- **Synthetic**: a Receiver Pool share named after its asset: rAAPL, rSPX, rBTC, rGOLD. These are examples; the live list is `/trade`.
 - **Payer**: a negative-size position in the Receiver pool, with the market's collateral inside it. Short scale is `R / P`. Do not describe that scale as a leverage setting.
+- **nUSDC**: the share of the **Null Collateral Vault**, a curated Morpho Vault V2 over USDC. It is the collateral in every market and its interest pays the Payers.
+- **Null Savings Vault**: a separate Morpho vault whose asset is `nUSDC`. It lends `nUSDC` into every long market only. Savers earn two layers: the Collateral Vault's interest and the long-market borrow interest.
+- **Long market**: `rX | nUSDC` (collateral | loan). Lends `nUSDC` against the synthetic. Used by **Leverage Long**.
+- **Short market**: `nUSDC | rX`. Lends the synthetic against `nUSDC`. Supplied by holders through **Lend**, used by **Leverage Short**. Lending a synthetic here makes it yield-bearing.
+- Inside tables, escape the pipe in market names: `rAAPL \| nUSDC`.
 - **Market identity**: `(collateral, oracle, frm)`
-- **Funding**: vault yield on the Receiver pool, paid to Payers by `NullV1YieldShareFundingRateModel`. Never negative. High-water mark. Capped at 100% APR for one interval.
-- **Collateral vault** and **Null Savings Vault**: two roles of the same `nmUSDC` Morpho Vault V2 share
+- **Funding**: the interest on Receiver deposits, paid to Payers by `NullV1YieldShareFundingRateModel`. Never negative. High-water mark. Capped at 100% APR for one interval. In Guides, explain it as interest first, then name it funding.
 - **Buy / Sell**: app words for pool deposit and redeem. Use those words in Guides.
 - **deposit / redeem**: onchain and developer docs language for the same flows
 - **Add money / Withdraw**: Savings. **Lend / Recall**: Lending. **Place Order / Close** and **Long / Short**: Margin.
@@ -25,27 +40,35 @@
 
 ## Style preferences
 
+- Plain words a first-time reader understands. Short sentences. One idea per sentence.
 - Active voice, second person ("you")
-- Concise sentences. One idea per sentence.
 - No em dashes. Use a period, comma, colon, or parentheses.
-- Sentence case for headings
+- Sentence case for headings. No all-caps labels, no numbered section headings.
+- Lists of things are tables (rendered as hairline rows), not cards or tinted boxes.
 - Bold for UI elements: Click **Settings**
 - Code formatting for file names, commands, paths, and code references
 - Prefer `viem` snippets in developer guides; Solidity for contract surfaces
 
+## Brand
+
+- Palette: soft sage `#DFE4DA` and green `#23412E` lead; warm black `#26241D` and white `#FCFCFC` for contrast; terracotta `#97533B`, fjord blue `#618AA1` and sand `#D4B16B` as accents.
+- Type: Newsreader for the page title only. Lato for everything else, headings included.
+- The logo only appears green on sage, sage on green, warm black on white or white on warm black.
+
 ## Diagrams
 
-- Diagrams are hand-authored SVGs in `images/`, not ASCII art or Mermaid
-- Ship every diagram as a light/dark pair (`*-light.svg` / `*-dark.svg`) and embed with `<Frame>` plus `className="block dark:hidden"` / `hidden dark:block`
-- Match the app design tokens: Inter text; light mode ink `#2d2c2c`, secondary `#6e6e6e`, borders `#dee6ee`, guides `#afb4bc`, accent `#2e8afa`; dark mode ink `#d4dce7`, secondary `#a0a0a0`, borders `#29323b`, guides `#787c86`, accent `#b8d9fa`, surfaces `#141416`
-- Boxes use `rx="10"`-`rx="12"`; solid accent lines for writes, dashed gray lines for reads; include `role="img"`, `aria-label`, and `<title>`
+- Diagrams are drawn in Figma (Null Design file, "Docs diagrams – v1-docs" board) and exported as SVG with outlined text into `images/`. Not ASCII art or Mermaid.
+- Each diagram is one file on a sage `#DFE4DA` panel, so it works in light and dark mode. Embed with `<Frame><img src="/images/name.svg" alt="..." /></Frame>`.
+- Visual language: circles, not boxes. Receiver = solid green circle; Payer = terracotta outline; vaults carry the Null mark (sage on green, or green on sage with a green outline); Morpho markets = small outline circles with the Morpho mark (green for long, terracotta for short). Grey lines show structure; dashed fjord-blue lines show lending.
+- Include `role="img"`, `aria-label`, and `<title>` in every SVG, and a full `alt` on the `<img>`.
+- Current set: `two-pools`, `price-move`, `building-block`, `everything-app`, `long-short-markets`; developer diagrams `architecture` and `settlement-pipeline`.
 
 ## Content boundaries
 
-- Guides: what Null is, the four products, the primitive, funding, vaults, Morpho books, fees, risks, market making, points, and legal
+- Guides: what Null is, two pools, how Payers earn, the building block, the everything app, the two vaults, long and short markets, fees, risks, the four products, Payers, questions, glossary, points, and legal
 - Developers: protocol mechanics, integration, market setup, deployments, contract reference
 - Support: troubleshooting and brand assets
-- Audits live once, under Developers → Protocol
+- Audits live once, under Developers → Protocol. Guides say "audited by Nethermind" and link there for scope.
 - Do not invent SDK packages, API keys, webhooks, order books, or mainnet addresses
 - Do not document removed behavior: depositor allow-lists, deposit pause, a signed funding curve, a time-scaled 7 percent breaker, or a price-oracle vendor other than Chainlink Data Streams
 - `liquidation-compare/` is a research note. The public explanation is the formula on the Margin page

@@ -1,73 +1,59 @@
 ---
-title: "FAQ"
-sidebarTitle: "FAQ"
-description: "Straight answers on what Null is, how its four products differ, why funding flows to Payers, and what points do and do not mean."
+title: "Questions"
+sidebarTitle: "Questions"
+description: "Short answers to the questions people ask most."
 ---
 
-Most questions about Null come down to a few distinctions: pool shares versus the assets they
-track, funded products versus leveraged ones, and rates that describe the present versus
-returns nobody has promised. The answers below take those distinctions one at a time.
-
 <AccordionGroup>
-  <Accordion title="What is Null?">
-    Null is a market built from two pools that take opposite sides of an oracle tracked price,
-    with Savings, Lending, and Margin arranged around that core. If you are new to the design,
-    [the primitive](/concepts/the-primitive) explains how the two pools work together.
+  <Accordion title="Is Null audited?">
+    Yes. Nethermind audited the core contracts in August 2026, and the report is public on Nethermind's GitHub. Some newer contracts came after that review. [Audits](/protocol/audits) lists exactly what it covered.
   </Accordion>
-  <Accordion title="Do I own the stock or token a market tracks?">
-    No. You own a share of a collateral pool, a share of a vault, or a supply position on Morpho,
-    depending on the product you used. No voting rights and no dividends reach you directly,
-    although an oracle whose return includes distributions reflects them in its price.
+  <Accordion title="Why not a perp?">
+    A perp charges funding on your whole position. On Null you only give up your deposit's interest. There is no liquidation price on Spot.
   </Accordion>
-  <Accordion title="What is the difference between Savings and Lending?">
-    Savings is the managed route, where **Add money** deposits USDC into the Null Savings Vault
-    and the vault lends across long books for you. Lending is the direct route, where you pick
-    a book yourself and use **Lend** and **Recall**, including Receiver share books.
+  <Accordion title="What does it cost?">
+    Each market has its own entry and exit fee, capped at 2.5%. There is no fee for holding. Gas is separate. See [Fees](/concepts/fees).
   </Accordion>
-  <Accordion title="What is the difference between Spot and Margin?">
-    Spot buys you an unlevered share of a pool, so your position can lose value but can never be
-    liquidated. Margin borrows against collateral on Morpho to enlarge the position, and that
-    borrowing introduces a liquidation threshold at the book's LLTV.
+  <Accordion title="Who holds my money?">
+    You do. Your tokens stay in your own wallet, and the collateral stays in the contracts. Null never holds your funds.
   </Accordion>
-  <Accordion title="Where is Payer, and why can I not see it?">
-    Payer is hidden until you turn on **Pro Mode** in the account menu. Once it is on, **Payer
-    buy** and **Payer sell** appear on the Spot ticket. Payer backs Receiver and moves against
-    the oracle price, so the app keeps it out of sight until you ask for it.
+  <Accordion title="Where do prices come from?">
+    Chainlink price feeds. Any single jump above 20% is skipped, not settled. See [Circuit breaker](/protocol/circuit-breaker).
   </Accordion>
-  <Accordion title="Why is funding always paid to Payers?">
-    Funding is the yield earned on collateral inside the Receiver pool, routed to Payers as
-    payment for backing Receiver exposure. The direction never flips, even when Payer collateral
-    is larger than Receiver collateral, though coverage changes how much each Payer earns.
-    [Funding and yield](/concepts/funding-and-yield) works through the numbers.
+  <Accordion title="Do I own the stock or coin a market follows?">
+    No. You hold a Receiver Pool share, a vault share or a Morpho position, depending on the product. No votes or dividends reach you, unless the price feed itself includes them.
   </Accordion>
-  <Accordion title="What does Net APR actually mean?">
-    Net APR combines collateral yield with funding, signed for the side you hold, and on a Payer
-    position it is scaled by `R / P`. It describes what current rates imply right now. It is not
-    a quote anyone has made you, and it does not predict your profit at exit.
+  <Accordion title="What if the Payer pool runs out?">
+    Returns stop until new Payers join. Missed price moves are not made up later.
   </Accordion>
-  <Accordion title="Why can I not withdraw all of my Savings?">
-    Most of the vault's USDC is out on loan to Margin longs at any given moment, so only the
-    unlent remainder is free to leave immediately. The panel shows how much that is. As loans are
-    repaid or positions close, more of the balance becomes withdrawable.
+  <Accordion title="How do I get out?">
+    Sell your pool tokens for your share of the collateral, less fees. Savings and Lending return what borrowers aren't using right away, and the rest as loans are repaid.
   </Accordion>
-  <Accordion title="What does Receive do?">
-    **Receive** displays your connected wallet's address and a QR code so you, an exchange, or
-    another wallet can send assets to it. That is all it does. It opens no position and commits
-    no funds, and assets become Cash only once they arrive in the wallet.
+  <Accordion title="What if Null shuts down?">
+    The contracts keep running without Null's app.
+  </Accordion>
+  <Accordion title="How can my synthetic earn interest?">
+    Lend it into its short market through [Lending](/products/lending). Leverage Short traders borrow it, and you keep its price exposure while it's lent.
+  </Accordion>
+  <Accordion title="What's the difference between Savings and Lending?">
+    Savings is managed: **Add money** puts USDC into the Null Savings Vault, which lends nUSDC across every long market for you. Lending is direct: you pick a market and use **Lend** and **Recall**, including lending your synthetics to short markets.
+  </Accordion>
+  <Accordion title="What's the difference between Spot and Margin?">
+    Spot buys a pool share outright. It can lose value but can never be liquidated. Margin borrows on Morpho to make the position bigger, which brings a liquidation price at the market's LLTV.
+  </Accordion>
+  <Accordion title="Where is Payer?">
+    Turn on **Pro Mode** in the account menu. **Payer buy** and **Payer sell** then appear on the Spot ticket.
+  </Accordion>
+  <Accordion title="Why does funding always flow to Payers?">
+    Funding is the interest earned on Receiver deposits, passed to Payers for backing them. Its source never changes, so its direction never flips. See [How Payers earn](/concepts/funding-and-yield).
+  </Accordion>
+  <Accordion title="Which markets are live?">
+    The list on `/trade` is the live set. These docs use rAAPL, rSPX, rBTC and rGOLD as examples only.
   </Accordion>
   <Accordion title="Are points a form of yield?">
-    No. Season 0 monitors ordinary trading activity, and points record that activity without
-    changing the value of any pool share, position, or settlement. They carry no stated value
-    and promise no token or payout. See [Points](/points) and the [Legal notices](/legal).
+    No. Points record ordinary activity in Season 0. They carry no stated value and promise no token or payout. See [Points](/points).
   </Accordion>
-  <Accordion title="Which markets are live right now?">
-    The list on `/trade` is the live set, and it is the only list worth trusting. These docs
-    deliberately avoid naming symbols, because the indexer decides what is listed and that set
-    can change without the documentation changing with it.
-  </Accordion>
-  <Accordion title="Has Null been audited?">
-    Nethermind reviewed an earlier, defined scope of the core contracts, and that review has
-    real limits. Later contracts, including Margin routing and the vault, can sit outside it.
-    Read [Audits](/protocol/audits) for what was covered before relying on it.
+  <Accordion title="What are the risks?">
+    Bad price feeds, contract bugs, collateral losses, and liquidation if you borrow. Audits reduce risk. They do not remove it. See [Risks](/concepts/risks).
   </Accordion>
 </AccordionGroup>

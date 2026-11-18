@@ -1,76 +1,52 @@
 ---
 title: "Fees"
 sidebarTitle: "Fees"
-description: "What trading on Null really costs: per market entry and exit fees on notional, no ongoing Null holding charge, and gas on top."
+description: "Each market has its own entry and exit fee, capped at 2.5%. There is no fee for holding. Gas is separate."
 ---
 
-A trade can look inexpensive at the rate and expensive at the receipt. Null tries to show you the receipt before you sign. Three different costs may appear around a position, and separating them will make the review screen much easier to read. The market may charge a fee when you enter or leave. Your position may earn or pay carry while you hold it.
+Three costs can show up around a position. A market may charge a fee when you enter or leave. Your position earns or gives up interest while you hold it. And Ethereum charges gas whenever you transact. Only the first is a Null fee.
 
-Ethereum will charge gas whenever you transact. Only the first of those is a trading fee charged by the market, and it is the subject of this page.
+## Entry and exit fees
 
-## Each market sets its own entry and exit fee
+| | |
+| --- | --- |
+| Who sets it | Each market has its own **Entry fee** and **Exit fee**, shown in its market information. One may charge nothing. |
+| The cap | Neither fee can go above 2.5%. The factory owner can adjust fees within that cap, and a change never rewrites trades already made. |
+| How it's taken | The fee comes out of the amount you trade. The review screen says **Protocol fee included in this purchase** or **in this sale**. |
+| What it's charged on | Notional: the size of the position you open or close. |
+| Where it goes | Usually to the opposite pool, to compensate the other side. Some deployments send it to the protocol instead. |
 
-A Null market can charge a fee on entry, a fee on exit, both, or neither. In the app's market information, those values appear as **Entry fee** and **Exit fee**. They belong to the specific market you are about to use. One market may charge nothing. Another may charge a small amount on one side and more on the other.
+## Why Payer fees look bigger
 
-There is a firm ceiling above whatever a market chooses. Neither the entry fee nor the exit fee can exceed 2.50 percent. That cap is useful as a boundary, but it is not the price you should expect to pay. The live rates in the market information, and the amounts calculated on your review screen, are the numbers that govern your trade.
+For a Receiver, notional is roughly what you put in. A Payer backs the whole Receiver pool, so its notional is scaled by `R / P`. The same fee rate is charged on a bigger position.
 
-## The fee comes out of the amount
-
-Null does not ask for your trade amount and then add a second fee charge on top of it. The review screen says **Protocol fee included in this purchase** when you buy, or **Protocol fee included in this sale** when you sell. Read that sentence literally. If a fee applies, it is taken out of the amount moving through the trade.
-
-A buyer receives fewer shares than the same amount would have bought without the fee. A seller receives less collateral than the gross value of the shares being sold. This presentation is easier to miss than an explicit extra charge, because the total leaving your wallet may match the number you typed. What changes is how much position that total actually opens or closes. The after fee amount is the economically important line.
-
-## Why notional, not cash posted, sets the fee
-
-The fee rate is applied to notional, meaning the size of the position being opened or closed. For a Receiver trade, notional and cash posted are usually close. Buy with 1,000 USDC of collateral value and you are opening roughly 1,000 of Receiver exposure, so a 0.25 percent fee is roughly 2.50. Payer requires one more step of thought.
-
-A Payer is a negative-size position in the Receiver pool, and its notional is scaled by the short scale, `R / P`, as explained in [The primitive](/concepts/the-primitive). Your Payer collateral might be 1,000 while the Receiver exposure it backs is several times larger. The same fee percentage is therefore charged against a larger position.
-
-| You post | Side | Short scale `R / P` | Approximate notional | Fee at 0.25% |
+| You post | Side | `R / P` | Notional | Fee at 0.25% |
 | --- | --- | ---: | ---: | ---: |
-| 1,000 | Receiver | Any | 1,000 | 2.50 |
-| 1,000 | Payer | 1 | 1,000 | 2.50 |
-| 1,000 | Payer | 5 | 5,000 | 12.50 |
-| 1,000 | Payer | 10 | 10,000 | 25.00 |
+| 1,000 | Receiver | any | about 1,000 | 2.50 |
+| 1,000 | Payer | 1 | about 1,000 | 2.50 |
+| 1,000 | Payer | 5 | about 5,000 | 12.50 |
+| 1,000 | Payer | 10 | about 10,000 | 25.00 |
 
-This is not a special penalty for choosing Payer. The market is charging the same rate for a bigger position. It does mean a thin Payer pool can make a trade materially more expensive in cash terms even when the published fee rate has not changed. When the rate and the amount seem to disagree, trust the calculated amount and ask what notional produced it.
+This is not a penalty for choosing Payer. It is the same rate on a bigger position.
 
-## What a round trip costs
+## A round trip
 
-Imagine buying 1,000 of Receiver exposure in a market with a 0.25 percent entry fee and a 0.25 percent exit fee. About 2.49 is taken on the way in, leaving 997.51 working in the pool. If nothing about the price, pools, or funding changes before you sell, another fee of about 2.49 comes out on the way back. You finish with roughly 995.02 before gas.
+Buy 1,000 of Receiver exposure in a market with a 0.25% entry fee and a 0.25% exit fee. About 2.49 comes out on the way in, leaving 997.51 in the pool. If nothing else changes, about 2.49 comes out on the way back. You finish with about 995.02 before gas, a round trip of about half a percent.
 
-Entering and leaving together cost about half a percent in that example. A zero fee market would cost nothing on this measure. A market charging the 2.50 percent cap on both sides would cost roughly five percent for the same round trip. The spread between those outcomes is why reading the live rate matters more than remembering that a cap exists.
+## Holding is free of Null fees
 
-## Where the fee usually goes
+Null charges nothing while you hold a pool position. That doesn't make holding free in every sense:
 
-On most markets, your fee is credited to the opposite pool. When a Receiver buyer pays a fee, that value is usually credited to Payers. When a Payer buyer pays, it is usually credited to Receivers. The transfer gives the side providing the other half of the market some compensation at the moment a trade changes the balance between the pools.
+| You hold | What it costs or pays while you hold |
+| --- | --- |
+| Receiver | You give up the interest on your deposit. It goes to Payers. |
+| Payer | You earn the interest on both pools' deposits. |
+| Savings | No extra app fee. You earn the **AER**. |
+| Lending | No Null cut of the **Lend Rate**. |
+| Margin | Entry and exit fees when the desk buys and sells, plus the borrow interest on your loan. |
 
-A few deployments route fees to the protocol instead, according to the market's factory setting. Either destination follows the same rule from your point of view. The fee leaves your position once, at the moment you trade. It is not collected again for as long as you remain in the pool.
+## At the review screen
 
-## Holding a position carries no Null holding charge
+Check the **Entry fee** or **Exit fee**, then the amount after the fee. That is the position you are really opening or closing. Then set the minimum you will accept. Settlement runs inside your transaction, so pools may have moved since the preview. If the result would be worse than your minimum, the transaction fails and the gas is still spent.
 
-There is no ongoing Null fee quietly accruing against a pool position while you wait. Opening may cost the entry fee. Closing may cost the exit fee. Between those events, Null does not add a holding charge of its own. That does not mean holding is free in every economic sense.
-
-A Receiver gives up the collateral yield on its pool, because that yield is paid to Payers as funding. A Payer receives that funding in addition to yield on its own collateral. A Margin position pays borrow interest to lenders on the Morpho book it used for as long as the loan remains open.
-
-Those are carrying costs and carrying income, shown through rates and pool values rather than collected as Null fees.
-
-[Funding and yield](/concepts/funding-and-yield) explains the Spot side, while [Margin](/products/margin) covers borrow interest in context. Gas belongs in a separate mental column altogether.
-
-It is paid to Ethereum, varies with network conditions and transaction complexity, and returns whenever you transact, including a Savings withdrawal that has no Null trading fee attached to it.
-
-## The other products, in fee terms
-
-**Savings** charges no extra app fee for depositing. You receive the vault supply rate shown as **AER**, reflecting what lenders earn after USDC has been allocated to the Morpho books and borrowers have paid interest. You still pay gas to use **Add money** and **Withdraw**. **Lending** works in a similarly direct way.
-
-You receive the **Lend rate** on the book you supply, funded by borrower interest. The app does not take a separate Null cut from that supply rate, and using **Recall** still costs gas. **Margin** combines the layers rather than replacing one with another. Opening a Margin position can incur the Null market's entry fee when the router buys Receiver shares.
-
-Closing can incur the exit fee when those shares are sold. Morpho borrow interest accrues between those two moments, and gas applies to the transactions. The ticket separates **Fees** and **Liquidation price** from the borrow amount so you can see which cost is which before committing.
-
-## Slow down at the review screen
-
-Start with the **Entry fee** or **Exit fee**, then follow it to the amount after the fee. That after fee amount tells you the position you are really opening or closing. Next, check the minimum amount you are willing to accept. Settlement runs inside your transaction, so pool balances may have moved since the first preview was produced.
-
-If the final result would be worse than your minimum, the transaction fails and the gas is still spent. Finally, if a Payer fee looks large, pause long enough to compare the direction expressed through [Margin](/products/margin).
-
-The economics are not identical, because Margin brings borrow interest and liquidation risk, but the comparison can clarify whether you are paying for pool exposure or simply for size. For the exact formula and the contract level caps, see [Fees](/protocol/fees).
+Contract level detail is in [Fees](/protocol/fees).

@@ -1,79 +1,38 @@
 ---
 title: "Glossary"
 sidebarTitle: "Glossary"
-description: "Plain definitions for the terms the app and these docs use, from Cash and coverage to Payer, Receiver, and short scale."
+description: "Plain definitions for the words the app and these docs use."
 ---
 
-Null uses a compact vocabulary, and most of it earns its place. A few words, such as Receiver and Payer, name ideas you will not meet elsewhere, while others, such as Cash, mean something more specific here than they do on an exchange. The definitions below follow the app.
+A few words, such as Receiver and Payer, name ideas you won't meet elsewhere. Others, such as Cash, mean something more specific here than on an exchange. These definitions follow the app.
 
-**AER**
-The annual equivalent rate is the yearly figure implied by the current Savings supply rate, shown to two decimal places. It moves as the rate moves, so it describes today rather than promising a year.
-
-**Burn**
-Burning is how the app describes redeeming a pool or vault share. It is the exit half of the ERC-4626 flow, and it returns the underlying asset.
-
-**Buy and Sell**
-**Buy** and **Sell** are the Spot actions for opening or adding to a pool position and for leaving one. Onchain they are ERC-4626 deposit and redeem, whatever the button says.
-
-**Carry**
-Carry is the net of collateral yield and funding on a position after the pool ratio has had its say. It is shown on Margin positions and should not be confused with the Morpho borrow APR.
-
-**Cash**
-Cash is the USDC sitting in your connected wallet, available to spend. It is not held by Null, and it earns nothing until you deploy it.
-
-**Collateral APR**
-Collateral APR is the annualized yield the market's collateral vault is currently earning. It is the raw material from which funding is paid.
-
-**Collateral vault**
-The collateral vault is the ERC-4626 share, `nmUSDC`, that a market uses as its collateral. The yield it generates is the source of all funding.
-
-**Coverage**
-Coverage is `P / R`, Payer assets divided by Receiver assets. It tells you how thickly the backing pool stands behind the exposed one.
-
-**Funding APR**
-Funding APR is the annualized collateral yield paid from the Receiver pool to Payers. It is funded by real yield, and it does not go negative.
-
-**LLTV**
-The LLTV is a Morpho book's liquidation loan to value threshold. A Margin position that reaches it can be liquidated by the book.
-
-**Long book**
-A long book is a Morpho market that lends USDC against Receiver shares. It is the borrowing venue behind leveraged long exposure.
-
-**Margin**
-Margin is the product that borrows on Morpho to hold an enlarged pool position. It can be liquidated, which is what separates it from Spot.
-
-**Mint**
-Minting is the app's word for depositing into a pool or vault and receiving shares. It is the entry half of the ERC-4626 flow.
-
-**Net APR**
-Net APR combines collateral yield with funding for the side you hold, with Payer figures scaled by `R / P`. It is a current reading, not a forecast of profit.
-
-**nmUSDC**
-`nmUSDC` is the Morpho Vault V2 share used as Null collateral. Its underlying asset is USDC, and its yield funds the whole design.
-
-**Null Savings Vault**
-The Null Savings Vault is that same `nmUSDC` vault reached through Savings, where depositing USDC lets it allocate across long books.
-
-**Payer**
-Payer is the pool that backs Receiver, structured as a negative size position in the Receiver pool with the market's collateral inside it. It gains when the oracle price falls and collects funding for the risk.
-
-**Pro Mode**
-Pro Mode is the account setting that reveals **Payer buy** and **Payer sell** on Spot. Leaving it off keeps the ticket Receiver only.
-
-**R and P**
-`R` and `P` are the assets held by the Receiver and Payer pools, both counted in collateral units. Nearly every ratio in Null derives from these two numbers.
-
-**Receive**
-**Receive** shows your wallet address and a QR code so assets can be sent to you. It neither buys a position nor moves any funds itself.
-
-**Receiver**
-Receiver is the pool that takes the oracle tracked return, rising and falling with the price it follows. Its collateral yield is paid away to Payers as funding.
-
-**Settlement**
-Settlement is the market update that refreshes a market before pool actions run. It is part of those actions rather than a separate step you perform yourself.
-
-**Short book**
-A short book is a Morpho market that lends Receiver shares against `nmUSDC`. It supplies the borrowing behind leveraged short exposure.
-
-**Short scale**
-Short scale is `R / P`, the size of Payer's negative Receiver exposure relative to Payer capital. It moves whenever either pool grows or shrinks, so hedges sized from it need revisiting.
+| Term | Meaning |
+| --- | --- |
+| **AER** | The Savings rate, as a yearly figure to two decimal places. It describes today, not a promise for the year. |
+| **Back markets** | Holding Payer: taking the other side of a market for both pools' interest. See [Payers](/market-making/overview). |
+| **Buy and Sell** | The Spot actions for entering and leaving a pool. Onchain they are ERC-4626 deposit and redeem. |
+| **Burn and Mint** | The app's words for redeeming and depositing a pool or vault share. |
+| **Carry** | The net of interest and borrow cost on a Margin position. |
+| **Cash** | The USDC in your connected wallet. Null doesn't hold it, and it earns nothing until you use it. |
+| **Collateral APR** | What the Null Collateral Vault is earning now. The source of all funding. |
+| **Coverage** | `P / R`: how thickly Payers back Receivers. |
+| **Funding** | The interest on Receiver deposits, paid to Payers. It only flows one way and is never negative. |
+| **Funding APR** | Funding as a yearly rate, measured on the Receiver pool. |
+| **Leverage Long** | Borrowing nUSDC on a long market to hold more of a synthetic. See [Margin](/products/margin). |
+| **Leverage Short** | Borrowing a synthetic on a short market and selling it. See [Margin](/products/margin). |
+| **LLTV** | A Morpho market's liquidation loan-to-value. A Margin position that reaches it can be liquidated. |
+| **Long market** | The Morpho market that lends nUSDC against a synthetic, written `rAAPL \| nUSDC`. The Null Savings Vault lends into it. |
+| **Net APR** | Interest and funding combined for the side you hold. Payer figures are scaled by `R / P`. A current reading, not a forecast. |
+| **nUSDC** | The share of the Null Collateral Vault. It is the collateral in every market. |
+| **Null Collateral Vault** | The curated vault of USDC that backs every market. Its interest pays the Payers. |
+| **Null Savings Vault** | A Morpho vault that holds nUSDC and lends it into every long market. What you use through Savings. |
+| **Payer** | The pool that backs Receivers. It gains when the price falls and earns both pools' interest. |
+| **Pro Mode** | The account setting that shows **Payer buy** and **Payer sell** on Spot. |
+| **R and P** | The assets in the Receiver and Payer pools, in nUSDC. Most ratios in Null come from these two numbers. |
+| **Receive** | Shows your wallet address and a QR code. It doesn't trade or move funds. |
+| **Receiver** | The pool that follows the price. Its deposits' interest goes to Payers. |
+| **Receiver Pool share** | The token you hold as a Receiver. A synthetic, such as rAAPL. |
+| **Settlement** | The update a market runs before any deposit or withdrawal: price moves and funding, then your trade. |
+| **Short market** | The Morpho market that lends a synthetic against nUSDC, written `nUSDC \| rAAPL`. Holders lend into it. |
+| **Short scale** | `R / P`: how much short exposure each Payer dollar carries. It moves as the pools change. |
+| **Synthetic** | A Receiver Pool share named after the asset it follows: rAAPL, rSPX, rBTC, rGOLD. |

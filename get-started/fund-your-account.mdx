@@ -1,69 +1,38 @@
 ---
 title: "Fund your account"
 sidebarTitle: "Fund your account"
-description: "Cash is simply the USDC in your connected wallet, ready for Savings, Spot, Lending, and Margin, with ETH kept aside for gas."
+description: "Cash is the USDC in your wallet. Each product puts it to work in a different layer."
 ---
 
-There is no deposit account to top up before you can use Null. **Cash** is
-the USDC already sitting in the wallet you connected, shown in USD in your
-portfolio. When a product needs money, it spends from that wallet balance.
-When you withdraw from Savings or sell on Spot, the USDC comes back to the
-same wallet. Your account, in other words, is your wallet.
-
-This is easy to misread if you are used to exchanges, where cash usually
-means money held on the platform. Here it does not. Null never takes custody
-of the USDC in your wallet, and nothing about holding Cash earns a return.
-Cash becomes productive only when you choose to put it to work.
+There is no account to top up. **Cash** is the USDC already in the wallet you connected. When a product needs money, it spends from there. When you withdraw or sell, the USDC comes back to the same wallet. Cash earns nothing until you put it to work.
 
 ## How each product uses Cash
 
-Every product starts from the same wallet, but each one does something
-different with what it takes. Savings asks you to **Add money**, which
-deposits USDC into the Null Savings Vault. Spot uses **Buy** to wrap USDC
-into `nmUSDC` and deposit that collateral into a pool. Lending supplies
-USDC, or in some books a Receiver share, to a Morpho book when you choose
-**Lend**. Margin takes USDC as the equity behind a **Long** or **Short**.
-
-One cost sits outside all four products, and it catches people out. Every
-transaction needs ETH for gas. A wallet full of USDC and empty of ETH can
-see its balance perfectly well and still be unable to do anything with it,
-so treat a small ETH buffer as part of funding, not as an afterthought.
-
-| What you are doing | What you need | Where it goes |
+| Product | Action | Where your USDC goes |
 | --- | --- | --- |
-| Savings | USDC | Into the Null Savings Vault through **Add money** |
-| Spot | USDC | Wrapped to `nmUSDC` and deposited into a pool through **Buy** |
-| Lending | USDC or a Receiver share | Supplied to a Morpho book through **Lend** |
-| Margin | USDC | Posted as equity for a **Long** or **Short** |
-| Any transaction | ETH | Paid as gas on Ethereum mainnet |
+| Savings | **Add money** | Becomes nUSDC in the Null Savings Vault, which lends it to the long markets. |
+| Spot | **Buy** | Becomes nUSDC, the Collateral Vault share, and goes into a market's pool. |
+| Lending | **Lend** | Supplied as nUSDC to a long market. Or lend a synthetic you hold to its short market. |
+| Margin | **Place Order** | Posted as the equity behind a **Long** or **Short**. |
+| Anything | Gas | Paid in ETH on Ethereum mainnet. |
 
-## Getting USDC to your wallet
+A wallet full of USDC and empty of ETH can see its balance but do nothing with it. Treat a small ETH buffer as part of funding.
+
+## Get USDC to your wallet
 
 <Steps>
-  <Step title="Copy your address from Receive">
-    Open **Receive** and copy the address of your connected wallet. Read the
-    chain notice before you send anything, because the network matters as
-    much as the address itself.
+  <Step title="Copy your address">
+    Open **Receive** and copy your address. Read the network notice before you send.
   </Step>
   <Step title="Send USDC on Ethereum">
-    Send USDC from an exchange, a bridge, or another wallet, and send it on
-    Ethereum. USDC arriving on another chain will not appear as Cash, even
-    though it reached a wallet you control.
+    From an exchange, a bridge or another wallet. USDC sent on another chain won't appear as Cash.
   </Step>
-  <Step title="Leave ETH behind for gas">
-    Keep a buffer of ETH rather than spending the wallet down to zero. Your
-    next deposit, sale, or withdrawal will need it, and a transaction you
-    cannot afford to confirm is a position you cannot manage.
+  <Step title="Keep some ETH">
+    Your next deposit, sale or withdrawal needs gas.
   </Step>
-  <Step title="Confirm Cash, then choose a product">
-    Back on Home, your USDC should show under **Cash**. From there, **Invest**
-    lets you pick Savings, Spot, Lending, or Margin, depending on what you
-    want the money to do.
+  <Step title="Choose a product">
+    Back on Home, your USDC shows under **Cash**. **Invest** lets you pick Savings, Spot, Lending or Margin.
   </Step>
 </Steps>
 
-Returns work in the other direction through the same wallet. Savings
-withdrawals and Spot sells send USDC back to you, subject to the liquidity
-available at the time and any fees that apply. If a balance looks smaller
-than you expected after a withdrawal, check what was actually free to leave
-before assuming something went wrong.
+Withdrawals and sells return USDC to your wallet, subject to the liquidity free at the time and any fees. If a withdrawal is smaller than you expected, check what was free to leave first.

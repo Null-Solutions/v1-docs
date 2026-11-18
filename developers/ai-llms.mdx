@@ -34,7 +34,7 @@ Use these pages as source context when asking an assistant to reason about or ge
 
 **Product language**
 
-- [The primitive](/concepts/the-primitive)
+- [Two pools](/concepts/the-primitive) and [The everything app](/concepts/everything-app)
 - [Savings](/products/savings), [Spot](/products/spot), [Lending](/products/lending), [Margin](/products/margin)
 
 ## Terms to preserve
@@ -47,7 +47,9 @@ Use these pages as source context when asking an assistant to reason about or ge
 | **FRM** | Funding-rate model stored on the market. Current model pays vault yield to Payers and does not go negative |
 | **Funding** | Vault yield on the Receiver pool, paid to Payers |
 | **Buy / Sell** | App words for pool deposit and redeem |
-| **Null Savings Vault** | USDC deposit into the Morpho vault that lends on long books |
+| **nUSDC** | Share of the Null Collateral Vault, a Morpho Vault V2 over USDC. Collateral in every market |
+| **Null Savings Vault** | Morpho vault that holds `nUSDC` and lends it into each market's long book |
+| **Long / short book** | Morpho markets per synthetic: `rX \| nUSDC` lends `nUSDC` against Receiver shares; `nUSDC \| rX` lends Receiver shares against `nUSDC` |
 | **Margin** | Morpho long or short via `NullV1MorphoRouter` |
 
 ## Guardrails

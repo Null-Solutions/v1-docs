@@ -1,60 +1,54 @@
 ---
 title: "Lending"
 sidebarTitle: "Lending"
-description: "Lend USDC or Receiver shares into the Morpho books around a Null market, and recall them later."
+description: "Lend nUSDC to the long markets, or lend your synthetic to the short markets and earn on it while you hold."
 ---
 
-Lending is for people who looked at [Savings](/products/savings) and asked a reasonable follow-up question: which book, exactly, is earning that rate, and could I choose it myself? Yes. Lending is the same Morpho books that the **Null Savings Vault** lends into, opened up so you can supply them directly, market by market, and recall your money under your own control.
-
-That control is the whole point of the product, and also its price. Savings blends everything into one AER and one balance. Lending hands you a full book of individual opportunities, each with its own rate and its own liquidity, and expects you to have a view on which ones deserve your capital. If that sounds like work you would enjoy, this is your page. If it does not, Savings was built for you.
+Lending is the direct version of Savings. Instead of one blended rate, you pick the Morpho markets yourself, and you can lend something Savings never touches: your synthetics.
 
 <Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/morpho-books-light.svg"
-    alt="Lenders supply USDC on the long book or Receiver shares on the short book."
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/morpho-books-dark.svg"
-    alt="Lenders supply USDC on the long book or Receiver shares on the short book."
-  />
+  <img src="/images/long-short-markets.svg" alt="Lenders supply nUSDC to the long market, rAAPL | nUSDC, or rAAPL to the short market, nUSDC | rAAPL." />
 </Frame>
 
-## Why this exists
+## Two things you can lend
 
-Leveraged traders need lenders the way a bank needs depositors. Every [Margin](/products/margin) long borrows USDC from someone, and every Margin short borrows Receiver shares from someone. Lending is where that someone is you, paid a market rate for making the trade possible.
+| You lend | Into | You earn | Your exposure |
+| --- | --- | --- | --- |
+| nUSDC | A long market, such as `rAAPL \| nUSDC` | Interest from Leverage Long borrowers, on top of nUSDC's own interest. | None to the price. You are a lender. |
+| Your synthetic, such as rAAPL | Its short market, `nUSDC \| rAAPL` | Interest from Leverage Short borrowers. | You keep rAAPL's price exposure while it is lent. |
 
-Doing it directly, rather than through the vault, buys you two things. You can favour books whose rates you find attractive and avoid ones you do not, and you can lend an asset Savings never touches: Receiver shares themselves. That second option is what makes the short side of Null function, because shorts cannot exist unless somebody is willing to part with shares for a while.
-
-## How it connects to the primitive
-
-Each wired Null market sits between two books, and [Morpho markets](/concepts/morpho-markets) lays out the architecture. One book faces each direction of trade. On the long book you lend USDC, labelled in the style of `USDC | AAPL`, meaning USDC is the loan asset and the market's Receiver share is the collateral behind the borrowing. Margin longs draw on this book. On the short book the relationship flips: you lend Receiver shares into a book labelled like `AAPL | nmUSDC`, and Margin shorts borrow those shares against `nmUSDC` collateral.
-
-Notice what this means about your exposure. Lending USDC keeps you neutral on the underlying price; you are a creditor, and your outcome depends on borrowers and their collateral. Lending Receiver shares is different, because the asset in your hand is itself a share of the Receiver pool from [the primitive](/concepts/the-primitive). While it is supplied, its value still moves with the pool, so you are combining a lending return with the price exposure you would have had on [Spot](/products/spot). Neither choice is better in the abstract. They are answers to different questions about what you want to own.
+The second row is what makes your synthetics yield-bearing. You hold Apple's price and earn interest on it. It is also what makes shorting possible, because a Leverage Short needs someone to lend the synthetic it borrows. [Long and short markets](/concepts/morpho-markets) explains both.
 
 ## Using the lending book
 
-The full book lives at `/lending`, and your current positions are summarised under **Home** and then **Lending**. The book rewards a slow first read. Its columns run from **Loan** and **Collateral**, which tell you what a book lends and what stands behind it, through **Outstanding Loans** and **Total Liquidity**, which tell you how busy and how deep it is, to **Your Supplied**, **Your Interest Earnt**, and **Lend Rate**, which are the three numbers that describe your own position in it.
+The full book is at `/lending`. Your positions are under **Home** and then **Lending**.
+
+| Column | What it tells you |
+| --- | --- |
+| **Loan** and **Collateral** | What the market lends, and what borrowers post against it. |
+| **Outstanding Loans** and **Total Liquidity** | How busy and how deep the market is. |
+| **Your Supplied**, **Your Interest Earnt** and **Lend Rate** | Your own position. |
 
 <Steps>
-  <Step title="Choose a book">
-    Decide whether you are lending USDC into a long book or Receiver shares into a short book. That choice determines both your return and what you are exposed to while the money is out.
+  <Step title="Choose a market">
+    nUSDC into a long market, or a synthetic into a short market. That choice sets both what you earn and what you're exposed to.
   </Step>
   <Step title="Lend">
-    Select **Lend**, enter an amount, and confirm. Your balance starts earning the book's **Lend Rate**, which floats with how much of the book borrowers are using.
+    Select **Lend**, enter an amount and confirm. Your balance starts earning the **Lend Rate**, which moves with how much borrowers use.
   </Step>
   <Step title="Recall">
-    Choose **Recall** to take assets back, up to the liquidity currently free in the book. If borrowers are using most of it, recall what is available now and the rest as loans are repaid.
+    Choose **Recall** to take assets back, up to what is free in the market. If borrowers are using most of it, take what's free now and the rest as loans are repaid.
   </Step>
 </Steps>
 
-That recall limit is not a penalty or a lockup someone imposed on you. It is arithmetic: lent money is, by definition, in someone else's hands. Watching **Total Liquidity** against **Outstanding Loans** before you lend gives you a fair sense of how quickly you could expect to exit a book in full.
+## Costs and risks
 
-## What it costs and what can go wrong
+| | |
+| --- | --- |
+| Fees | No Null cut of the **Lend Rate**. You pay gas to **Lend** and **Recall**. |
+| The rate moves | Quiet markets pay little. Busy ones pay more. |
+| Recalls | Limited by free liquidity. Compare **Total Liquidity** with **Outstanding Loans** before you lend. |
+| Bad debt | If a borrower is liquidated for less than the debt, you can lose principal. |
+| Price | Lending a synthetic keeps its price risk. |
 
-Your return is interest paid by borrowers, expressed as the **Lend Rate**, and it moves. Quiet books pay little because nobody needs the money; busy books pay more because traders are competing for a limited supply. There is no Null funding flowing to you as a lender, because funding is a transfer between Receiver and Payer pools, and it never goes negative or leaks out to bystanders. [Funding and yield](/concepts/funding-and-yield) explains that separation, and [Fees](/concepts/fees) covers what the wider system charges.
-
-The risk that matters most is the one lending always carries. Your borrowers post collateral, and if a position is liquidated for less than the debt it secures, the shortfall is where lenders can lose principal. [Risks](/concepts/risks) treats this properly, alongside oracle and smart contract risk across both Null and Morpho. Add the practical risk that a heavily used book cannot return your full balance on demand, and the picture is complete: lend money you can leave lent.
-
-If choosing books stops sounding appealing, [Savings](/products/savings) will happily make these decisions for you in exchange for a blended rate.
+Rather not choose markets? [Savings](/products/savings) does it for you.

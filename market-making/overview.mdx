@@ -1,107 +1,66 @@
 ---
-title: "Market making"
-sidebarTitle: "Market making"
-description: "Holding Payer means backing Receiver exposure for funding and collateral yield, sizing any hedge yourself, and carrying the price risk that comes with it."
+title: "Back markets as a Payer"
+sidebarTitle: "Payers"
+description: "Payers take the other side of every market. They earn both pools' interest, size any hedge themselves and carry the price risk."
 ---
 
-Market making on Null has a specific meaning, and it is narrower than the phrase suggests
-elsewhere. You are not quoting bids and offers, and you are not running a bot. You are holding
-**Payer**, the pool that stands behind Receiver so that Receiver can take the return of an
-oracle tracked asset. In exchange for taking the other side of that exposure, you collect the
-funding Receivers pay and the yield on the collateral inside your own pool.
+A Payer backs the Receivers in a market. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers. For taking that side, Payers earn the interest on their own deposit and on the Receivers' deposits.
 
-That trade should be understood before it is admired. When the oracle price rises, Receiver
-gains and Payer loses. When the price falls, the direction reverses. Your return therefore
-depends on whether the funding and yield you collect over time outweigh the price moves
-working against you. Payer pays you to carry risk. It does not remove the risk.
+That trade should be understood before it is admired. Payer pays you to carry risk. It does not remove the risk. Your returns come from interest rather than direction only if you hedge the price away.
 
-To see any of this in the app, turn on **Pro Mode** in the account menu. Spot then offers
-**Payer buy** and **Payer sell** alongside the Receiver ticket. With Pro Mode off, Payer is
-hidden entirely, which is the right default for anyone who has not yet decided to take this
-side of the market.
+To see Payer in the app, turn on **Pro Mode** in the account menu. Spot then offers **Payer buy** and **Payer sell**.
 
-## What you actually hold
+## What you hold
 
-A Payer position is best pictured as a negative size position in the Receiver pool, with the
-market's collateral sitting inside that structure. You are long the collateral and short the
-tracked exposure at the same time. The size of the short is not a setting you choose. It falls
-out of the balance between the two pools, and it changes as other people enter and leave.
-
-The relationship is expressed through two quantities you will see across these docs. `R` is
-the assets in the Receiver pool and `P` is the assets in the Payer pool, both measured in
-collateral units. Their ratio sets how much exposure each unit of Payer capital is carrying.
+A Payer position is long the collateral and short the price at the same time. How short is not a setting you choose. It comes from the balance of the two pools:
 
 ```text
 short scale = R / P
 Payer short notional = p × R / P
 ```
 
-Read that second line slowly, because it drives every decision that follows. If Receiver holds
-three times the assets Payer does, each dollar of Payer value carries roughly three dollars of
-short exposure. As coverage thins and the ratio climbs, the same position becomes a larger bet
-without you adding a cent. As Receiver drains and the ratio falls, the bet quietly shrinks.
-Position size on Payer is a moving quantity.
+`R` is the Receiver pool's assets and `P` the Payer pool's, both in nUSDC. `p` is your Payer position's value. If the Receiver pool is three times the Payer pool, each Payer dollar carries about three dollars of short exposure. When Payers are scarce, the same position becomes a bigger bet without you adding anything.
 
-## What you earn for carrying it
+## What you earn
 
-Payers are compensated from two sources, and it helps to keep them apart. The first is the
-yield on your own collateral, which you would earn from that collateral in any case. The second
-is funding, paid across from the Receiver pool out of the yield its collateral generates.
-Combined, the approximate carry on a Payer position, before fees and hedge costs, looks like this.
+| Source | What it is |
+| --- | --- |
+| Your own interest | Your deposit earns in the Null Collateral Vault, like any nUSDC. |
+| Funding | The Receivers' interest, paid across to the Payer pool. |
+
+Together, before fees and hedge costs:
 
 ```text
 carry ≈ y × (1 + R / P)
 ```
 
-Here `y` is the collateral yield. The opening `y` is the return on your own collateral, and the
-`y × R / P` term is the funding arriving from Receivers, scaled by the same ratio that scales
-your short. This is why thin coverage cuts both ways. It raises the funding you receive per unit
-of capital at exactly the moment it raises your exposure per unit of capital. The worked numbers
-behind the formula are in [Funding and yield](/concepts/funding-and-yield).
+`y` is the vault's interest rate. With 5% interest and Receivers twice the size of Payers, carry is about 15% a year on your Payer capital. Thin coverage raises your interest and your exposure at the same time. [How Payers earn](/concepts/funding-and-yield) has the worked example.
 
-## Hedging, and why it is your problem
+## Hedging is your job
 
-Many Payers do not want outright price exposure, so they hedge outside Null by buying the tracked
-asset, or a perpetual contract on it, at another venue. Done well, the hedge offsets the short
-embedded in Payer. What remains is the trade they actually wanted: Null funding, plus yield on
-Payer collateral, minus whatever the hedge costs to hold.
+Most Payers don't want the price risk, so they hedge outside Null, by buying the asset or a perp on it elsewhere. What's left is the trade they wanted: Null funding plus collateral interest, minus the cost of the hedge.
 
-Null does not open, size, or manage that hedge for you, and its economics are entirely separate
-from Null funding. An external venue charges its own funding, its own fees, and its own
-maintenance margin, and none of those charges appear in Null's Funding APR. A headline rate that
-looks generous inside Null can still lose money once hedge funding turns against you or the basis
-between the two venues moves. Judge the position on the net of both legs, never on one leg alone.
+Null doesn't open, size or manage that hedge. The other venue charges its own funding, fees and margin, none of which show in Null's **Funding APR**. A rate that looks generous here can still lose money once the hedge costs turn against you. Judge both legs together.
 
-Sizing also needs maintenance. Because the hedge should match the short notional `p × R / P`, and
-because that notional drifts with pool flows, a hedge that was correct on the day you entered can
-be materially wrong a week later. Recheck the ratio after large deposits or withdrawals in either
-pool, and resize the hedge when the scale has moved.
+The hedge should match your short notional, `p × R / P`, and that drifts as the pools change. Recheck it after large flows into either pool.
 
 ## Running a Payer position
 
 <Steps>
-  <Step title="Read the pools before you commit">
-    Check `R`, `P`, the collateral APR, and the funding APR on the market. Together they tell
-    you how large a short you are taking on and what you are currently being paid to hold it.
+  <Step title="Read the pools">
+    Check `R`, `P`, **Collateral APR** and **Funding APR**. They tell you how short you'll be and what you're paid to hold it.
   </Step>
-  <Step title="Buy Payer through Pro Mode">
-    Use **Payer buy** on the Spot ticket. Entry and exit fees are charged on notional rather
-    than on the cash you put in, so the cost scales with `R / P` and deserves a look first.
+  <Step title="Buy Payer in Pro Mode">
+    Use **Payer buy**. Fees are charged on notional, which scales with `R / P`, so check them first. See [Fees](/concepts/fees).
   </Step>
-  <Step title="Place the hedge outside Null, if you want one">
-    Match the short notional at an external venue, and remember that its funding, fees, and
-    margin calls are yours to manage. An unhedged Payer position is a deliberate directional
-    short, not a neutral one.
+  <Step title="Hedge elsewhere, if you want to">
+    Match the short notional on another venue. Its funding, fees and margin calls are yours. An unhedged Payer is a deliberate short.
   </Step>
-  <Step title="Watch the carry against its costs">
-    Compare Null funding and collateral yield with the funding and fees on your hedge. When
-    the net no longer pays for the exposure, exit with **Payer sell** rather than waiting
-    for the rate to rescue you.
+  <Step title="Watch carry against costs">
+    When the net no longer pays for the exposure, leave with **Payer sell**.
   </Step>
 </Steps>
 
 <Warning>
-Payer can lose most of its value when the oracle price rises and coverage is thin. Funding
-softens that outcome over time, but it does not cap it. Size the position for the price move,
-not for the rate.
+Payer can lose most of its value when the price rises and Payers are scarce. Funding softens that over time, but it does not cap it. Size for the price move, not the rate.
 </Warning>

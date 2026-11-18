@@ -1,11 +1,17 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "name": "Null V1",
+  "name": "Null",
   "theme": "luma",
   "colors": {
-    "primary": "#2d2c2c",
-    "light": "#2d2c2c",
-    "dark": "#ffffff"
+    "primary": "#23412E",
+    "light": "#DFE4DA",
+    "dark": "#23412E"
+  },
+  "background": {
+    "color": {
+      "light": "#DFE4DA",
+      "dark": "#26241D"
+    }
   },
   "logo": {
     "light": "/images/Logo.svg",
@@ -14,19 +20,39 @@
   },
   "favicon": "/images/LogoIcon.svg",
   "appearance": {
-    "default": "system"
+    "default": "light"
   },
   "fonts": {
-    "family": "Inter"
+    "family": "Lato",
+    "heading": {
+      "family": "Newsreader",
+      "weight": 400
+    },
+    "body": {
+      "family": "Lato"
+    }
   },
   "icons": {
     "library": "lucide"
   },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Open app",
+      "href": "https://null.xyz"
+    }
+  },
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude", "cursor"]
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "cursor"
+    ]
   },
   "search": {
-    "prompt": "Search Null V1 docs..."
+    "prompt": "Search the Null docs"
   },
   "seo": {
     "indexing": "navigable"
@@ -301,23 +327,25 @@
             ]
           },
           {
+            "group": "How Null works",
+            "pages": [
+              "concepts/the-primitive",
+              "concepts/funding-and-yield",
+              "concepts/building-block",
+              "concepts/everything-app",
+              "concepts/vaults",
+              "concepts/morpho-markets",
+              "concepts/fees",
+              "concepts/risks"
+            ]
+          },
+          {
             "group": "Products",
             "pages": [
               "products/savings",
               "products/spot",
               "products/lending",
               "products/margin"
-            ]
-          },
-          {
-            "group": "How it works",
-            "pages": [
-              "concepts/the-primitive",
-              "concepts/funding-and-yield",
-              "concepts/vaults",
-              "concepts/morpho-markets",
-              "concepts/fees",
-              "concepts/risks"
             ]
           },
           {
@@ -329,9 +357,9 @@
           {
             "group": "More",
             "pages": [
-              "points",
               "faq",
               "glossary",
+              "points",
               "legal"
             ]
           }

@@ -6,7 +6,7 @@ description: "NullV1YieldShareFundingRateModel pays Payers the vault yield earne
 
 Funding exists in Null because the two sides of a market do not want the same thing from the collateral. Receivers want price exposure. Payers are providing the balance sheet that makes that exposure possible, and they expect to be paid for it. In many perpetual markets that payment is invented from positioning, an auction between longs and shorts. Here it has a concrete source: the collateral itself is a yield bearing vault share, and funding is simply that yield, taken from the Receiver pool and handed to the Payer pool.
 
-`NullV1YieldShareFundingRateModel` is the model that performs the measurement. It does not forecast an annual percentage yield, subscribe to a rate feed, or smooth anything over time. On each settlement it reads what the vault share is worth now, compares that with the best value it has previously recorded, and turns the growth since then into the rate the market should apply. Receivers end up keeping none of the vault yield on their pool, while Payers receive that yield in addition to the yield on their own shares, which reconciliation has already credited to them. The product view of the same arrangement is in [Funding and yield](/concepts/funding-and-yield).
+`NullV1YieldShareFundingRateModel` is the model that performs the measurement. It does not forecast an annual percentage yield, subscribe to a rate feed, or smooth anything over time. On each settlement it reads what the vault share is worth now, compares that with the best value it has previously recorded, and turns the growth since then into the rate the market should apply. Receivers end up keeping none of the vault yield on their pool, while Payers receive that yield in addition to the yield on their own shares, which reconciliation has already credited to them. The product view of the same arrangement is in [How Payers earn](/concepts/funding-and-yield).
 
 ## Reading a share price precisely
 
@@ -16,7 +16,7 @@ The model prices the collateral by asking the vault to convert a deliberately ov
 sharePrice = vault.convertToAssets(1e36)
 ```
 
-Quoting for `1e36` shares rather than one share preserves precision when a single share is worth far less than one unit of the underlying asset. That is the normal case here, since `nmUSDC` carries 18 decimals over 6 decimal USDC, and rounding at this step would otherwise become a slow leak or gift between the pools, repeated at every settlement.
+Quoting for `1e36` shares rather than one share preserves precision when a single share is worth far less than one unit of the underlying asset. That is the normal case here, since `nUSDC` carries 18 decimals over 6 decimal USDC, and rounding at this step would otherwise become a slow leak or gift between the pools, repeated at every settlement.
 
 For each market the model remembers two things together: the highest share price it has seen at a settlement, its high water mark, and the annualised rate produced by the most recent settlement. Both matter to what happens next.
 

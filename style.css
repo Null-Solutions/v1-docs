@@ -1,6 +1,176 @@
+/*
+ * Null docs: brand layer over the Mintlify luma theme.
+ * Follows the Null brand guide: sage and green lead, warm black and white
+ * for contrast, terracotta, fjord blue and sand as accents.
+ * Newsreader is for the page title only. Everything else is Lato.
+ * Lists and tables are hairline rows, not boxes.
+ */
+
+:root {
+  --null-sage: #dfe4da;
+  --null-sage-deep: #c5cac1;
+  --null-sage-light: #eef1eb;
+  --null-ink: #26241d;
+  --null-ink-soft: rgb(38 36 29 / 72%);
+  --null-green: #23412e;
+  --null-terracotta: #97533b;
+  --null-fjord: #618aa1;
+  --null-sand: #d4b16b;
+  --null-white: #fcfcfc;
+  --null-hairline: rgb(38 36 29 / 18%);
+  --null-hairline-strong: rgb(38 36 29 / 45%);
+
+  /* Functional motion mirrors v1-ui/src/lib/motion.ts */
+  --null-motion-instant: 50ms;
+  --null-motion-normal: 100ms;
+  --null-motion-micro: 150ms;
+  --null-motion-fast: 180ms;
+  --null-motion-standard: 280ms;
+  --null-motion-content-fast: 140ms;
+  --null-ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
+  --null-ease-content: cubic-bezier(0.23, 0.88, 0.26, 0.92);
+  --null-ease-material: cubic-bezier(0.4, 0, 0.2, 1);
+  --null-focus-color: #618aa1;
+}
+
+.dark {
+  --null-ink: #dfe4da;
+  --null-ink-soft: rgb(223 228 218 / 72%);
+  --null-hairline: rgb(223 228 218 / 16%);
+  --null-hairline-strong: rgb(223 228 218 / 40%);
+  --null-focus-color: #a9c3d2;
+}
+
+/* ---------- Page and type ---------- */
+
+html:not(.dark) body,
+html:not(.dark) #navbar > div:first-child,
+html:not(.dark) #sidebar-content {
+  background-color: var(--null-sage) !important;
+}
+
+.dark body,
+.dark #navbar > div:first-child,
+.dark #sidebar-content {
+  background-color: #26241d !important;
+}
+
+body {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  color: var(--null-ink);
+}
+
+/* The one large heading on each page is Newsreader. */
+#page-title,
+#content-area h1 {
+  font-family: "Newsreader", Georgia, serif !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--null-green) !important;
+}
+
+.dark #page-title,
+.dark #content-area h1 {
+  color: var(--null-sage) !important;
+}
+
+#page-title {
+  margin-top: 0;
+  font-size: clamp(2.4rem, 4vw, 3.25rem) !important;
+}
+
+/* Section headings stay in Lato, green, sentence case. */
+#content-area h2,
+#content-area h3,
+#content-area h4 {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0;
+  color: var(--null-green) !important;
+  text-transform: none !important;
+}
+
+#content-area h2 {
+  font-size: 1.85rem !important;
+  line-height: 1.2;
+  margin-top: 3.25rem;
+}
+
+#content-area h3 {
+  font-size: 1.3rem !important;
+  margin-top: 2.25rem;
+}
+
+.dark #content-area :is(h2, h3, h4) {
+  color: var(--null-sage) !important;
+}
+
+/* Lead line under the title. */
+#header [data-component-part="page-description"],
+#header .description,
+#header p {
+  color: var(--null-ink-soft);
+  font-size: 1.15rem;
+  line-height: 1.55;
+}
+
+#content-area p,
+#content-area li {
+  line-height: 1.7;
+}
+
+#content-area strong {
+  font-weight: 600;
+}
+
+/* Links: green with a quiet underline. */
+#content-area a:not(.card):not([class*="button"]) {
+  color: var(--null-green);
+  text-decoration: underline;
+  text-decoration-color: var(--null-hairline-strong);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  border-bottom: none !important;
+}
+
+#content-area a:not(.card):hover {
+  text-decoration-color: currentColor;
+}
+
+.dark #content-area a:not(.card):not([class*="button"]) {
+  color: var(--null-sage);
+}
+
+/* No all-caps labels anywhere. */
+eyebrow,
+.eyebrow,
+sidebar-group-header,
+[class*="sidebar-group-header"],
+#sidebar-content h5 {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+eyebrow,
+.eyebrow {
+  display: block !important;
+  width: fit-content;
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: var(--null-ink-soft) !important;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  margin-bottom: 1rem;
+}
+
+/* ---------- Navigation ---------- */
+
 img.nav-logo {
   width: auto !important;
-  height: 20px !important;
+  height: 22px !important;
 }
 
 .nav-dropdown-item-icon {
@@ -12,53 +182,8 @@ img.nav-logo {
   display: none !important;
 }
 
-sidebar-group-header {
-  display: none !important;
-}
-
-eyebrow,
-.eyebrow {
-  display: block !important;
-  width: fit-content;
-  padding: 0;
-  border-radius: 0;
-  background: transparent !important;
-  color: #2d2c2c !important;
-  line-height: 1.25;
-  white-space: nowrap;
-  margin-bottom: 1.25rem;
-}
-
-#page-title {
-  margin-top: 0;
-}
-
-.dark :is(eyebrow, .eyebrow) {
-  background: transparent !important;
-  color: rgb(255 255 255 / 70%) !important;
-}
-
-/*
- * Functional motion mirrors v1-ui/src/lib/motion.ts:
- * micro for controls, surface for overlays, content for page changes.
- */
-:root {
-  --null-motion-instant: 50ms;
-  --null-motion-normal: 100ms;
-  --null-motion-micro: 150ms;
-  --null-motion-fast: 180ms;
-  --null-motion-standard: 280ms;
-  --null-motion-content-fast: 140ms;
-  --null-ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
-  --null-ease-content: cubic-bezier(0.23, 0.88, 0.26, 0.92);
-  --null-ease-material: cubic-bezier(0.4, 0, 0.2, 1);
-  --null-focus-color: #2e8afa;
-}
-
-@supports (color: color(display-p3 0.22 0.8 1)) {
-  :root {
-    --null-focus-color: color(display-p3 0.22 0.8 1);
-  }
+#navbar > div:first-child {
+  border-bottom: 1px solid var(--null-hairline) !important;
 }
 
 #sidebar-content li > a,
@@ -70,32 +195,312 @@ eyebrow,
     transform var(--null-motion-micro) var(--null-ease-standard);
 }
 
+#sidebar-content li > a {
+  color: var(--null-ink-soft) !important;
+}
+
 #sidebar-content li[data-active] > a {
-  border-radius: 0.625rem;
-  background: rgb(45 44 44 / 8%);
-  color: #2d2c2c !important;
+  border-radius: 999px;
+  background: rgb(35 65 46 / 9%);
+  color: var(--null-green) !important;
 }
 
 #sidebar-content li:not([data-active]) > a:hover {
   background: transparent;
-  color: #2d2c2c !important;
+  color: var(--null-green) !important;
 }
+
+.dark #sidebar-content li[data-active] > a {
+  background: rgb(223 228 218 / 10%);
+  color: var(--null-sage) !important;
+}
+
+.dark #sidebar-content li:not([data-active]) > a:hover {
+  color: var(--null-sage) !important;
+}
+
+/* Underline tabs, not pills. */
+#navbar nav[aria-label="Main"] a.link {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  height: auto !important;
+  padding: 0.65rem 0 !important;
+  color: var(--null-ink-soft) !important;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+#navbar nav[aria-label="Main"] a.link:hover {
+  background: transparent !important;
+  color: var(--null-green) !important;
+}
+
+#navbar nav[aria-label="Main"] a[aria-current] {
+  background: transparent !important;
+  color: var(--null-green) !important;
+  border-bottom-color: var(--null-green);
+}
+
+.dark #navbar nav[aria-label="Main"] a:is(.link:hover, [aria-current]) {
+  color: var(--null-sage) !important;
+  border-bottom-color: var(--null-sage);
+}
+
+/* The "Open app" button reads as a quiet outline pill. */
+#navbar a[href="https://null.xyz"]:not(:has(img)) {
+  border-radius: 999px !important;
+  background: var(--null-green) !important;
+  color: var(--null-sage) !important;
+}
+
+.dark #navbar a[href="https://null.xyz"]:not(:has(img)) {
+  background: var(--null-sage) !important;
+  color: #26241d !important;
+}
+
+/* Search reads as part of the page, not a widget. */
+:is(#search-bar-entry, #search-bar-entry-mobile) {
+  background: transparent !important;
+  border: 1px solid var(--null-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+/* ---------- Content components ---------- */
+
+/* Diagrams sit flush: the sage panel is the frame. */
+#content-area .frame,
+#content-area [data-component-part="frame"] {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 2rem 0 !important;
+}
+
+#content-area .frame *,
+#content-area [data-component-part="frame"] * {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#content-area .frame .pointer-events-none.absolute {
+  border: none !important;
+}
+
+#content-area .frame img,
+#content-area [data-component-part="frame"] img {
+  display: block;
+  width: 100%;
+}
+
+#content-area .frame [data-component-part="frame-caption"],
+#content-area .frame figcaption {
+  color: var(--null-ink-soft);
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+/* Tables are hairline lists. */
+#content-area table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border: none !important;
+  border-collapse: collapse;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#content-area table code {
+  white-space: nowrap;
+}
+
+#content-area :is(table, thead, tbody, tr) {
+  background: transparent !important;
+}
+
+#content-area th {
+  font-weight: 600 !important;
+  color: var(--null-ink) !important;
+  text-align: left;
+  border: none !important;
+  border-bottom: 1px solid var(--null-hairline-strong) !important;
+  padding: 0.6rem 1.5rem 0.6rem 0 !important;
+  background: transparent !important;
+}
+
+#content-area td {
+  border: none !important;
+  border-top: 1px solid var(--null-hairline) !important;
+  padding: 0.85rem 1.5rem 0.85rem 0 !important;
+  vertical-align: top;
+  color: var(--null-ink-soft);
+}
+
+#content-area td:first-child {
+  color: var(--null-green);
+  min-width: 10rem;
+}
+
+.dark #content-area td:first-child {
+  color: var(--null-sage);
+}
+
+#content-area div:has(> table) {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Cards become hairline rows: no boxes, no tinted tiles. */
+#content-area :is(.card, a.card) {
+  border: none !important;
+  border-top: 1px solid var(--null-hairline) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#content-area a.card:hover {
+  border-top-color: var(--null-green) !important;
+}
+
+#content-area .card [data-component-part="card-content-container"] {
+  padding: 1rem 0 0.75rem !important;
+}
+
+#content-area .card :is(h2, h3, [data-component-part="card-title"]) {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 1.1rem !important;
+  line-height: 1.4 !important;
+  margin-top: 0.5rem !important;
+  color: var(--null-green) !important;
+  font-weight: 500 !important;
+}
+
+#content-area .card [data-component-part="card-content"],
+#content-area .card p {
+  color: var(--null-ink-soft) !important;
+  font-size: 0.95rem;
+}
+
+#content-area .card svg {
+  color: var(--null-green) !important;
+}
+
+.dark #content-area .card svg {
+  color: var(--null-sage) !important;
+}
+
+.dark #content-area .card :is(h2, h3, [data-component-part="card-title"]) {
+  color: var(--null-sage) !important;
+}
+
+/* Callouts: a green rule on a slightly deeper sage, no rounded tile. */
+#content-area :is([data-callout-type], .callout) *:not(a) {
+  color: var(--null-ink) !important;
+}
+
+#content-area :is([data-callout-type], .callout) [data-component-part="callout-icon"] svg {
+  color: var(--null-green) !important;
+}
+
+#content-area :is([data-callout-type], .callout) {
+  border: none !important;
+  border-left: 2px solid var(--null-green) !important;
+  border-radius: 0 !important;
+  background: rgb(197 202 193 / 45%) !important;
+  color: var(--null-ink) !important;
+}
+
+#content-area :is([data-callout-type="warning"], [data-callout-type="danger"]) {
+  border-left-color: var(--null-terracotta) !important;
+}
+
+.dark #content-area :is([data-callout-type], .callout) {
+  background: rgb(223 228 218 / 6%) !important;
+  border-left-color: var(--null-sage) !important;
+}
+
+/* Accordions: hairline rows. */
+#content-area details.accordion,
+#content-area [data-component-part="accordion-group"] {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#content-area details.accordion {
+  border-top: 1px solid var(--null-hairline) !important;
+}
+
+#content-area details.accordion > summary {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  color: var(--null-green);
+}
+
+.dark #content-area details.accordion > summary {
+  color: var(--null-sage);
+}
+
+#content-area details.accordion > [data-component-part="accordion-content"] {
+  padding-left: 0 !important;
+  color: var(--null-ink-soft);
+}
+
+/* Steps: green markers, hairline spine. */
+#content-area [data-component-part="step-number"] {
+  background: var(--null-green) !important;
+  color: var(--null-sage) !important;
+}
+
+#content-area [data-component-part="step-line"] {
+  background: var(--null-hairline) !important;
+}
+
+/* Code stays readable and calm. */
+#content-area :is(pre, .code-block, [data-component-part="code-block-root"]) {
+  border-radius: 6px !important;
+  border: 1px solid var(--null-hairline) !important;
+  box-shadow: none !important;
+}
+
+#content-area :not(pre) > code {
+  background: rgb(197 202 193 / 55%) !important;
+  border: none !important;
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  color: var(--null-ink) !important;
+  font-size: 0.9em;
+}
+
+.dark #content-area :not(pre) > code {
+  background: rgb(223 228 218 / 10%) !important;
+}
+
+/* Pagination as hairline links. */
+#pagination a {
+  border: none !important;
+  border-top: 1px solid var(--null-hairline) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* ---------- Motion and focus (unchanged behaviour) ---------- */
 
 #header,
 #content,
 #pagination {
   animation: null-content-reveal var(--null-motion-content-fast)
     var(--null-ease-content) both;
-}
-
-.dark #sidebar-content li[data-active] > a {
-  background: rgb(255 255 255 / 10%);
-  color: #ffffff !important;
-}
-
-.dark #sidebar-content li:not([data-active]) > a:hover {
-  background: transparent;
-  color: #ffffff !important;
 }
 
 :is(
@@ -174,10 +579,6 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   #sidebar-content li:not([data-active]) > a:hover {
     transform: translateX(2px);
   }
-
-  a.card:hover {
-    transform: translateY(-2px);
-  }
 }
 
 :is(
@@ -188,8 +589,7 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   button[aria-label="More actions"],
   button[aria-label^="Copy the contents"],
   button[aria-label^="Expand image"],
-  #pagination a,
-  a.card
+  #pagination a
 ):active {
   transform: scale(0.97);
 }
@@ -261,11 +661,8 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   }
 }
 
-#navbar > div:first-child {
-  border-bottom-width: 0 !important;
-}
+/* ---------- Layout: tabs under the logo, wide reading column ---------- */
 
-/* Stack tabs under the logo (second navbar row). CSS only, no DOM moves */
 @media (min-width: 1024px) {
   #navbar > div:last-child {
     width: 100%;
@@ -301,7 +698,7 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   }
 
   #navbar nav[aria-label="Main"] ul {
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
 
   /* Keep sidebar below the taller navbar (padding + logo row + tabs row) */
@@ -314,51 +711,4 @@ details.accordion[open] > [data-component-part="accordion-content"] {
   #content-area {
     margin-left: max(0px, calc(min(50vw, 640px) - 348px - 14rem)) !important;
   }
-}
-
-/* Underline tabs, not pills */
-#navbar nav[aria-label="Main"] a.link {
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  height: auto !important;
-  padding: 0.65rem 0 !important;
-  color: rgb(107 114 128) !important;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-
-#navbar nav[aria-label="Main"] a.link:hover {
-  background: transparent !important;
-  color: #2d2c2c !important;
-}
-
-#navbar nav[aria-label="Main"] a[aria-current] {
-  background: transparent !important;
-  color: #2d2c2c !important;
-  border-bottom-color: #2d2c2c;
-}
-
-.dark #navbar nav[aria-label="Main"] a.link {
-  color: rgb(156 163 175) !important;
-}
-
-.dark #navbar nav[aria-label="Main"] a.link:hover {
-  color: #ffffff !important;
-}
-
-.dark #navbar nav[aria-label="Main"] a[aria-current] {
-  color: #ffffff !important;
-  border-bottom-color: #ffffff;
-}
-
-/* Address tables: keep hex addresses on one line and scroll the table instead of wrapping. */
-#content-area table {
-  display: block;
-  width: 100%;
-  overflow-x: auto;
-}
-
-#content-area table code {
-  white-space: nowrap;
 }

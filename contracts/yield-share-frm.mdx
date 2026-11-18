@@ -4,7 +4,7 @@ sidebarTitle: "Yield-share model"
 description: "Reference for the vault yield funding model."
 ---
 
-`NullV1YieldShareFundingRateModel` is the funding rate model for markets whose collateral is an ERC-4626 vault share, such as `nmUSDC`. Its premise is simple. The Receiver pool holds vault shares, and as the vault earns yield those shares become worth more. This model measures that growth at every settlement and hands all of it to the Payer side as funding. Receivers keep none of the yield earned on the Receiver pool. Payers receive it, on top of the yield on their own shares.
+`NullV1YieldShareFundingRateModel` is the funding rate model for markets whose collateral is an ERC-4626 vault share, such as `nUSDC`. Its premise is simple. The Receiver pool holds vault shares, and as the vault earns yield those shares become worth more. This model measures that growth at every settlement and hands all of it to the Payer side as funding. Receivers keep none of the yield earned on the Receiver pool. Payers receive it, on top of the yield on their own shares.
 
 The model never estimates an APY and never extrapolates. It reads the live vault share price, compares it with the highest price it has previously settled at, and annualizes only the growth that has actually happened.
 

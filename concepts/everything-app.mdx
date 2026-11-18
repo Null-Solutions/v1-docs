@@ -1,0 +1,44 @@
+---
+title: "The everything app"
+sidebarTitle: "The everything app"
+description: "One curated vault backs many synthetics, each with a long and a short market. Savers lend nUSDC to the longs. Holders lend their synthetics to the shorts."
+---
+
+We're building the everything app for the world's markets. Each layer builds on the one before it, so the app stays simple and settlement stays open.
+
+<Frame caption="Synthetics shown are examples. The live list is on /trade.">
+  <img src="/images/everything-app.svg" alt="The everything app in layers. The Null Collateral Vault, nUSDC, backs many synthetics: rAAPL, rSPX, rBTC and rGOLD. Each synthetic has a long Morpho market and a short Morpho market. The Null Savings Vault lends nUSDC into every long market, and holders lend their synthetic into the short markets." />
+</Frame>
+
+## The layers
+
+| Layer | What it does |
+| --- | --- |
+| Null Collateral Vault | One curated vault of USDC. Its share, nUSDC, is the collateral in every market, and its interest pays the Payers. |
+| Synthetics | A Receiver Pool share for every asset: a stock, an index, a commodity or a coin. Each one is fully backed by nUSDC. |
+| Morpho markets | Each synthetic gets two. The long market, written `rAAPL \| nUSDC`, lends nUSDC against rAAPL. The short market, `nUSDC \| rAAPL`, lends rAAPL against nUSDC. |
+| Null Savings Vault | A Morpho vault. Savers deposit, it holds nUSDC and lends it into every long market. That is two layers of interest: the Collateral Vault's and the borrowers'. |
+
+Markets are written collateral first, then the asset being lent. In `rAAPL | nUSDC`, borrowers post rAAPL and borrow nUSDC.
+
+## Two ways to lend for yield
+
+The dashed lines in the diagram are lending.
+
+- **Savers lend nUSDC to the longs.** Your Savings deposit becomes nUSDC, and the Null Savings Vault lends it to traders who want leveraged long exposure.
+- **Holders lend their synthetic to the shorts.** If you hold rAAPL, you can lend it into the short market and earn interest on it while you keep the price exposure. That makes rAAPL a yield-bearing way to hold Apple's price.
+
+[Long and short markets](/concepts/morpho-markets) explains both in detail.
+
+## All in one app
+
+Each action in the app sits on one layer.
+
+| Action | Where it happens | What you do |
+| --- | --- | --- |
+| **Save** | Null Savings Vault | Your deposit is lent to the long markets for interest. See [Savings](/products/savings). |
+| **Hold** | Synthetics | Buy a token that follows a price, fully backed. See [Spot](/products/spot). |
+| **Lend** | Long or short markets | Lend nUSDC to longs, or your synthetic to shorts. See [Lending](/products/lending). |
+| **Leverage Long** | Long markets | Borrow nUSDC against your synthetic for more exposure. See [Margin](/products/margin). |
+| **Leverage Short** | Short markets | Borrow the synthetic against nUSDC and sell it. See [Margin](/products/margin). |
+| **Back markets** | Payer pools | Take the other side of a market and earn both pools' interest. See [Payers](/market-making/overview). |

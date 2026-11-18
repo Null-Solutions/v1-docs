@@ -1,55 +1,50 @@
 ---
-title: "Null"
+title: "Global market exposure. Built to work across DeFi."
 sidebarTitle: "Home"
-description: "Null is built on one idea: two pools sharing one pot of collateral. Savings, Spot, Lending, and Margin are four ways of using it."
+description: "Null turns the price of a stock, index, commodity or crypto asset into a token you can hold, back or build with."
 ---
 
-Most ways of getting exposure to a price ask you to trust someone with the other side of your trade. Null replaces that counterparty with a pot of collateral that two groups share.
+Null runs in open contracts on Ethereum. There is no broker, no custodian and no margin account. You keep your tokens in your own wallet, and every position is fully backed.
 
-Every Null market tracks one price (a stock, an index, a token) through an oracle. Around that price sit two pools. The **Receiver** pool gains when the price rises. The **Payer** pool gains when it falls. Both pools hold the same collateral, and when the price moves, the market simply moves collateral from one pool to the other. Nobody borrows the asset, nobody can be liquidated, and there is no account to top up. If you understand that picture, you understand Null, because everything in the app is a variation on it.
+## Every market has two pools
+
+Receivers get the price return of an asset, such as Apple or the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
 
 <Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/system-map-light.svg"
-    alt="How Null fits together: your USDC either earns in the Savings vault or buys into a market's two pools, and Morpho books around those pools power Lending and Margin."
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/system-map-dark.svg"
-    alt="How Null fits together: your USDC either earns in the Savings vault or buys into a market's two pools, and Morpho books around those pools power Lending and Margin."
-  />
+  <img src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
 </Frame>
 
-## The four products
+That is the whole idea. Everything else in Null is built on it. [Two pools](/concepts/the-primitive) walks through it with a worked example.
 
-**[Savings](/products/savings)** is the quiet starting point. You add USDC and it is lent out to people taking leveraged positions, so it earns a variable rate. You have no view on any price.
+## What you can do with it
 
-**[Spot](/products/spot)** is the primitive itself. Buying puts you in the Receiver pool, holding the return of the tracked price, paid for in collateral that earns yield while you hold it. It is exposure without leverage and without a liquidation price.
+| You want to | Use | What happens |
+| --- | --- | --- |
+| Earn on your USDC | [Savings](/products/savings) | Your deposit is lent to the long markets for interest. |
+| Hold a price | [Spot](/products/spot) | You buy a token that follows a stock, index, commodity or coin. |
+| Earn on what you hold | [Lending](/products/lending) | You lend nUSDC to longs, or your synthetic to shorts. |
+| Take a bigger position | [Margin](/products/margin) | You borrow on Morpho to go long or short. |
+| Back the market | [Payers](/market-making/overview) | You take the other side and earn both pools' interest. |
 
-**[Lending](/products/lending)** lets you supply the same borrowing markets that Savings uses, directly, book by book, including lending the Receiver shares themselves.
-
-**[Margin](/products/margin)** is for taking a bigger view. You borrow against your position on Morpho, long or short, which multiplies the return and introduces the one thing Spot does not have: a price at which you are liquidated.
-
-The thread connecting them is the collateral. It sits in a yield-bearing vault token, `nmUSDC`, so money that is backing a position is also money that is earning. Receivers hand that yield to Payers as funding, the Savings vault lends to the Margin longs, and the same Receiver share is the asset being lent, borrowed, and held throughout. [Vaults](/concepts/vaults) explains how one token does all of that.
+These are all one app. [The everything app](/concepts/everything-app) shows how the pieces stack: one curated vault, many synthetics, a long and a short market for each, and a savings vault that lends into them.
 
 ## Where to start
 
-If you are new, read [The primitive](/concepts/the-primitive). It is the only page you need before the product pages make sense, and it takes a few minutes. If you already know what you want to do, go straight to the product above.
-
-Two things are worth knowing before any of it. Prices here come from oracles and positions settle when they are touched, so a value on screen is the last settled state, not a live quote. And these are real assets on Ethereum mainnet: positions can lose value, leveraged ones can be wiped out, and Null is not offered in the United Kingdom. [Risks](/concepts/risks) is the honest version of that paragraph.
-
 <CardGroup cols={2}>
+  <Card title="Two pools" icon="circle-dot" href="/concepts/the-primitive">
+    The one idea behind every market.
+  </Card>
+  <Card title="How Payers earn" icon="coins" href="/concepts/funding-and-yield">
+    Where the interest goes, and why.
+  </Card>
   <Card title="Sign in" icon="wallet" href="/get-started/sign-in">
-    Connect a wallet and see what Cash means.
+    Connect your wallet and see your Cash.
   </Card>
-  <Card title="The primitive" icon="layers" href="/concepts/the-primitive">
-    Two pools, one pot of collateral, one price.
-  </Card>
-  <Card title="Funding and yield" icon="percent" href="/concepts/funding-and-yield">
-    Why holding a position here earns or costs carry.
-  </Card>
-  <Card title="Risks" icon="alert-triangle" href="/concepts/risks">
-    What can go wrong, product by product.
+  <Card title="Risks" icon="shield-alert" href="/concepts/risks">
+    What can go wrong, in plain terms.
   </Card>
 </CardGroup>
+
+<Note>
+Prices come from Chainlink oracles, and markets settle when someone uses them. A value on screen is the last settled state, not a live quote. Positions can lose value, leveraged ones can be wiped out, and Null is not offered in the United Kingdom. Read [Risks](/concepts/risks) before you start.
+</Note>

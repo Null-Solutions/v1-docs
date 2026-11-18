@@ -1,72 +1,56 @@
 ---
 title: "Savings"
 sidebarTitle: "Savings"
-description: "Deposit USDC into the Null Savings Vault and earn the Morpho supply rate."
+description: "Add USDC and earn two layers of interest. No price exposure, no positions to manage."
 ---
 
-Most people who arrive at Null do not want a position. They want their USDC to work while they decide what to do next, without tracking a price, a funding rate, or a liquidation level. That is exactly who Savings is for. It is the quiet corner of the product: you put USDC in, the vault puts that USDC to work on Morpho, and you take it back out when you need it.
-
-You are earning a lending rate here, not making a market call. Nothing about your balance rises or falls with the price of a stock or a token. If you want that exposure, it lives in [Spot](/products/spot) and [Margin](/products/margin). Savings sits underneath both, and understanding it also explains where much of the money those products borrow actually comes from.
+Savings is for USDC you want working while you decide what to do next. You don't track a price, a funding rate or a liquidation level. You add money, it earns, and you withdraw when you need it.
 
 <Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/system-map-light.svg"
-    alt="Savings deposits USDC into the vault, which lends it on Morpho long books."
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/system-map-dark.svg"
-    alt="Savings deposits USDC into the vault, which lends it on Morpho long books."
-  />
+  <img src="/images/long-short-markets.svg" alt="The Null Savings Vault lends nUSDC into the long market, rAAPL | nUSDC, where Leverage Long traders borrow it against rAAPL." />
 </Frame>
 
-## Why this exists
+## How it earns
 
-Idle stablecoins earn nothing, but most ways of earning on them ask you to become an active lender: picking markets, watching utilisation, and moving money as rates change. Savings removes that workload. One deposit gives you the blended result of the vault's lending, and one withdrawal brings your USDC back.
+Your deposit becomes nUSDC, a share of the [Null Collateral Vault](/concepts/vaults), and goes into the Null Savings Vault. The Savings Vault lends that nUSDC into the long market of every synthetic, where Leverage Long traders borrow it.
 
-It also matters to the rest of Null. Margin longs need USDC to borrow, and that USDC has to come from somewhere. Savings is one of the main places it comes from, which is why the rate you earn is ultimately set by how much traders want to borrow. When borrowing demand is strong, lenders tend to do well. When it fades, the rate fades with it. That relationship is covered in [Funding and yield](/concepts/funding-and-yield), although funding itself is a separate flow that does not touch your Savings balance.
+| Layer | Where it comes from |
+| --- | --- |
+| First | nUSDC earns interest in the Null Collateral Vault. |
+| Second | Borrowers on the long markets pay interest to the Savings Vault. |
 
-## How it connects to the primitive
+The app shows the combined rate as **AER**, to two decimal places. It is a snapshot of what the vault earns now, not a promise about the year ahead. If the app can't fetch a rate, it says so rather than show a stale one.
 
-Under the surface, your deposit goes into the **Null Savings Vault**. That vault is a Morpho Vault V2 whose share is known as `nmUSDC`, the same collateral share that appears throughout Null markets. This is worth pausing on, because it is easy to confuse the vault with the pools at the heart of the [primitive](/concepts/the-primitive).
-
-You do not hold a Receiver share, which tracks an oracle price return, and you do not hold a Payer share either. Payer is the negative size position inside the Receiver pool, and it belongs to people making a deliberate short case. You hold the vault that lends to the books around those pools. The vault allocates your USDC onto long books, where borrowers post Receiver shares as collateral and pay interest for the loan. That interest, after the mechanics described in [Vaults](/concepts/vaults), becomes your return.
-
-Because your money is lent rather than parked, it is working in the same [Morpho markets](/concepts/morpho-markets) that Margin traders borrow from. Savings is simply the managed way in. [Lending](/products/lending) is the same set of books approached directly, book by book, for people who would rather choose for themselves.
+You hold no Receiver or Payer position. Nothing in your balance rises or falls with the price of a stock or coin.
 
 ## Using Savings
 
-You will find the product under **Home** and then **Savings**. The balance sits there labelled **Null Savings Vault**, with the current rate beside it, shown to two decimal places in the form of a figure like 4.20% AER. AER is an annualised way of expressing the current variable rate, so treat it as a snapshot of what the vault is earning now, not a promise about the year ahead. If the app cannot fetch a rate, it will say so plainly rather than show you a stale number.
+Go to **Home** and then **Savings**. Your balance shows as **Null Savings Vault**, with the current **AER** beside it.
 
 <Steps>
   <Step title="Add money">
-    Choose **Add money**, enter the USDC amount, and confirm. Your USDC becomes vault shares, and returns accrue through the value of those shares rather than arriving as separate payments.
+    Choose **Add money**, enter an amount of USDC and confirm. Interest accrues through the value of your vault shares, not as separate payments.
   </Step>
-  <Step title="Check where the money is">
-    Open **Info** to see the **Alloc.** table, which breaks the vault down by **Collateral**, **%**, and **APY**. This tells you which books your deposit is funding and what each allocation is currently earning.
+  <Step title="See where it's lent">
+    Open **Info** for the **Alloc.** table. It shows each long market the vault lends into, by **Collateral**, **%** and **APY**.
   </Step>
-  <Step title="Withdraw when you need to">
-    Choose **Withdraw** and take out up to the amount currently available. If a large share of the vault is lent out on long books, you may only be able to withdraw the free USDC immediately, and the remainder once borrowers repay.
+  <Step title="Withdraw">
+    Choose **Withdraw** and take out up to the amount free right now. If most of the vault is lent, take what's free now and the rest as borrowers repay.
   </Step>
 </Steps>
 
-Your history is kept in a straightforward ledger with columns for **Transaction**, **Date**, **Status**, **Account**, and **Amount**, so you can always reconcile what went in, what came out, and when. There is no separate claim step and no lockup to wait out. The only constraint is liquidity, and the app will show you the withdrawable figure before you commit.
+Your history sits in a ledger with **Transaction**, **Date**, **Status**, **Account** and **Amount**. There is no claim step and no lock-up.
 
-It is worth revisiting **Info** occasionally even if you never touch the balance.
-The **Alloc.** table is the difference between trusting a headline rate and
-understanding it. If the blended AER falls, the table usually tells you why:
-one book has gone quiet, or the vault's weight has shifted toward a calmer
-allocation. That context turns a disappointing rate from a mystery into a
-decision you can make with your eyes open, whether that decision is to stay
-put, to withdraw, or to lend directly into a busier book yourself.
+## Costs and risks
 
-## What it costs and what can go wrong
+| | |
+| --- | --- |
+| Fees | No Null fee on Savings. You pay gas for **Add money** and **Withdraw**. |
+| The rate moves | It rises when traders borrow more and falls when markets are quiet. |
+| Withdrawals | Limited by what borrowers aren't using. Savings suits money you don't need on a precise date. |
+| Lending risk | If a borrower is liquidated for less than the debt, lenders can lose principal. |
+| Vault risk | If the Collateral Vault loses value, your nUSDC does too. |
 
-Savings has no Null entry or exit fee layered on top for you to model. What you earn is the Morpho supply AER on the vault's allocations, and what you should expect is for that figure to move. It rises when borrowers compete for USDC and falls when books are quiet, and it can fall far enough that leaving your money in stops feeling worthwhile. That is a decision the rate display in **Info** is there to help you make, allocation by allocation.
+This is not a bank deposit and it is not insured. Size it like an onchain lending position, because that is what it is. More in [Risks](/concepts/risks).
 
-The risk that deserves the most attention is the withdrawal queue that is not really a queue. Because deposits are lent on long books, a withdrawal is limited by the free USDC the vault holds at that moment. In calm conditions this rarely bites. In busy ones, you might have to take part of your money now and the rest later, which is why Savings suits money you do not need on a precise timetable.
-
-Beyond that, you carry the ordinary risks of the stack described in [Risks](/concepts/risks): the vault depends on Morpho books behaving as designed, on borrower collateral covering its debts, and on the contracts doing what they are supposed to do. [Fees](/concepts/fees) sets out the wider cost picture across Null. This is not a bank deposit and it is not insured, so size it like an onchain lending position, because that is what it is.
-
-If managing individual books sounds more appealing than a blended vault, move on to [Lending](/products/lending). If you would rather put the USDC to work as market exposure instead, start with [Spot](/products/spot).
+Want to choose the markets yourself? Use [Lending](/products/lending). Want price exposure instead? Start with [Spot](/products/spot).

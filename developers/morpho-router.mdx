@@ -26,7 +26,7 @@ There is one exception worth knowing before you prompt the user for a signature.
 
 ## Open a long
 
-A long posts Receiver pool shares as collateral and borrows the loan token, which is USDC when the market collateral is a vault. Two amounts describe your position. `equity` is what you contribute, and `debt` is what the router borrows on top of it. Both are denominated in the loan token. `minCollateralShares` is your slippage floor: the smallest number of Receiver shares the combined deposit may return.
+A long posts Receiver pool shares as collateral and borrows the loan token, `nUSDC`, which is the market collateral itself. Two amounts describe your position. `equity` is what you contribute, and `debt` is what the router borrows on top of it. Both are denominated in the loan token. `minCollateralShares` is your slippage floor: the smallest number of Receiver shares the combined deposit may return.
 
 ```ts
 await walletClient.writeContract({
@@ -46,7 +46,7 @@ await walletClient.writeContract({
 });
 ```
 
-Two arguments need care. `marketParams` is the Morpho Blue tuple `{ loanToken, collateralToken, oracle, irm, lltv }`, and for a long the `collateralToken` must be the Receiver pool while `loanToken` is USDC. `updateData` carries the oracle reports the market needs to settle before it trades. Pass fresh reports when you have them, and an empty array only when the stored price is still valid. `deadline` is a Unix timestamp after which the transaction reverts rather than executing at a stale quote.
+Two arguments need care. `marketParams` is the Morpho Blue tuple `{ loanToken, collateralToken, oracle, irm, lltv }`, and for a long the `collateralToken` must be the Receiver pool while `loanToken` is `nUSDC`. `updateData` carries the oracle reports the market needs to settle before it trades. Pass fresh reports when you have them, and an empty array only when the stored price is still valid. `deadline` is a Unix timestamp after which the transaction reverts rather than executing at a stale quote.
 
 If you would rather not grant an ERC-20 allowance, `openWithPermit2` pulls the equity through Permit2 instead. The permit covers `equity`, names the router as spender, and uses the same deadline as the call itself.
 
@@ -66,7 +66,7 @@ await walletClient.writeContract({
 
 ## Open and close a short
 
-A short inverts the book. The router borrows Receiver shares from Morpho and sells them, posting `nmUSDC` as collateral. Here `equity` is in the loan asset side of the trade, `shortShares` is the number of Receiver shares to borrow and sell, and `minCollateral` is the minimum `nmUSDC` the finished position must post.
+A short inverts the book. The router borrows Receiver shares from Morpho and sells them, posting `nUSDC` as collateral. Here `equity` is in the loan asset side of the trade, `shortShares` is the number of Receiver shares to borrow and sell, and `minCollateral` is the minimum `nUSDC` the finished position must post.
 
 ```ts
 await walletClient.writeContract({

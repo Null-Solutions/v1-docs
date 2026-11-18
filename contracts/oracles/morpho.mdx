@@ -10,19 +10,18 @@ Neither oracle reads Chainlink. The Chainlink oracle on the Null market prices t
 
 ## The long oracle
 
-`NullV1MorphoOracle` serves the long book, where Morpho lends USDC against Receiver shares. It therefore quotes loan assets per Receiver share:
+`NullV1MorphoOracle` serves the long book, where Morpho lends `nUSDC`, the market collateral, against Receiver shares. It therefore quotes collateral per Receiver share:
 
 ```text
-collateralAssets = receiverPool.previewRedeem(sampleShares)
-loanAssets = vault.previewRedeem(collateralAssets)   // or passthrough when collateral is not a vault
+loanAssets = receiverPool.previewRedeem(sampleShares)   // nUSDC
 price = loanAssets * 1e36 / sampleShares
 ```
 
-The important choice here is `previewRedeem`. Morpho is being promised the USDC a redemption would actually raise if the collateral had to be sold, exit fee included, not a theoretical mid price. When the market collateral is a vault such as `nmUSDC`, the quote takes one extra step through the vault so the final number lands in loan assets. When the collateral is not a vault, that step is a passthrough.
+The important choice here is `previewRedeem`. Morpho is being promised the `nUSDC` a redemption would actually raise if the collateral had to be sold, exit fee included, not a theoretical mid price. Because the long book lends the collateral itself, no conversion through the vault is needed.
 
 ## The inverse oracle
 
-`NullV1MorphoInverseOracle` serves the short book, where Morpho lends Receiver shares against `nmUSDC`. The units flip. This oracle quotes Receiver shares per unit of collateral:
+`NullV1MorphoInverseOracle` serves the short book, where Morpho lends Receiver shares against `nUSDC`. The units flip. This oracle quotes Receiver shares per unit of collateral:
 
 ```text
 price = receiverPool.previewDeposit(sampleAssets) * 1e36 / sampleAssets
@@ -36,7 +35,7 @@ Pairing the wrong oracle with a book is not a cosmetic mistake. The two books le
 
 | Book | Morpho lends | Oracle | Price states |
 | --- | --- | --- | --- |
-| Long | USDC | `NullV1MorphoOracle` | Loan assets per Receiver share |
+| Long | `nUSDC` | `NullV1MorphoOracle` | `nUSDC` per Receiver share |
 | Short | Receiver shares | `NullV1MorphoInverseOracle` | Receiver shares per collateral unit |
 
 When you create or verify a book, check the oracle field of `marketParams` against this table before you check anything else. It is the fastest way to catch a misconfigured market, and it costs one read.

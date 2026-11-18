@@ -6,7 +6,7 @@ description: "How a Null V1 market settles: two ERC-4626 pools, one collateral t
 
 A Null market exists to turn an oracle price into a transfer between two groups of holders, without either group having to find the other. One side, the Receiver pool, is long the tracked return. The other side, the Payer pool, backs that exposure and takes the opposite return. Both pools hold the same collateral token and issue their own fungible ERC-4626 shares, so a position is simply a share of a pool rather than a private contract with a named counterparty.
 
-That pooled design is the whole protocol in miniature. The market never lends the tracked asset, never holds it, and never liquidates a spot holder. It holds collateral, watches a price, and periodically rewrites how much of that collateral belongs to each pool. Everything else in Null, including leveraged positions through Morpho, is built around that single act of redistribution. For the product level explanation, start with [The primitive](/concepts/the-primitive).
+That pooled design is the whole protocol in miniature. The market never lends the tracked asset, never holds it, and never liquidates a spot holder. It holds collateral, watches a price, and periodically rewrites how much of that collateral belongs to each pool. Everything else in Null, including leveraged positions through Morpho, is built around that single act of redistribution. For the product level explanation, start with [Two pools](/concepts/the-primitive).
 
 ## What a market is
 
@@ -14,7 +14,7 @@ A market is fixed at creation by three addresses, its collateral, its oracle, an
 
 Creation is permissionless. Anyone can call the factory to create a market for a tuple that does not exist yet, and in this deployment there is no deposit whitelist and no pause standing in the way of using it once created. The one gate sits earlier, at the level of models rather than markets: the factory owner must enable a funding rate model before any market can point at it, and enabling is irreversible. That asymmetry is deliberate. Markets should be free to form, but the code that decides how money moves on every settlement should be admitted once, carefully, and never quietly withdrawn.
 
-On the current stack the collateral is `nmUSDC`, a Morpho Vault V2 share over USDC, which is why funding and collateral cannot really be understood apart. See [Collateral](/protocol/collateral) and [Collateral in the markets section](/markets/collateral).
+On the current stack the collateral is `nUSDC`, a Morpho Vault V2 share over USDC, which is why funding and collateral cannot really be understood apart. See [Collateral](/protocol/collateral) and [Collateral in the markets section](/markets/collateral).
 
 ## How value moves
 

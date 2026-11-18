@@ -1,76 +1,55 @@
 ---
-title: "Morpho markets"
-sidebarTitle: "Morpho markets"
-description: "How the Morpho Blue long and short books beside a Null market support Margin borrowing, lending, and liquidation."
+title: "Long and short markets"
+sidebarTitle: "Long and short markets"
+description: "Every synthetic has two Morpho markets. The long market lends nUSDC against it. The short market lends the synthetic itself."
 ---
 
-Spot on Null is self contained. A Receiver or Payer position lives inside the market's two pools, moves when settlement moves value between them, and is not liquidated by an outside lending protocol. [Lending](/products/lending) and [Margin](/products/margin) need something more.
-
-They need a place where exposure can be borrowed against, where lenders can supply assets, and where an undercollateralised loan can be closed before it becomes a loss for those lenders. That place is Morpho Blue. For a fully wired Null market, two Morpho Blue books sit beside the Null market itself.
-
-They look similar in a list, but they lend different assets and support opposite kinds of Margin position.
+A Spot position never borrows, so it can never be liquidated. Leverage needs somewhere to borrow from. On Null, that is two Morpho markets beside every synthetic: one for going long, one for going short.
 
 <Frame>
-  <img
-    className="block dark:hidden"
-    src="/images/morpho-books-light.svg"
-    alt="The long Morpho book lends USDC against Receiver shares. The short book lends Receiver shares against nmUSDC."
-  />
-  <img
-    className="hidden dark:block"
-    src="/images/morpho-books-dark.svg"
-    alt="The long Morpho book lends USDC against Receiver shares. The short book lends Receiver shares against nmUSDC."
-  />
+  <img src="/images/long-short-markets.svg" alt="Each synthetic, such as rAAPL, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market rAAPL | nUSDC, where Leverage Long traders borrow it against rAAPL. rAAPL holders lend into the short market nUSDC | rAAPL, where Leverage Short traders borrow rAAPL against nUSDC." />
 </Frame>
 
-## The long book lends dollars against Receiver exposure
+Markets are written collateral first, then the asset being lent.
 
-On the long book, the loan token is USDC. The collateral token is the Null market's Receiver pool share. That pairing tells you who the book is for. A Margin long wants more Receiver exposure than its own USDC equity would buy outright. Savings depositors and other lenders supply the USDC that makes those positions possible.
+## The long market
 
-When you open a long, you begin by posting USDC equity. The router borrows additional USDC from the long book, wraps the combined amount into `nmUSDC`, buys Receiver shares, and posts those shares back to Morpho as collateral for the loan. You end the sequence with leveraged Receiver exposure and a USDC debt.
+| | |
+| --- | --- |
+| Written as | `rAAPL \| nUSDC` |
+| Who lends | The Null Savings Vault, and anyone lending nUSDC through **Lend**. |
+| Who borrows | Leverage Long traders. They post rAAPL and borrow nUSDC to buy more of it. |
+| Lenders earn | The interest borrowers pay, on top of what nUSDC already earns in the Collateral Vault. |
 
-The temporary steps happen as one user facing transaction, but the final state is what matters for risk. If Receiver shares lose value, the collateral behind your USDC loan shrinks while the debt remains. Closing the position reverses the journey. The debt is repaid, Receiver shares are withdrawn and sold, and any leftover USDC returns to you. The long book also explains a liquidity experience you may meet outside Margin.
+## The short market
 
-Idle USDC on the book is what new longs borrow. If most of that USDC is already lent, a large new long may not find enough available liquidity, and a large Savings withdrawal can face the same shortage.
+| | |
+| --- | --- |
+| Written as | `nUSDC \| rAAPL` |
+| Who lends | rAAPL holders, through **Lend**. |
+| Who borrows | Leverage Short traders. They post nUSDC, borrow rAAPL and sell it. |
+| Lenders earn | Interest on their rAAPL, while they keep its price exposure. |
 
-## The short book lends Receiver shares against vault collateral
+That last line matters. Lending your synthetic into its short market turns a plain price position into one that also earns interest. A Leverage Short is only possible because someone was willing to lend.
 
-The short book reverses the assets. Here, the loan token is the Receiver pool share. The collateral token is the collateral vault share, `nmUSDC`. A Margin short posts USDC equity, wraps it into `nmUSDC`, and borrows Receiver shares against that collateral. The router then sells the borrowed Receiver shares in the Receiver pool.
+## Each market has its own settings
 
-You are left with negative Receiver exposure and a debt denominated in Receiver shares. If Receiver shares fall in value, buying them back should require less value than the sale produced, before interest and fees. If they rise, repaying the share debt becomes more expensive. Closing a short buys enough Receiver shares to repay what was borrowed.
+Every Morpho market has its own price feed, its own interest rate model and its own LLTV, the loan-to-value at which a borrower can be liquidated. Two markets can behave differently at the same moment, so read the live terms on **Parameters** before you trade.
 
-That closing purchase does not depend on spare lender liquidity in the short book, because you are returning an asset rather than asking the book for a new loan. Lenders still matter to the short book. Someone has to supply the Receiver shares that shorts borrow, just as someone supplies USDC to the long book.
+## When a borrower is liquidated
 
-## Each book carries its own risk settings
+Opening at leverage `L` starts your loan-to-value at `1 - 1/L`. It rises when the price moves against you or as interest adds to the debt. When it reaches the market's LLTV, Morpho can liquidate the position.
 
-A Morpho book is more than a pair of token names. Each book has its own oracle, its own interest rate model, and its own LLTV, short for liquidation loan-to-value. Interest accrues according to borrowing demand and supply on that particular book. Liquidation is judged against that book's LLTV, not against a global Null threshold.
+Before interest, the price drop that takes a new long to that point is:
 
-Two books attached to related markets can therefore behave differently at the same moment. One may have plentiful liquidity and a conservative LLTV. The other may be expensive to borrow from or quicker to liquidate. For Margin, the live terms deserve as much attention as the direction you are trading.
+```text
+drop to liquidation = 1 - (1 - 1/L) / LLTV
+```
 
-## When a Margin position is liquidated
+Only the borrower is liquidated, and only in the market they borrowed from. Spot holders and lenders have no loan to liquidate. Lenders carry a different risk: if a borrower is liquidated for less than the debt, lender principal can be lost.
 
-Liquidation begins with a simple ratio. Loan-to-value compares your outstanding debt with the current value of the collateral securing it. At the moment a position opens, choosing leverage `L` also chooses its opening loan-to-value, which is `1 - 1/L`.
+## Lent money is not idle money
 
-As adverse price movement reduces collateral value, or as interest increases the debt, loan-to-value climbs. When it reaches the book's LLTV, Morpho can liquidate the position. Before interest, the adverse price drop that carries an opening position to that point is `1 - (1 - 1/L) / LLTV`.
+You can only take back what borrowers are not using. If most of a market is lent out, a **Recall** or a Savings withdrawal may have to wait for repayments. Compare **Total Liquidity** with **Outstanding Loans** before you lend.
 
-You do not need to memorise the formula to use what it is telling you. A higher opening leverage starts closer to the threshold.
-
-A lower LLTV brings the threshold closer from the other direction. Together, they decide how much room the position has to be wrong before Morpho intervenes. In the app, keep an eye on **Liquidation price** on the ticket before you confirm, and on **Liq. price** beside an open position afterwards.
-
-The Margin **Parameters** tab shows the live LLTV and the ceiling applied to the leverage slider. That slider stays below the theoretical maximum of `1 / (1 - LLTV)`, because a position opened exactly at its liquidation boundary would have no room to exist.
-
-## A useful comparison with perpetual futures
-
-Many traders arrive with an intuition built on perpetual futures, where maintenance margin performs a similar protective role. For a perpetual long, the price drop to liquidation can be written as `(1/L - mm) / (1 - mm)`, where `mm` is maintenance margin. Null does not change its pools to imitate that formula.
-
-Instead, a Morpho book can be configured with an LLTV that produces a comparable distance to liquidation. A maintenance margin of five percent, for example, lines up with an LLTV of 95 percent. Reaching for higher leverage while preserving that distance calls for a higher LLTV. That is a useful translation between systems, but it should not become an assumption.
-
-Always read the live LLTV for the book in front of you before sizing a position, because the live value is what will govern liquidation.
-
-## Liquidation belongs to the borrowing, not to Spot
-
-Only the Morpho position is liquidated, and only on the book from which it borrowed. A Spot holder who has never opened Margin has no Morpho loan to liquidate. A lender who has only supplied assets is not liquidated either, because supplying does not create a personal debt. Lenders face a different risk.
-
-If borrowers are liquidated and the collateral recovered is insufficient to cover their loans, lender principal can be affected. That is why the same system can be calm for one participant and severe for another. Your risk depends on whether you supplied, borrowed, or simply held a pool position.
-
-For the contract level view of how these books are connected, continue to [Morpho integration](/protocol/morpho-integration).
+For the contract level view, continue to [Morpho integration](/protocol/morpho-integration).
