@@ -1,14 +1,14 @@
 ---
 title: "Margin"
 sidebarTitle: "Margin"
-description: "Leverage Long or Leverage Short on any synthetic, by borrowing on its Morpho markets. Liquidation follows each market's LLTV."
+description: "Leverage Long or Leverage Short on any synthetic, by borrowing on its Morpho markets. Null markets liquidate at a 95% LLTV."
 ---
 
 Margin is for when a view no longer fits inside your cash. You borrow, so a given price move matters more than it would on Spot. That cuts both ways, which is why Margin has its own desk and the one thing Spot never has: a liquidation price.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="With 1,000 USDC of equity, a flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at the market's LLTV, for example 86 percent, a price drop of about 22 percent. The borrow rate adds to the loan over time." />
-  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="With 1,000 USDC of equity, a flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at the market's LLTV, for example 86 percent, a price drop of about 22 percent. The borrow rate adds to the loan over time." />
+  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="With 1,000 USDC of equity, a flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 95 percent LLTV, a price drop of about 30 percent. The borrow rate adds to the loan over time." />
+  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="With 1,000 USDC of equity, a flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 95 percent LLTV, a price drop of about 30 percent. The borrow rate adds to the loan over time." />
 </Frame>
 
 ## How it works
@@ -47,7 +47,7 @@ The desk is only reached through **Home** and then **Margin**. It opens with a m
     Choose a market, then the **Long** or **Short** tab. A side only shows where its Morpho market is set up.
   </Step>
   <Step title="Read the parameters">
-    **Parameters** shows the **Long borrow APR**, **Short borrow APR**, **LLTV** and max leverage. They differ by market.
+    **Parameters** shows the **Long borrow APR**, **Short borrow APR**, **LLTV** and max leverage. Borrow rates differ by market; the LLTV is 95%.
   </Step>
   <Step title="Build the ticket">
     The ticket shows your **Position**, the **Loan (USDC)** it needs and the **Liquidation price**. Resize until that last number is one you can live with.
@@ -61,13 +61,13 @@ Open positions sit under **My Positions**, each with its **Liq. price** and **Ca
 
 ## Liquidation, in plain terms
 
-Opening at leverage `L` starts your loan-to-value at `1 - 1/L`. When it climbs to the market's LLTV, through a price move or accruing interest, Morpho can liquidate you. As a price drop:
+Null markets use a 95% LLTV. Opening at leverage `L` starts your loan-to-value at `1 - 1/L`. When it climbs to 95%, through a price move or accruing interest, Morpho can liquidate you. As a price drop:
 
 ```text
 drop to liquidation = 1 - (1 - 1/L) / LLTV
 ```
 
-If you come from perps, don't reuse the perp formula `(1/L - mm) / (1 - mm)`. The two only match at particular LLTVs. Always check the live LLTV on **Parameters**. The leverage slider stays below `1 / (1 - LLTV)`, and interest slowly shrinks your distance to liquidation even if the price sits still.
+At 3× that is about a 30% drop; at 5×, about 16%; at 10×, about 5%. If you come from perps, don't reuse the perp formula `(1/L - mm) / (1 - mm)`. The leverage slider stays below `1 / (1 - 0.95)`, so under 20×, and interest slowly shrinks your distance to liquidation even if the price sits still.
 
 ## Costs and risks
 
@@ -75,7 +75,7 @@ If you come from perps, don't reuse the perp formula `(1/L - mm) / (1 - mm)`. Th
 | --- | --- |
 | Borrow interest | The borrow APR for your side, for the life of the position. |
 | Fees | The market's entry and exit fees when the desk buys and sells. See [Fees](/concepts/fees). |
-| Liquidation | Reach LLTV and Morpho can sell your collateral, often at the worst moment. You may keep little or nothing. |
+| Liquidation | Reach the 95% LLTV and Morpho can sell your collateral, often at the worst moment. You may keep little or nothing. |
 | Fast markets | Oracle faults, thin liquidity and contract risk all shorten the time you have to react. |
 
 Margin turns being wrong from a drawdown into a deadline. Size it so the deadline never arrives, and keep your Savings money out of it. More in [Risks](/concepts/risks).

@@ -35,11 +35,11 @@ That last line matters. Lending your synthetic into its short market turns a pla
 
 ## Each market has its own settings
 
-Every Morpho market has its own price feed, its own interest rate model and its own LLTV, the loan-to-value at which a borrower can be liquidated. Two markets can behave differently at the same moment, so read the live terms on **Parameters** before you trade.
+Every Morpho market has its own price feed and its own interest rate model, so two markets can behave differently at the same moment. Null markets use a 95% LLTV, the loan-to-value at which a borrower can be liquidated. Read the live terms on **Parameters** before you trade.
 
 ## When a borrower is liquidated
 
-Opening at leverage `L` starts your loan-to-value at `1 - 1/L`. It rises when the price moves against you or as interest adds to the debt. When it reaches the market's LLTV, Morpho can liquidate the position.
+Opening at leverage `L` starts your loan-to-value at `1 - 1/L`. It rises when the price moves against you or as interest adds to the debt. When it reaches the 95% LLTV, Morpho can liquidate the position.
 
 Before interest, the price drop that takes a new long to that point is:
 
