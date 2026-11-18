@@ -217,7 +217,7 @@
     },
     {
       "source": "/learn/vaults",
-      "destination": "/concepts/vaults"
+      "destination": "/concepts/collateral-vault"
     },
     {
       "source": "/learn/morpho",
@@ -318,6 +318,10 @@
     {
       "source": "/get-started/navigating-the-app",
       "destination": "/"
+    },
+    {
+      "source": "/concepts/vaults",
+      "destination": "/concepts/collateral-vault"
     }
   ],
   "navigation": {
@@ -335,12 +339,13 @@
           {
             "group": "How Null works",
             "pages": [
+              "concepts/everything-app",
+              "concepts/collateral-vault",
               "concepts/the-primitive",
               "concepts/funding-and-yield",
               "concepts/building-block",
-              "concepts/everything-app",
-              "concepts/vaults",
               "concepts/morpho-markets",
+              "concepts/savings-vault",
               "concepts/fees",
               "concepts/risks"
             ]

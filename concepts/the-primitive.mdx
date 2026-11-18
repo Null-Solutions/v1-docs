@@ -4,14 +4,14 @@ sidebarTitle: "Two pools"
 description: "Every Null market has two pools. Receivers follow the price. Payers take the other side."
 ---
 
-Receivers get the price return of an asset, such as the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
+This is the second layer. A market takes nUSDC from the [Collateral Vault](/concepts/collateral-vault) and splits it into two pools. Receivers get the price return of an asset, such as the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
 
 <Frame>
   <img className="block dark:hidden" src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
   <img className="hidden dark:block" src="/images/two-pools-dark.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
 </Frame>
 
-Both pools hold the same collateral: nUSDC, a share of the [Null Collateral Vault](/concepts/vaults). When the price moves, the market moves collateral from one pool to the other. Nobody borrows the asset and nobody holds it for you.
+Both pools hold nUSDC. When the price moves, the market moves collateral from one pool to the other. Nobody borrows the asset and nobody holds it for you.
 
 ## The two sides
 
@@ -50,6 +50,6 @@ A Payer backs the whole Receiver pool with a smaller deposit. In the example, $5
 
 That ratio works both ways. It makes a Payer's share of the interest bigger, and it makes price moves hit harder. It also changes as people join and leave either pool. [Payers](/market-making/overview) covers how to size and hedge it.
 
-## Where to next
+## Next
 
-[How Payers earn](/concepts/funding-and-yield) explains the interest. [One building block](/concepts/building-block) shows why a Receiver Pool share is useful far beyond holding it.
+Next: [How Payers earn](/concepts/funding-and-yield), where the interest on all that nUSDC goes.

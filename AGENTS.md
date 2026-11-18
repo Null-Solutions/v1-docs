@@ -9,13 +9,16 @@
 
 ## How the docs explain Null
 
-Guides follow the product overview and deck: one idea per page, explained so a first-time reader understands it.
+Guides follow the product overview and deck: one idea per page, explained so a first-time reader understands it. "How Null works" walks up the four layers, bottom to top, and every page ends with a "Next" link to the following one.
 
-1. **Two pools** (`concepts/the-primitive`): every market has a Receiver Pool and a Payer Pool.
-2. **How Payers earn** (`concepts/funding-and-yield`): Receivers hand their deposits' interest to Payers.
-3. **One building block** (`concepts/building-block`): a Receiver Pool share is a price, a position, collateral and settlement in one token.
-4. **The everything app** (`concepts/everything-app`): Null Collateral Vault → synthetics → long and short Morpho markets → Null Savings Vault.
-5. Then the vaults, the long and short markets, fees, risks, products and Payers.
+1. **The big picture** (`concepts/everything-app`): the four-layer map and where each product sits.
+2. **Collateral Vault** (`concepts/collateral-vault`): layer 1. USDC becomes nUSDC, which earns interest and backs everything.
+3. **Two pools** (`concepts/the-primitive`): layer 2. Each market splits nUSDC into a Receiver Pool and a Payer Pool.
+4. **How Payers earn** (`concepts/funding-and-yield`): Receivers hand their interest to Payers.
+5. **Synthetics** (`concepts/building-block`): the Receiver Pool share as a token (rAAPL etc.), and what it can build.
+6. **Long and short markets** (`concepts/morpho-markets`): layer 3. Two Morpho markets per synthetic.
+7. **Savings Vault** (`concepts/savings-vault`): layer 4. Lends nUSDC into every long market.
+8. Then fees, risks, products and Payers.
 
 ## Terminology
 
@@ -65,7 +68,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 
 ## Content boundaries
 
-- Guides: what Null is, two pools, how Payers earn, the building block, the everything app, the two vaults, long and short markets, fees, risks, the four products, Payers, questions, glossary, points, and legal
+- Guides: what Null is, the big picture, the Collateral Vault, two pools, how Payers earn, synthetics, long and short markets, the Savings Vault, fees, risks, the four products, Payers, questions, glossary, points, and legal
 - Developers: protocol mechanics, integration, market setup, deployments, contract reference
 - Support: troubleshooting and brand assets
 - Audits live once, under Developers → Protocol. Guides say "audited by Nethermind" and link there for scope.

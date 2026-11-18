@@ -1,0 +1,38 @@
+---
+title: "The Savings Vault"
+sidebarTitle: "Savings Vault"
+description: "The top layer. The Null Savings Vault lends nUSDC into every long market, so savers earn two layers of interest."
+---
+
+The Null Savings Vault sits on top of everything else. It takes nUSDC from savers and lends it into the long market of every synthetic. Savers earn twice: once from the Collateral Vault, and again from the borrowers.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/two-vaults.svg" alt="Your USDC goes into the Null Collateral Vault, which mints nUSDC and earns interest. nUSDC is the collateral in every market, where Receivers' interest pays Payers. Savers' nUSDC goes into the Null Savings Vault, which lends it into the long markets for a second layer of interest." />
+  <img className="hidden dark:block" src="/images/two-vaults-dark.svg" alt="Your USDC goes into the Null Collateral Vault, which mints nUSDC and earns interest. nUSDC is the collateral in every market, where Receivers' interest pays Payers. Savers' nUSDC goes into the Null Savings Vault, which lends it into the long markets for a second layer of interest." />
+</Frame>
+
+## What it is
+
+| | |
+| --- | --- |
+| The vault | A Morpho vault whose asset is nUSDC. |
+| Where it lends | The long market of every synthetic, such as `rAAPL \| nUSDC`, where Leverage Long traders borrow. |
+| What you earn | The interest nUSDC already earns, plus the interest borrowers pay. The app shows the total as **AER**. |
+| How you use it | **Add money** and **Withdraw**, under **Home** and then **Savings**. See [Savings](/products/savings). |
+
+It never lends to the short markets. Those lend synthetics, which come from holders lending directly through [Lending](/products/lending).
+
+## Lent money is not idle money
+
+Most of what the vault holds is out on loan at any moment. That is how it earns. A small withdrawal is usually met from what is free. A large one may need to wait for borrowers to repay, or be taken in parts. That free nUSDC is also what new Leverage Long trades borrow, so when it runs thin, both get harder.
+
+## What to watch
+
+| Risk | What it means for you |
+| --- | --- |
+| Collateral Vault | Savings holds nUSDC, so it falls if the Collateral Vault loses value. |
+| Borrowers | If a long-market borrower is liquidated for less than the debt, lenders can lose principal. |
+| Curation | Which markets the vault lends to, and how much, is set by its curator. |
+| Liquidity | Savings suits money you don't need on a precise timetable. |
+
+That completes the four layers. [The big picture](/concepts/everything-app) shows them together, and [Fees](/concepts/fees) and [Risks](/concepts/risks) cover what applies to all of them.

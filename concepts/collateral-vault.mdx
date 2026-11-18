@@ -1,0 +1,35 @@
+---
+title: "The Collateral Vault"
+sidebarTitle: "Collateral Vault"
+description: "Every dollar in Null starts here. Your USDC becomes nUSDC, which earns interest and backs every market."
+---
+
+Every dollar that enters Null goes into the Null Collateral Vault first. You deposit USDC and the vault gives you nUSDC, its share. nUSDC is the collateral in every market, so it is the one currency that the rest of Null is built on.
+
+## What it is
+
+| | |
+| --- | --- |
+| The vault | A curated Morpho Vault V2 over USDC. |
+| Its share | nUSDC. |
+| What it earns | The vault lends USDC out in DeFi. Interest shows up as each nUSDC becoming worth more USDC over time, not as new tokens arriving. |
+| Where it's used | Every market holds nUSDC in its pools. The long and short markets lend it and take it as collateral. The Savings Vault holds it. |
+
+You rarely touch nUSDC directly. When you **Buy** on Spot or open a Margin trade, your USDC becomes nUSDC on the way in. When you leave, it comes back as USDC.
+
+## Who gets the interest
+
+It depends on what your nUSDC is doing.
+
+| Your nUSDC is | The interest goes to |
+| --- | --- |
+| In a Receiver pool | Payers. That is what following a price costs. See [How Payers earn](/concepts/funding-and-yield). |
+| In a Payer pool | You, plus the Receivers' interest. |
+| In the Savings Vault | You, plus what borrowers on the long markets pay. |
+| Posted as Margin collateral | You. It keeps earning while it sits in Morpho. |
+
+## What to watch
+
+If the Collateral Vault loses value, everything built on it loses with it: every pool, the Savings Vault and every Morpho market. The vault's curator and allocations deserve the same scrutiny as Null's own contracts.
+
+Next, the layer built on nUSDC: [Two pools](/concepts/the-primitive). For contract detail, see [Collateral](/protocol/collateral).

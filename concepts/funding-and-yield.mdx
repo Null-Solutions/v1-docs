@@ -4,7 +4,7 @@ sidebarTitle: "How Payers earn"
 description: "Receivers hand the interest on their deposits to Payers. That is the cost of following a price, and the pay for taking the other side."
 ---
 
-All deposits sit in the Null Collateral Vault, which lends them out in DeFi and earns interest. Receivers hand their share of that interest to Payers. That is what following the price costs a Receiver, and what a Payer is paid for taking the opposite side.
+Both pools hold nUSDC, and nUSDC earns interest in the [Collateral Vault](/concepts/collateral-vault). Receivers hand their share of that interest to Payers. That is what following the price costs a Receiver, and what a Payer is paid for taking the opposite side.
 
 The app calls this transfer **funding**. On Null it only ever flows one way, from Receivers to Payers, because its source is interest that has already been earned.
 
@@ -65,3 +65,5 @@ Never negative describes the transfer, not your position. If the vault loses val
 Funding is not a fee. It stays inside the market and moves between its two pools. Null does not take it as revenue. Entry and exit fees are separate, see [Fees](/concepts/fees).
 
 If you hedge a Payer position somewhere else, that hedge has its own funding, fees and margin. Judge the two together. The contract detail is in [Funding rate model](/protocol/funding-rate-model).
+
+Next: [Synthetics](/concepts/building-block), the Receiver side of a market as a token you can use anywhere.
