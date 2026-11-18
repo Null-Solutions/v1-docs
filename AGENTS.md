@@ -17,8 +17,9 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 4. **Payers earn the interest** (`concepts/funding-and-yield`): Receivers hand their interest to Payers.
 5. **Receivers hold synthetics** (`concepts/building-block`): the Receiver Pool share as a token (rAAPL etc.), and what it can build.
 6. **Synthetics go on Morpho** (`concepts/morpho-markets`): layer 3. Two Morpho markets per synthetic.
-7. **Savers lend to the longs** (`concepts/savings-vault`): layer 4. Lends nUSDC into every long market.
-8. Then fees, risks, products and Payers.
+7. **Savers lend to the longs** (`concepts/savings-vault`): layer 4. The Savings Vault lends nUSDC into every long market.
+8. **Holders lend to the shorts** (`concepts/short-lending`): layer 4. Holders lend synthetics into the short markets, keeping price exposure.
+9. Then fees, risks, products and Payers.
 
 ## Terminology
 
@@ -64,7 +65,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 - Ship every diagram as a pair: `name.svg` on a sage `#DFE4DA` panel for light mode, and `name-dark.svg` on warm black `#26241D` for dark mode (green and warm black swap to sage, white fills to warm black; terracotta, fjord blue and sand stay). Embed both in one `<Frame>` with `className="block dark:hidden"` and `className="hidden dark:block"`.
 - Visual language: circles, not boxes. Receiver = solid green circle; Payer = terracotta outline; vaults carry the Null mark (sage on green, or green on sage with a green outline); Morpho markets = small outline circles with the Morpho mark (green for long, terracotta for short). Grey lines show structure; dashed fjord-blue lines show lending.
 - Include `role="img"`, `aria-label`, and `<title>` in every SVG, and a full `alt` on the `<img>`.
-- Current set: `two-pools`, `price-move`, `payer-interest`, `two-vaults`, `spot-buy`, `savings-flow`, `lending-flow`, `margin-loop`, `margin-short`, `payer-hedge`, `building-block`, `everything-app`, `long-short-markets`; developer diagrams `architecture` and `settlement-pipeline`.
+- Current set: `two-pools`, `price-move`, `payer-interest`, `two-vaults`, `spot-buy`, `savings-flow`, `lending-flow`, `margin-loop`, `margin-short`, `payer-hedge`, `short-lending`, `building-block`, `everything-app`, `long-short-markets`; developer diagrams `architecture` and `settlement-pipeline`.
 
 ## Content boundaries
 
