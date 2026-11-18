@@ -81,15 +81,15 @@
     },
     {
       "source": "/private-beta/getting-started",
-      "destination": "/get-started/sign-in"
+      "destination": "/get-started/fund-your-account"
     },
     {
       "source": "/private-beta/getting-started/null-private-beta",
-      "destination": "/get-started/sign-in"
+      "destination": "/get-started/fund-your-account"
     },
     {
       "source": "/private-beta/getting-started/account-setup",
-      "destination": "/get-started/sign-in"
+      "destination": "/get-started/fund-your-account"
     },
     {
       "source": "/private-beta/fund-account",
@@ -105,11 +105,11 @@
     },
     {
       "source": "/private-beta/trading",
-      "destination": "/get-started/navigating-the-app"
+      "destination": "/"
     },
     {
       "source": "/private-beta/trading/using-the-app",
-      "destination": "/get-started/navigating-the-app"
+      "destination": "/"
     },
     {
       "source": "/private-beta/trading/markets",
@@ -177,7 +177,7 @@
     },
     {
       "source": "/private-beta/status-and-points/home-dashboard",
-      "destination": "/get-started/navigating-the-app"
+      "destination": "/"
     },
     {
       "source": "/private-beta/status-and-points/how-to-earn-points",
@@ -310,6 +310,14 @@
     {
       "source": "/mechanics/yield-bearing-collateral",
       "destination": "/protocol/collateral"
+    },
+    {
+      "source": "/get-started/sign-in",
+      "destination": "/get-started/fund-your-account"
+    },
+    {
+      "source": "/get-started/navigating-the-app",
+      "destination": "/"
     }
   ],
   "navigation": {
@@ -321,9 +329,7 @@
             "group": "Start here",
             "pages": [
               "index",
-              "get-started/sign-in",
-              "get-started/fund-your-account",
-              "get-started/navigating-the-app"
+              "get-started/fund-your-account"
             ]
           },
           {
