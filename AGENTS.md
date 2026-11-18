@@ -61,7 +61,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 - Ship every diagram as a pair: `name.svg` on a sage `#DFE4DA` panel for light mode, and `name-dark.svg` on warm black `#26241D` for dark mode (green and warm black swap to sage, white fills to warm black; terracotta, fjord blue and sand stay). Embed both in one `<Frame>` with `className="block dark:hidden"` and `className="hidden dark:block"`.
 - Visual language: circles, not boxes. Receiver = solid green circle; Payer = terracotta outline; vaults carry the Null mark (sage on green, or green on sage with a green outline); Morpho markets = small outline circles with the Morpho mark (green for long, terracotta for short). Grey lines show structure; dashed fjord-blue lines show lending.
 - Include `role="img"`, `aria-label`, and `<title>` in every SVG, and a full `alt` on the `<img>`.
-- Current set: `two-pools`, `price-move`, `payer-interest`, `two-vaults`, `spot-buy`, `savings-flow`, `lending-flow`, `margin-loop`, `building-block`, `everything-app`, `long-short-markets`; developer diagrams `architecture` and `settlement-pipeline`.
+- Current set: `two-pools`, `price-move`, `payer-interest`, `two-vaults`, `spot-buy`, `savings-flow`, `lending-flow`, `margin-loop`, `margin-short`, `building-block`, `everything-app`, `long-short-markets`; developer diagrams `architecture` and `settlement-pipeline`.
 
 ## Content boundaries
 
