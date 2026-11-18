@@ -9,15 +9,15 @@
 
 ## How the docs explain Null
 
-Guides follow the product overview and deck: one idea per page, explained so a first-time reader understands it. "How Null works" walks up the four layers, bottom to top, and every page ends with a "Next" link to the following one.
+Guides follow the product overview and deck: one idea per page, explained so a first-time reader understands it. "How Null works" walks up the four layers, bottom to top, and every page ends with a "Next" link to the following one. Sidebar titles are short statements, so reading the sidebar alone tells the story.
 
-1. **The big picture** (`concepts/everything-app`): the four-layer map and where each product sits.
-2. **Collateral Vault** (`concepts/collateral-vault`): layer 1. USDC becomes nUSDC, which earns interest and backs everything.
-3. **Two pools** (`concepts/the-primitive`): layer 2. Each market splits nUSDC into a Receiver Pool and a Payer Pool.
-4. **How Payers earn** (`concepts/funding-and-yield`): Receivers hand their interest to Payers.
-5. **Synthetics** (`concepts/building-block`): the Receiver Pool share as a token (rAAPL etc.), and what it can build.
-6. **Long and short markets** (`concepts/morpho-markets`): layer 3. Two Morpho markets per synthetic.
-7. **Savings Vault** (`concepts/savings-vault`): layer 4. Lends nUSDC into every long market.
+1. **Null is four layers** (`concepts/everything-app`): the four-layer map and where each product sits.
+2. **USDC becomes nUSDC** (`concepts/collateral-vault`): layer 1. USDC becomes nUSDC, which earns interest and backs everything.
+3. **nUSDC backs two pools** (`concepts/the-primitive`): layer 2. Each market splits nUSDC into a Receiver Pool and a Payer Pool.
+4. **Payers earn the interest** (`concepts/funding-and-yield`): Receivers hand their interest to Payers.
+5. **Receivers hold synthetics** (`concepts/building-block`): the Receiver Pool share as a token (rAAPL etc.), and what it can build.
+6. **Synthetics get markets** (`concepts/morpho-markets`): layer 3. Two Morpho markets per synthetic.
+7. **Savers lend to the longs** (`concepts/savings-vault`): layer 4. Lends nUSDC into every long market.
 8. Then fees, risks, products and Payers.
 
 ## Terminology

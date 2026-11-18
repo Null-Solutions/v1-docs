@@ -1,6 +1,6 @@
 ---
-title: "The big picture"
-sidebarTitle: "The big picture"
+title: "Null is four layers"
+sidebarTitle: "Null is four layers"
 description: "Null is four layers, each built on the one below: a collateral vault, synthetics, long and short markets, and a savings vault."
 ---
 
@@ -15,10 +15,10 @@ Null is built in four layers. Each one uses the layer below it, so you can under
 
 | Layer | In one line | Read |
 | --- | --- | --- |
-| Collateral Vault | Your USDC becomes nUSDC, which earns interest and backs every market. | [Collateral Vault](/concepts/collateral-vault) |
-| Synthetics | Each market splits nUSDC into two pools. The Receiver side is a token that follows a price, such as rAAPL. | [Two pools](/concepts/the-primitive), [How Payers earn](/concepts/funding-and-yield), [Synthetics](/concepts/building-block) |
-| Long and short markets | Every synthetic gets two Morpho markets, one to borrow nUSDC against it and one to borrow it. | [Long and short markets](/concepts/morpho-markets) |
-| Savings Vault | Savers' nUSDC is lent into the long markets, for a second layer of interest. | [Savings Vault](/concepts/savings-vault) |
+| Collateral Vault | USDC becomes nUSDC, which earns interest and backs every market. | [USDC becomes nUSDC](/concepts/collateral-vault) |
+| Synthetics | Each market splits nUSDC into two pools. The Receiver side is a token that follows a price, such as rAAPL. | [nUSDC backs two pools](/concepts/the-primitive), [Payers earn the interest](/concepts/funding-and-yield), [Receivers hold synthetics](/concepts/building-block) |
+| Long and short markets | Every synthetic gets two Morpho markets, one to borrow nUSDC against it and one to borrow it. | [Synthetics go on Morpho](/concepts/morpho-markets) |
+| Savings Vault | Savers' nUSDC is lent into the long markets, for a second layer of interest. | [Savers lend to the longs](/concepts/savings-vault) |
 
 ## Where each product sits
 
@@ -34,4 +34,4 @@ Every action in the app happens on one of these layers.
 
 That is why we call it the everything app. One vault and one kind of token are enough to rebuild saving, holding, lending and leverage, with open settlement underneath.
 
-Start at the bottom: [Collateral Vault](/concepts/collateral-vault).
+Start at the bottom: [USDC becomes nUSDC](/concepts/collateral-vault).
