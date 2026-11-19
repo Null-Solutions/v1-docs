@@ -104,7 +104,7 @@ event Withdraw(
 );
 ```
 
-Pool shares use `collateral.decimals() + 10` decimals.
+Pool shares use `collateral.decimals() + 2` decimals. `Deposit` comes only from `deposit` and `Withdraw` only from `redeem`; `mint` and `withdraw` are disabled.
 
 Use `Transfer` as the source of truth for current share balances. Use `Deposit` and `Withdraw` for action history and asset/share amounts. A router operation can emit vault, collateral, and pool events in the same transaction; filter by known contract address instead of symbol.
 
@@ -145,7 +145,7 @@ oracle.quoteName();
 oracle.quoteSymbol();
 ```
 
-Cache these values as display labels and handle individual RPC failures. Pool token names follow `<baseName> Receiver Share` / `<baseName> Payer Share`, with symbols `r<baseSymbol>` / `p<baseSymbol>`. Determine the side from the market's pool addresses or `poolKind()`, not from labels.
+Cache these values as display labels and handle individual RPC failures. Pool token names follow `<baseName> Receiver Share` / `<baseName> Payer Share`, with symbols `<baseSymbol>r` / `<baseSymbol>p`. Determine the side from the market's pool addresses or `poolKind()`, not from labels.
 
 ## Collateral units
 

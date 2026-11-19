@@ -21,8 +21,8 @@ Pool token metadata comes from the oracle's base metadata:
 
 | Kind     | Token name                  | Symbol          |
 | -------- | --------------------------- | --------------- |
-| Receiver | `<baseName> Receiver Share` | `r<baseSymbol>` |
-| Payer    | `<baseName> Payer Share`    | `p<baseSymbol>` |
+| Receiver | `<baseName> Receiver Share` | `<baseSymbol>r` |
+| Payer    | `<baseName> Payer Share`    | `<baseSymbol>p` |
 
 Empty base metadata falls back to `Base` and `BASE`. Treat `name()` and `symbol()` as display labels. Use `poolKind()` or the market's pool addresses to determine the side.
 
@@ -36,18 +36,18 @@ function totalAssets() public view returns (uint256);
 
 The pool's ERC-4626 `asset()` is always `market.collateral()`. If that collateral is itself an ERC-4626 vault, pool assets are `collateralVault` shares, not the vault's `underlying`.
 
-Share decimals are `collateral.decimals() + 10`. Conversion math also includes OpenZeppelin's virtual shares. Always read `decimals()` and use ERC-4626 conversion functions instead of assuming a fixed asset-to-share scale.
+Share decimals are `collateral.decimals() + 2`. Conversion math also includes OpenZeppelin's virtual shares. Always read `decimals()` and use ERC-4626 conversion functions instead of assuming a fixed asset-to-share scale.
 
 ## Settlement before writes
 
-Every state-changing ERC-4626 entry point settles the market before converting between assets and shares:
+Pools offer two state-changing entry points. Both settle the market before converting between assets and shares:
 
 | Function                            | Caller specifies                  | Result          |
 | ----------------------------------- | --------------------------------- | --------------- |
 | `deposit(assets, receiver)`         | Exact market-collateral assets in | Shares minted   |
-| `mint(shares, receiver)`            | Exact shares out                  | Assets charged  |
-| `withdraw(assets, receiver, owner)` | Exact assets out                  | Shares burned   |
 | `redeem(shares, receiver, owner)`   | Exact shares in                   | Assets returned |
+
+`mint` and `withdraw` are permanently disabled. They revert with `NotImplemented()`, and so do `previewMint` and `previewWithdraw`. `maxMint` and `maxWithdraw` return `0`.
 
 Execution uses the post-settlement pool value. A prior pool preview can differ materially.
 
@@ -56,15 +56,11 @@ Execution uses the post-settlement pool value. A prior pool preview can differ m
 | Function                  | Fee pattern |
 | ------------------------- | ----------- |
 | `previewDeposit(assets)`  | `feeOnTotal(notional)` taken out of principal |
-| `previewMint(shares)`     | `feeOnRawNotional` added on top |
-| `previewWithdraw(assets)` | `feeOnRawNotional` added on top |
 | `previewRedeem(shares)`   | `feeOnTotal(notional)` taken out of principal |
 
 Notional is `assets × settleableR / ownAssets` for both pools. In practical terms:
 
-- `deposit`: the supplied assets include the entry fee; only the net amount mints shares.
-- `mint`: the caller pays the raw asset quote plus the entry fee, and reverts if that fee would be 100% or more of principal.
-- `withdraw`: the pool deducts the requested assets plus the exit fee, with the same revert.
+- `deposit`: the supplied assets include the entry fee; only the net amount mints shares. A nonzero deposit that would mint zero shares reverts with `ZeroShares()`.
 - `redeem`: the exit fee is deducted from the gross asset quote, and can consume the full redemption.
 
 The previews use the last settled state. Funding, price PnL, balance reconciliation, or other transactions can move the execution rate. Use `NullV1Lens.previewMarket` for a settlement projection and a router minimum for execution protection.
@@ -72,7 +68,7 @@ The previews use the last settled state. Funding, price PnL, balance reconciliat
 `feeOnTotal(notional)` is `ceil(notional × feeBps / (10000 + feeBps))`, capped at the assets of the trade. Receiver-pool fees credit the Payer pool (or the Receiver pool itself while the Payer pool is at or below `MIN_POOL_ASSETS`). Payer-pool fees credit `protocolFees`. See [Fees](/protocol/fees).
 
 <Warning>
-`maxDeposit` and `maxMint` always return `type(uint256).max`. Never use them to size inputs. `maxWithdraw` is net of the exit fee but reads the last settled state, so a full exit via `withdraw(maxWithdraw(owner))` can revert once execution settles the market. Exit fully with `redeem(balanceOf(owner))` instead. See [Max functions](/contracts/pool#max-functions).
+`maxDeposit` always returns `type(uint256).max`. Never use it to size inputs. `maxMint` and `maxWithdraw` always return `0` because `mint` and `withdraw` are disabled. Exit fully with `redeem(balanceOf(owner))`. See [Max functions](/contracts/pool#max-functions).
 </Warning>
 
 ## Unit pipelines

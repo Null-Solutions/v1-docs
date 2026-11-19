@@ -58,7 +58,7 @@ Use these pages as source context when asking an assistant to reason about or ge
 - Read pool addresses from the market or from `CreateMarket`.
 - Keep coverage `P/R` distinct from short scale `R/P`. Neither is a funding rate. Do not describe Payer as a leverage slider.
 - Handle zero denominators. Do not report either ratio as finite when its denominator is zero.
-- Treat shares as ERC-4626. Share decimals equal collateral decimals plus 10.
+- Treat shares as ERC-4626. Share decimals equal collateral decimals plus 2. Only `deposit` and `redeem` work; `mint` and `withdraw` revert.
 - Assume every pool write settles the market first.
 - Pass slippage floors and deadlines on router calls.
 - Route Chainlink updates through `NullV1Router`. Do not attach `msg.value`.

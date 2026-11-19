@@ -17,7 +17,7 @@ Product funding is **yield share of collateral APR** (Receivers pay Payers; neve
 ## Immutable identity
 
 <ParamField path="collateral" type="IERC20" required>
-  ERC-20 held by the market and both pools. Accounting is in raw units of this token. See [Collateral](/markets/collateral).
+  ERC-20 held by the market and both pools. Accounting is in raw units of this token. It is expected to have 18 decimals, because the pool floor `MIN_POOL_ASSETS` is a fixed `1e18` raw units. See [Collateral](/markets/collateral).
 </ParamField>
 
 <ParamField path="oracle" type="INullV1Oracle" required>
@@ -50,8 +50,8 @@ Factory owner can set two fees with `setFees(newEntryFee, newExitFee)`. Entry an
 
 | Accessor | Charged on | Maximum |
 | --- | --- | ---: |
-| `entryFee()` | `deposit` / `mint`, on settleable-R notional | 250 bps (2.5%) |
-| `exitFee()` | `withdraw` / `redeem`, same notional | 250 bps (2.5%) |
+| `entryFee()` | `deposit`, on settleable-R notional | 250 bps (2.5%) |
+| `exitFee()` | `redeem`, same notional | 250 bps (2.5%) |
 
 Receiver-side fees credit the Payer pool (or the Receiver pool while the Payer pool is at or below `MIN_POOL_ASSETS`). Payer-side fees credit `protocolFees`. `sweepFees()` pays the factory owner the `protocolFees` recorded at the last settlement; it does not settle the market. Details: [Fees](/protocol/fees).
 

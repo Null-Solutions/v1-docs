@@ -48,7 +48,7 @@ function createMarket(
 
 Market creation is permissionless, but the FRM must already be enabled. The factory deploys a market clone and its receiver and payer pool clones, initializes them, then registers the market under the tuple.
 
-The supplied dependencies must satisfy the contract assumptions: collateral transfers must be exact and non-reentrant, oracle prices must be nonzero and scaled by `1e36`, and the FRM must not revert, re-enter, or return a rate that overflows settlement math.
+The supplied dependencies must satisfy the contract assumptions: collateral transfers must be exact and non-reentrant, the collateral should have 18 decimals (the pool floor `MIN_POOL_ASSETS` is `1e18` raw units and is not scaled), oracle prices must be nonzero and scaled by `1e36`, and the FRM must not revert, re-enter, or return a rate that overflows settlement math.
 
 `createMarket` reverts with:
 

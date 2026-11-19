@@ -10,7 +10,7 @@ On the current stack that token is `nUSDC`, the share of the **Null Collateral V
 
 ## Assumptions
 
-The factory only checks that the collateral address is nonzero. Documented assumptions are stronger: transfers should be non-reentrant, and sender/receiver balances should change by exactly the requested amount. Passing the factory check does **not** mean the token is safe.
+The factory only checks that the collateral address is nonzero. Documented assumptions are stronger: transfers should be non-reentrant, sender/receiver balances should change by exactly the requested amount, and the token should have 18 decimals with one token worth about one unit of account (for example a share of a stablecoin vault). The pool floor `MIN_POOL_ASSETS` is a fixed `1e18` raw units and is not scaled by decimals, so a market on a 6-decimal token would never settle. Passing the factory check does **not** mean the token is safe.
 
 | Collateral form | Core pool units | Router units |
 | --- | --- | --- |

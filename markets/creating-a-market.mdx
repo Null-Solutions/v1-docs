@@ -8,7 +8,7 @@ A market is identified by `(collateral, oracle, frm)`. The factory stores one ma
 
 ## Prerequisites
 
-- A nonzero ERC-20 `collateral`
+- A nonzero ERC-20 `collateral` with 18 decimals (the factory does not check decimals, but the `1e18` pool floor assumes them)
 - A nonzero `INullV1Oracle` whose `price()` returns a nonzero `1e36`-scaled price during initialization
 - A nonzero `INullV1FundingRateModel` already enabled through `enableFrm(frm)`
 

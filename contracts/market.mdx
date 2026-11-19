@@ -40,11 +40,11 @@ Fees are basis points. Entry and exit default to 25 bps and are capped at `250` 
 
 ## Settlement
 
-State accrual is interaction-driven. There is no permissionless public “poke”: `updateState()` is callable only by the two pools. Every pool deposit, mint, withdrawal, or redemption settles first. `setFees` also settles before applying its change. `sweepFees` does not settle.
+State accrual is interaction-driven. There is no permissionless public “poke”: `updateState()` is callable only by the two pools. Every pool deposit or redemption settles first (the pools' only live entry points; `mint` and `withdraw` are disabled). `setFees` also settles before applying its change. `sweepFees` does not settle.
 
 Settlement reconciles the market's actual collateral balance, obtains the signed WAD-scaled funding rate from `frm`, and settles funding and price PnL between pools. Positive funding means receivers pay payers; negative funding means payers pay receivers.
 
-When both pools have assets, price PnL is skipped if a move exceeds the time-scaled circuit-breaker cap; funding still settles and `UpdateState.circuitBreakerFired` is `true`. If either pool is empty, both price PnL and funding transfer are skipped and the flag is `false`. Settlement transfers are capped so the debited pool retains `MIN_POOL_ASSETS` (`1e6` raw collateral units).
+When both pools are above `MIN_POOL_ASSETS`, price PnL is skipped if the price moved by more than 20% (`MAX_ABS_CHANGE_BPS = 2000`) since the last settlement. The cap is flat and does not depend on elapsed time. Funding still settles and `UpdateState.circuitBreakerFired` is `true`. If either pool is at or below `MIN_POOL_ASSETS`, both price PnL and funding transfer are skipped and the flag is `false`; the new price and timestamp are still stored. Price PnL and funding are sized on the Receiver pool above the floor, and settlement transfers are capped so the debited pool retains `MIN_POOL_ASSETS` (`1e18` raw collateral units, one whole token of 18-decimal collateral).
 
 ## Owner operations
 

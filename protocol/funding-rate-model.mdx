@@ -60,6 +60,6 @@ Now imagine instead that the price fell to 98 and then recovered to 100 over the
 | Share price probe | `1e36` | Shares quoted in `convertToAssets` |
 | Rate cap | `1e18` | 100 percent annualised, per interval |
 | Rate floor | `0` | Funding is never negative |
-| Settlement floor | `1e6` | `MIN_POOL_ASSETS`, in raw collateral units |
+| Settlement floor | `1e18` | `MIN_POOL_ASSETS`, in raw collateral units |
 
 The factory owner must enable this model with `enableFrm` before a market can be created using it, and enabling cannot be undone. The contract surface is covered in [Yield share FRM](/contracts/yield-share-frm).
