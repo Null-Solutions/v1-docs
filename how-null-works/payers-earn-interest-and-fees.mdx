@@ -28,11 +28,11 @@ This is an example only. Rates change, Payers share the interest between them, a
 
 ## Fees go to Payers too
 
-Every time a Receiver opens or closes a position, the market charges a small fee, and that fee goes to the Payer pool, not to Null. It sits on top of the interest. The busier the Receiver side, the more Payers collect.
+Every time a Receiver opens or closes a position, the market charges a small fee, and that fee goes to the Payer pool, not to Null. It sits on top of the interest, and it adds up with volume. In the example below, a $10,000 Receiver pool trades $200,000 a year. At 0.1% each way, that pays Payers $200, lifting them from $750 of interest to $950, or 19% on $5,000.
 
-<Frame caption="Example only. Fees vary by market, capped at 2.5%. Interest rates change.">
-  <img className="block dark:hidden" src="/images/payer-fees.svg" alt="Fees go to Payers. A Receiver opens 10,000 dollars of exposure and later closes it. At 0.1 percent each way, 10 dollars to open and 10 dollars to close go to the Payer pool, 20 dollars per round trip. Over a year, 5,000 dollars of Payers backing 10,000 dollars of Receivers at 5 percent earn 250 dollars of their own interest, 500 dollars of the Receivers' interest and 20 dollars of fees per round trip, about 770 dollars or 15.4 percent." />
-  <img className="hidden dark:block" src="/images/payer-fees-dark.svg" alt="Fees go to Payers. A Receiver opens 10,000 dollars of exposure and later closes it. At 0.1 percent each way, 10 dollars to open and 10 dollars to close go to the Payer pool, 20 dollars per round trip. Over a year, 5,000 dollars of Payers backing 10,000 dollars of Receivers at 5 percent earn 250 dollars of their own interest, 500 dollars of the Receivers' interest and 20 dollars of fees per round trip, about 770 dollars or 15.4 percent." />
+<Frame caption="Example only. Volume and fees vary by market; fees are capped at 2.5%. Interest rates change.">
+  <img className="block dark:hidden" src="/images/payer-fees.svg" alt="Fees go to Payers. A Receiver pool of 10,000 dollars trades 200,000 dollars a year, ten round trips in and out. At 0.1 percent each way, each round trip pays 20 dollars to the Payer pool, 200 dollars a year. Over a year, 5,000 dollars of Payers backing those Receivers at 5 percent earn 250 dollars of their own interest, 500 dollars of the Receivers' interest and 200 dollars of fees, about 950 dollars or 19 percent." />
+  <img className="hidden dark:block" src="/images/payer-fees-dark.svg" alt="Fees go to Payers. A Receiver pool of 10,000 dollars trades 200,000 dollars a year, ten round trips in and out. At 0.1 percent each way, each round trip pays 20 dollars to the Payer pool, 200 dollars a year. Over a year, 5,000 dollars of Payers backing those Receivers at 5 percent earn 250 dollars of their own interest, 500 dollars of the Receivers' interest and 200 dollars of fees, about 950 dollars or 19 percent." />
 </Frame>
 
 | What Payers earn | Where it comes from | How it grows |
