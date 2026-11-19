@@ -1,14 +1,14 @@
 ---
 title: "Margin"
 sidebarTitle: "Margin"
-description: "Leverage Long or Leverage Short on any synthetic, by borrowing on its Morpho markets. Null markets liquidate at a 95% LLTV."
+description: "Leverage Long or Leverage Short on any synthetic, by borrowing on its Morpho markets. Null markets liquidate at a 96.5% LLTV."
 ---
 
 Margin is for when a view no longer fits inside your cash. You borrow, so a given price move matters more than it would on Spot. That cuts both ways, which is why Margin has its own desk and the one thing Spot never has: a liquidation price.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 95 percent LLTV, a price drop of about 30 percent. The borrow rate adds to the loan over time." />
-  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 95 percent LLTV, a price drop of about 30 percent. The borrow rate adds to the loan over time." />
+  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
+  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
 </Frame>
 
 ## How it works
@@ -42,8 +42,8 @@ You end with 3,000 of rAAPL and a 2,000 nUSDC loan. Closing runs the same loop i
 ### Leverage Short
 
 <Frame>
-  <img className="block dark:hidden" src="/images/margin-short.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of rAAPL. The rAAPL is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 95 percent LLTV, a price rise of about 27 percent." />
-  <img className="hidden dark:block" src="/images/margin-short-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of rAAPL. The rAAPL is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 95 percent LLTV, a price rise of about 27 percent." />
+  <img className="block dark:hidden" src="/images/margin-short.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of rAAPL. The rAAPL is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
+  <img className="hidden dark:block" src="/images/margin-short-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of rAAPL. The rAAPL is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
 </Frame>
 
 | Step | What happens, at 3× on 1,000 USDC |
@@ -80,9 +80,9 @@ You hold 3,000 of rAAPL against a 2,000 nUSDC loan. Loan-to-value starts at 67%.
 | --- | --- |
 | rAAPL rises 10% | Position 3,300, loan 2,000. Your equity is 1,300: **+30%**. |
 | rAAPL falls 10% | Position 2,700, loan 2,000. Your equity is 700: **−30%**. |
-| Liquidation | A fall of about 30%. |
+| Liquidation | A fall of about 31%. |
 | Carry | Borrow costs 80 a year and the nUSDC loan grows by about 100 in dollars: about **−180 a year**, or 15 a month. rAAPL has to rise about 6% a year just to cover it. |
-| After a year, price flat | The loan is about 2,180, loan-to-value about 73%, and the fall to liquidation shrinks to about 24%. |
+| After a year, price flat | The loan is about 2,180, loan-to-value about 73%, and the fall to liquidation shrinks to about 25%. |
 
 ### 3× short on rAAPL
 
@@ -92,9 +92,9 @@ You post 4,000 nUSDC against a loan of 3,000 of rAAPL. Loan-to-value starts at 7
 | --- | --- |
 | rAAPL falls 10% | The loan is worth 2,700. Your equity is 1,300: **+30%**. |
 | rAAPL rises 10% | The loan is worth 3,300. Your equity is 700: **−30%**. |
-| Liquidation | A rise of about 27%. |
+| Liquidation | A rise of about 29%. |
 | Carry | Your collateral earns about 200 a year and borrowing costs 60: about **+140 a year**. You are paid to wait, as long as the short borrow APR stays below the interest your collateral earns. |
-| After a year, price flat | Collateral is about 4,200, the loan about 3,060, and the rise to liquidation grows to about 30%. |
+| After a year, price flat | Collateral is about 4,200, the loan about 3,060, and the rise to liquidation grows to about 32%. |
 
 ### 10× long on rAAPL
 
@@ -103,9 +103,9 @@ You hold 10,000 of rAAPL against a 9,000 nUSDC loan. Loan-to-value starts at 90%
 | | |
 | --- | --- |
 | rAAPL rises 5% | Your equity is 1,500: **+50%**. |
-| Liquidation | A fall of about 5%. |
+| Liquidation | A fall of about 6.7%. |
 | Carry | About **−810 a year**, or 68 a month, on 1,000 of equity. |
-| Price flat | Carry alone pushes loan-to-value to 95% in about seven months. You can be liquidated without the price moving. |
+| Price flat | Carry alone pushes loan-to-value to 96.5% in about ten months. You can be liquidated without the price moving. |
 
 The pattern: a long pays both its borrow rate and nUSDC interest on the whole loan, so carry grows quickly with leverage. A short earns nUSDC interest on its collateral, so its carry can be positive. Spot has no loan, no carry and no liquidation.
 
@@ -118,7 +118,7 @@ The desk is only reached through **Home** and then **Margin**. It opens with a m
     Choose a market, then the **Long** or **Short** tab. A side only shows where its Morpho market is set up.
   </Step>
   <Step title="Read the parameters">
-    **Parameters** shows the **Long borrow APR**, **Short borrow APR**, **LLTV** and max leverage. Borrow rates differ by market; the LLTV is 95%.
+    **Parameters** shows the **Long borrow APR**, **Short borrow APR**, **LLTV** and max leverage. Borrow rates differ by market; the LLTV is 96.5%.
   </Step>
   <Step title="Build the ticket">
     The ticket shows your **Position**, the **Loan (USDC)** it needs and the **Liquidation price**. Resize until that last number is one you can live with.
@@ -132,17 +132,17 @@ Open positions sit under **My Positions**, each with its **Liq. price** and **Ca
 
 ## Liquidation, in plain terms
 
-Null markets use a 95% LLTV. On a long, opening at leverage `L` starts your loan-to-value at `1 - 1/L`. When it climbs to 95%, through a price move or accruing interest, Morpho can liquidate you. As a price drop:
+Null markets use a 96.5% LLTV. On a long, opening at leverage `L` starts your loan-to-value at `1 - 1/L`. When it climbs to 96.5%, through a price move or accruing interest, Morpho can liquidate you. As a price drop:
 
 ```text
 drop to liquidation = 1 - (1 - 1/L) / LLTV
 ```
 
-At 3× that is about a 30% drop; at 5×, about 16%; at 10×, about 5%.
+At 3× that is about a 31% drop; at 5×, about 17%; at 10×, about 6.7%.
 
-A short starts at `L / (L + 1)` and is liquidated by a price rise of `0.95 × (L + 1) / L - 1`: about 27% at 3×, 14% at 5×, 4.5% at 10×.
+A short starts at `L / (L + 1)` and is liquidated by a price rise of `0.965 × (L + 1) / L - 1`: about 29% at 3×, 16% at 5×, 6% at 10×.
 
- If you come from perps, don't reuse the perp formula `(1/L - mm) / (1 - mm)`. The leverage slider stays below `1 / (1 - 0.95)`, so under 20×, and interest slowly shrinks your distance to liquidation even if the price sits still.
+ If you come from perps, don't reuse the perp formula `(1/L - mm) / (1 - mm)`. The leverage slider stays below `1 / (1 - 0.965)`, about 28.6×, and stops at 25×, and interest slowly shrinks your distance to liquidation even if the price sits still.
 
 ## Costs and risks
 
@@ -150,7 +150,7 @@ A short starts at `L / (L + 1)` and is liquidated by a price rise of `0.95 × (L
 | --- | --- |
 | Borrow interest | The borrow APR for your side, for the life of the position. |
 | Fees | The market's entry and exit fees when the desk buys and sells. See [Fees](/how-null-works/what-it-costs). |
-| Liquidation | Reach the 95% LLTV and Morpho can sell your collateral, often at the worst moment. You may keep little or nothing. |
+| Liquidation | Reach the 96.5% LLTV and Morpho can sell your collateral, often at the worst moment. You may keep little or nothing. |
 | Fast markets | Oracle faults, thin liquidity and contract risk all shorten the time you have to react. |
 
 Margin turns being wrong from a drawdown into a deadline. Size it so the deadline never arrives, and keep your Savings money out of it. More in [Risks](/how-null-works/what-can-go-wrong).
