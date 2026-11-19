@@ -7,8 +7,8 @@ description: "Every Null market has two pools. Receivers follow the price. Payer
 This is the second layer. A market takes nUSDC from the [Collateral Vault](/concepts/collateral-vault) and splits it into two pools. Receivers get the price return of an asset, such as the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
-  <img className="hidden dark:block" src="/images/two-pools-dark.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits goes to the Payer Pool." />
+  <img className="block dark:hidden" src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits, plus Receivers' opening and closing fees, goes to the Payer Pool." />
+  <img className="hidden dark:block" src="/images/two-pools-dark.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits, plus Receivers' opening and closing fees, goes to the Payer Pool." />
 </Frame>
 
 Both pools hold nUSDC. When the price moves, the market moves collateral from one pool to the other. Nobody borrows the asset and nobody holds it for you.
