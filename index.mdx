@@ -6,16 +6,16 @@ description: "Null turns the price of a stock, index, commodity or crypto asset 
 
 Null runs in open contracts on Ethereum. There is no broker, no custodian and no margin account. You keep your tokens in your own wallet, and every position is fully backed.
 
-## Every market has two pools
+## A building block for DeFi
 
-Receivers get the price return of an asset, such as Apple or the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
+Null sits between Ethereum and the rest of DeFi. For each market it turns USDC into two tokens. Receiver tokens get the price return of an asset, such as Apple or the S&P 500, without owning it. Payer tokens take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers. Lending markets, exchanges and other apps can then build with both.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits, plus Receivers' opening and closing fees, goes to the Payer Pool." />
-  <img className="hidden dark:block" src="/images/two-pools-dark.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits, plus Receivers' opening and closing fees, goes to the Payer Pool." />
+  <img className="block dark:hidden" src="/images/null-stack.svg" alt="Null as a building block, in three layers. Ethereum mainnet at the base settles every position. Null sits on it and turns USDC into tokens: Receiver tokens that track assets such as AAPL, gold, the S&amp;P 500 and BTC, and Payer tokens that take the other side. DeFi sits on top, where apps such as Morpho, Uniswap, Aave and Sky can build with Null tokens for margin, lending, savings and collateral." />
+  <img className="hidden dark:block" src="/images/null-stack-dark.svg" alt="Null as a building block, in three layers. Ethereum mainnet at the base settles every position. Null sits on it and turns USDC into tokens: Receiver tokens that track assets such as AAPL, gold, the S&amp;P 500 and BTC, and Payer tokens that take the other side. DeFi sits on top, where apps such as Morpho, Uniswap, Aave and Sky can build with Null tokens for margin, lending, savings and collateral." />
 </Frame>
 
-That is the whole idea. Everything else in Null is built on it. [nUSDC backs two pools](/how-null-works/nusdc-backs-two-pools) walks through it with a worked example.
+Every market works the same way, with a Receiver Pool and a Payer Pool. [nUSDC backs two pools](/how-null-works/nusdc-backs-two-pools) walks through it with a worked example.
 
 ## What you can do with it
 
