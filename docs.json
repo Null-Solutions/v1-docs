@@ -160,20 +160,28 @@
       "destination": "/market-making/overview"
     },
     {
+      "source": "/points",
+      "destination": "/"
+    },
+    {
+      "source": "/referrals",
+      "destination": "/"
+    },
+    {
       "source": "/private-beta/status-and-points",
-      "destination": "/points"
+      "destination": "/"
     },
     {
       "source": "/private-beta/status-and-points/points-and-referrals",
-      "destination": "/points"
+      "destination": "/"
     },
     {
       "source": "/private-beta/referrals",
-      "destination": "/points"
+      "destination": "/"
     },
     {
       "source": "/private-beta/status-and-points/referrals",
-      "destination": "/points"
+      "destination": "/"
     },
     {
       "source": "/private-beta/status-and-points/home-dashboard",
@@ -181,7 +189,7 @@
     },
     {
       "source": "/private-beta/status-and-points/how-to-earn-points",
-      "destination": "/points"
+      "destination": "/"
     },
     {
       "source": "/private-beta/legal/private-beta-notices",
@@ -371,7 +379,6 @@
             "pages": [
               "faq",
               "glossary",
-              "points",
               "legal"
             ]
           }

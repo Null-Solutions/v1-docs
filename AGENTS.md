@@ -69,7 +69,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 
 ## Content boundaries
 
-- Guides: what Null is, the big picture, the Collateral Vault, two pools, how Payers earn, synthetics, long and short markets, the Savings Vault, fees, risks, the four products, Payers, questions, glossary, points, and legal
+- Guides: what Null is, the big picture, the Collateral Vault, two pools, how Payers earn, synthetics, long and short markets, the Savings Vault, fees, risks, the four products, Payers, questions, glossary, and legal
 - Developers: protocol mechanics, integration, market setup, deployments, contract reference
 - Support: troubleshooting and brand assets
 - Audits live once, under Developers → Protocol. Guides say "audited by Nethermind" and link there for scope.
