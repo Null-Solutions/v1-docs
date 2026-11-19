@@ -17,8 +17,8 @@ Both pools hold nUSDC. When the price moves, the market moves collateral from on
 
 | Side | What you do | What you get |
 | --- | --- | --- |
-| Receiver | Follow the price. You deposit USDC and get a Receiver Pool share. Its value rises and falls with the asset. | Price exposure with no borrowing, so no margin calls. In return, the interest your deposit earns goes to Payers. |
-| Payer | Take the opposite side. You deposit USDC and gain when the price falls, lose when it rises. | The interest on your own deposit and on the Receivers' deposits. Many Payers hedge the price elsewhere. Returns are not fixed. |
+| Receiver | Follow the price. You deposit USDC and get a Receiver Pool share. Its value rises and falls with the asset. | Price exposure with no borrowing, so no margin calls. In return, the interest your deposit earns goes to Payers, and so do your opening and closing fees. |
+| Payer | Take the opposite side. You deposit USDC and gain when the price falls, lose when it rises. | The interest on your own deposit and on the Receivers' deposits, plus the fees Receivers pay to open and close. Many Payers hedge the price elsewhere. Returns are not fixed. |
 
 You never own the asset. A Receiver Pool share is a claim on collateral in the pool, not a share of Apple or a bar of gold. There are no votes or dividends, unless the price feed itself includes them.
 
@@ -40,6 +40,7 @@ If the asset falls, money moves the other way. A Receiver can never gain more th
 | Prices | Chainlink price feeds. The market reads a fresh price before every deposit and withdrawal. |
 | Settlement | Gains and losses move between the pools at that price, then your trade goes through. |
 | Backing | Every position is fully backed. Settlement only moves collateral that is already in the pools, so nobody can end up owing money. |
+| Fees | Receivers pay an opening and closing fee, and it goes to the Payer pool, not to Null. Payers' own fees go to the Receiver pool. See [What it costs](/concepts/fees). |
 | If Payers run out | Returns stop until new Payers join. Missed price moves are not made up later. |
 | Big jumps | A single move of more than 20% is skipped, not settled. The new price becomes the starting point. |
 | Rules | Each market's collateral, price feed and funding model are fixed when it is created. |
