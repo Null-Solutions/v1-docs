@@ -20,6 +20,9 @@ description: "Short answers to the questions people ask most."
   <Accordion title="Where do prices come from?">
     Chainlink price feeds. Any single jump above 20% is skipped, not settled. See [Circuit breaker](/protocol/circuit-breaker).
   </Accordion>
+  <Accordion title="Why are jumps above 20% skipped?">
+    To protect both sides from moves that are not real, such as a stock split halving the price or a faulty oracle print that searchers could drain the pools on. Any single move above 20% becomes the new starting point instead of profit and loss, for Receivers and Payers alike. See [Why it exists](/protocol/circuit-breaker#why-it-exists).
+  </Accordion>
   <Accordion title="Do I own the stock or coin a market follows?">
     No. You hold a Receiver Pool share, a vault share or a Morpho position, depending on the product. No votes or dividends reach you, unless the price feed itself includes them.
   </Accordion>

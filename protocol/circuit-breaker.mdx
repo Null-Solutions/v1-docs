@@ -8,6 +8,21 @@ Every settlement trusts the oracle, and the circuit breaker exists for the momen
 
 The rule itself could hardly be simpler. During settlement, the market compares the fresh oracle price with the price stored at the previous settlement. If the two differ by more than 20 percent, the price leg of that settlement is skipped in full. No partial transfer is made up to the boundary. The move is either entirely within bounds and settled in full, or entirely beyond them and settled not at all.
 
+## Why it exists
+
+The breaker protects both pools from two things an oracle can produce that are not real price moves:
+
+- **Corporate actions.** A 2-for-1 split halves the reported price overnight. Settled mechanically, that would hand half the Receiver pool to Payers for a move that never happened economically. A 4-for-1 split would take three quarters.
+- **Faulty prints.** A bad report that lands onchain can be back-run by searchers in the same block, draining one side before anyone can react.
+
+Traditional equity swaps deal with the same events through the adjustment and market disruption provisions in ISDA's equity definitions. Null cannot tell a split from a glitch from a crash, so it treats any jump above 20% in one settlement the same way: as a new starting point, not as profit and loss.
+
+The rule is agreed by both sides up front, and it cuts both ways. If a glitch or a genuine black swan moves the price more than 20% at once, Receivers forgo the gain on a rise and are spared the loss on a fall, and Payers mirror that.
+
+### Dormant markets
+
+The known edge case is a market nobody touches for a long time. If the price drifts more than 20% with no settlement in between, the side that would lose can send a dust deposit to trigger one and skip the move. Either side can do this, and the defence is the same for both: settle often. Any deposit or redemption settles the market, so regular activity, keepers and interfaces keep the gap between settlements well under 20%, leaving only genuine single-print jumps to trip the breaker.
+
 ## What happens on the settlement that trips it
 
 Skipping the price leg does not mean skipping the settlement. The fresh price is still written into storage, so it becomes the baseline the next settlement measures from, and the timestamp still advances. Funding still runs, subject to the usual pool floor, since a discontinuity in the tracked price says nothing about the vault yield that accrued over the interval. The deposit or redemption that triggered settlement then proceeds at the existing pool values. Holders keep the shares they had, revalued only by funding and by whatever the interaction itself does.
