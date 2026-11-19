@@ -7,16 +7,16 @@ description: "Lend nUSDC to the long markets, or lend your synthetic to the shor
 Lending is the direct version of Savings. Instead of one blended rate, you pick the Morpho markets yourself, and you can lend something Savings never touches: your synthetics.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/lending-flow.svg" alt="Lend turns your USDC into nUSDC and lends it into a long market, where Leverage Long traders borrow it. Or lend rAAPL you hold into its short market, where Leverage Short traders borrow it, while you keep its price exposure." />
-  <img className="hidden dark:block" src="/images/lending-flow-dark.svg" alt="Lend turns your USDC into nUSDC and lends it into a long market, where Leverage Long traders borrow it. Or lend rAAPL you hold into its short market, where Leverage Short traders borrow it, while you keep its price exposure." />
+  <img className="block dark:hidden" src="/images/lending-flow.svg" alt="Lend turns your USDC into nUSDC and lends it into a long market, where Leverage Long traders borrow it. Or lend AAPLr you hold into its short market, where Leverage Short traders borrow it, while you keep its price exposure." />
+  <img className="hidden dark:block" src="/images/lending-flow-dark.svg" alt="Lend turns your USDC into nUSDC and lends it into a long market, where Leverage Long traders borrow it. Or lend AAPLr you hold into its short market, where Leverage Short traders borrow it, while you keep its price exposure." />
 </Frame>
 
 ## Two things you can lend
 
 | You lend | Into | You earn | Your exposure |
 | --- | --- | --- | --- |
-| nUSDC | A long market, such as `rAAPL \| nUSDC` | Interest from Leverage Long borrowers, on top of nUSDC's own interest. | None to the price. You are a lender. |
-| Your synthetic, such as rAAPL | Its short market, `nUSDC \| rAAPL` | Interest from Leverage Short borrowers. | You keep rAAPL's price exposure while it is lent. |
+| nUSDC | A long market, such as `AAPLr \| nUSDC` | Interest from Leverage Long borrowers, on top of nUSDC's own interest. | None to the price. You are a lender. |
+| Your synthetic, such as AAPLr | Its short market, `nUSDC \| AAPLr` | Interest from Leverage Short borrowers. | You keep AAPLr's price exposure while it is lent. |
 
 The second row is what makes your synthetics yield-bearing. You hold Apple's price and earn interest on it. It is also what makes shorting possible, because a Leverage Short needs someone to lend the synthetic it borrows. [Long and short markets](/how-null-works/synthetics-go-on-morpho) explains both.
 

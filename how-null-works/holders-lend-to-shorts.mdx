@@ -4,28 +4,28 @@ sidebarTitle: "Holders lend to shorts"
 description: "The other half of the top layer. Synthetic holders lend into the short markets, earn interest and keep their price exposure."
 ---
 
-Savers lend nUSDC to the longs. The short markets need something different: the synthetic itself. That comes from people who already hold it. If you hold rAAPL, you can lend it into its short market, earn interest, and still follow Apple's price the whole time.
+Savers lend nUSDC to the longs. The short markets need something different: the synthetic itself. That comes from people who already hold it. If you hold AAPLr, you can lend it into its short market, earn interest, and still follow Apple's price the whole time.
 
 <Frame caption="Each figure is an example. Rates change.">
-  <img className="block dark:hidden" src="/images/short-lending.svg" alt="You lend 1,000 of rAAPL into the short market, nUSDC | rAAPL, and still follow Apple's price. A Leverage Short trader posts nUSDC as collateral, borrows the rAAPL and sells it, and pays interest that comes back to you. At 2 percent a year, 1,000 of rAAPL becomes 1,020 if the price is flat, 1,122 if it rises 10 percent, and 918 if it falls 10 percent, against 1,000, 1,100 and 900 from just holding." />
-  <img className="hidden dark:block" src="/images/short-lending-dark.svg" alt="You lend 1,000 of rAAPL into the short market, nUSDC | rAAPL, and still follow Apple's price. A Leverage Short trader posts nUSDC as collateral, borrows the rAAPL and sells it, and pays interest that comes back to you. At 2 percent a year, 1,000 of rAAPL becomes 1,020 if the price is flat, 1,122 if it rises 10 percent, and 918 if it falls 10 percent, against 1,000, 1,100 and 900 from just holding." />
+  <img className="block dark:hidden" src="/images/short-lending.svg" alt="You lend 1,000 of AAPLr into the short market, nUSDC | AAPLr, and still follow Apple's price. A Leverage Short trader posts nUSDC as collateral, borrows the AAPLr and sells it, and pays interest that comes back to you. At 2 percent a year, 1,000 of AAPLr becomes 1,020 if the price is flat, 1,122 if it rises 10 percent, and 918 if it falls 10 percent, against 1,000, 1,100 and 900 from just holding." />
+  <img className="hidden dark:block" src="/images/short-lending-dark.svg" alt="You lend 1,000 of AAPLr into the short market, nUSDC | AAPLr, and still follow Apple's price. A Leverage Short trader posts nUSDC as collateral, borrows the AAPLr and sells it, and pays interest that comes back to you. At 2 percent a year, 1,000 of AAPLr becomes 1,020 if the price is flat, 1,122 if it rises 10 percent, and 918 if it falls 10 percent, against 1,000, 1,100 and 900 from just holding." />
 </Frame>
 
 ## How it works
 
 | | |
 | --- | --- |
-| What you lend | A synthetic you hold, such as rAAPL. |
-| Where it goes | Its short market, `nUSDC \| rAAPL`. |
-| Who borrows it | Leverage Short traders. They post nUSDC as collateral, borrow rAAPL and sell it. |
-| What you earn | The short borrow rate, paid in rAAPL. It rises when more traders want to short. |
-| What you keep | rAAPL's price exposure. Your balance still rises and falls with Apple. |
+| What you lend | A synthetic you hold, such as AAPLr. |
+| Where it goes | Its short market, `nUSDC \| AAPLr`. |
+| Who borrows it | Leverage Short traders. They post nUSDC as collateral, borrow AAPLr and sell it. |
+| What you earn | The short borrow rate, paid in AAPLr. It rises when more traders want to short. |
+| What you keep | AAPLr's price exposure. Your balance still rises and falls with Apple. |
 
 ## Why it matters
 
 | For | What it does |
 | --- | --- |
-| Holders | Turns a plain price position into one that also earns interest. rAAPL becomes yield-bearing. |
+| Holders | Turns a plain price position into one that also earns interest. AAPLr becomes yield-bearing. |
 | Short traders | Makes shorting possible. A Leverage Short can only borrow what holders have lent. |
 | The system | Balances the top layer. Savers fund the longs, holders fund the shorts, and both are paid by the traders who use them. |
 
@@ -37,7 +37,7 @@ Lend from the lending book at `/lending`: pick the synthetic's short market, sel
 
 | Risk | What it means for you |
 | --- | --- |
-| Price | Lending doesn't remove price risk. If Apple falls, your rAAPL falls with it. |
+| Price | Lending doesn't remove price risk. If Apple falls, your AAPLr falls with it. |
 | Recalls | You can only recall what traders aren't borrowing. In a busy market, you may wait for loans to be repaid. |
 | Bad debt | If a short trader is liquidated for less than the debt, lenders can lose some of what they lent. |
 | The rate moves | When few people want to short, the rate can be close to zero. |

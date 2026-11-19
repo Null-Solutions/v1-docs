@@ -7,8 +7,8 @@ description: "Every synthetic has two Morpho markets. The long market lends nUSD
 This is the third layer. Every synthetic gets two Morpho lending markets: one for going long, one for going short. They are where leverage comes from, and where nUSDC and synthetics can be lent for interest.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/long-short-markets.svg" alt="Each synthetic, such as rAAPL, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market rAAPL | nUSDC, where Leverage Long traders borrow it against rAAPL. rAAPL holders lend into the short market nUSDC | rAAPL, where Leverage Short traders borrow rAAPL against nUSDC." />
-  <img className="hidden dark:block" src="/images/long-short-markets-dark.svg" alt="Each synthetic, such as rAAPL, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market rAAPL | nUSDC, where Leverage Long traders borrow it against rAAPL. rAAPL holders lend into the short market nUSDC | rAAPL, where Leverage Short traders borrow rAAPL against nUSDC." />
+  <img className="block dark:hidden" src="/images/long-short-markets.svg" alt="Each synthetic, such as AAPLr, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market AAPLr | nUSDC, where Leverage Long traders borrow it against AAPLr. AAPLr holders lend into the short market nUSDC | AAPLr, where Leverage Short traders borrow AAPLr against nUSDC." />
+  <img className="hidden dark:block" src="/images/long-short-markets-dark.svg" alt="Each synthetic, such as AAPLr, has two Morpho markets. The Null Savings Vault lends nUSDC into the long market AAPLr | nUSDC, where Leverage Long traders borrow it against AAPLr. AAPLr holders lend into the short market nUSDC | AAPLr, where Leverage Short traders borrow AAPLr against nUSDC." />
 </Frame>
 
 Markets are written collateral first, then the asset being lent.
@@ -17,19 +17,19 @@ Markets are written collateral first, then the asset being lent.
 
 | | |
 | --- | --- |
-| Written as | `rAAPL \| nUSDC` |
+| Written as | `AAPLr \| nUSDC` |
 | Who lends | The [Savings Vault](/how-null-works/savers-lend-to-longs), and anyone lending nUSDC through **Lend**. |
-| Who borrows | Leverage Long traders. They post rAAPL and borrow nUSDC to buy more of it. |
+| Who borrows | Leverage Long traders. They post AAPLr and borrow nUSDC to buy more of it. |
 | Lenders earn | The interest borrowers pay, on top of what nUSDC already earns in the Collateral Vault. |
 
 ## The short market
 
 | | |
 | --- | --- |
-| Written as | `nUSDC \| rAAPL` |
-| Who lends | rAAPL holders, through **Lend**. |
-| Who borrows | Leverage Short traders. They post nUSDC, borrow rAAPL and sell it. |
-| Lenders earn | Interest on their rAAPL, while they keep its price exposure. |
+| Written as | `nUSDC \| AAPLr` |
+| Who lends | AAPLr holders, through **Lend**. |
+| Who borrows | Leverage Short traders. They post nUSDC, borrow AAPLr and sell it. |
+| Lenders earn | Interest on their AAPLr, while they keep its price exposure. |
 
 That last line matters. Lending your synthetic into its short market turns a plain price position into one that also earns interest. A Leverage Short is only possible because someone was willing to lend.
 

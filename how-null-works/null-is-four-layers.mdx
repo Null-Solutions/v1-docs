@@ -7,8 +7,8 @@ description: "Null is four layers, each built on the one below: a collateral vau
 Null is built in four layers. Each one uses the layer below it, so you can understand the whole system by reading from the bottom up. The rest of this section does exactly that, one page per layer.
 
 <Frame caption="Synthetics shown are examples. The live list is on /trade.">
-  <img className="block dark:hidden" src="/images/everything-app.svg" alt="Null in four layers. The Null Collateral Vault, nUSDC, backs many synthetics: rAAPL, rSPX, rBTC and rGOLD. Each synthetic has a long Morpho market and a short Morpho market. The Null Savings Vault lends nUSDC into every long market, and holders lend their synthetic into the short markets." />
-  <img className="hidden dark:block" src="/images/everything-app-dark.svg" alt="Null in four layers. The Null Collateral Vault, nUSDC, backs many synthetics: rAAPL, rSPX, rBTC and rGOLD. Each synthetic has a long Morpho market and a short Morpho market. The Null Savings Vault lends nUSDC into every long market, and holders lend their synthetic into the short markets." />
+  <img className="block dark:hidden" src="/images/everything-app.svg" alt="Null in four layers. The Null Collateral Vault, nUSDC, backs many synthetics: AAPLr, SPXr, BTCr and GOLDr. Each synthetic has a long Morpho market and a short Morpho market. The Null Savings Vault lends nUSDC into every long market, and holders lend their synthetic into the short markets." />
+  <img className="hidden dark:block" src="/images/everything-app-dark.svg" alt="Null in four layers. The Null Collateral Vault, nUSDC, backs many synthetics: AAPLr, SPXr, BTCr and GOLDr. Each synthetic has a long Morpho market and a short Morpho market. The Null Savings Vault lends nUSDC into every long market, and holders lend their synthetic into the short markets." />
 </Frame>
 
 ## The four layers
@@ -16,7 +16,7 @@ Null is built in four layers. Each one uses the layer below it, so you can under
 | Layer | In one line | Read |
 | --- | --- | --- |
 | Collateral Vault | USDC becomes nUSDC, which earns interest and backs every market. | [USDC becomes nUSDC](/how-null-works/usdc-becomes-nusdc) |
-| Synthetics | Each market splits nUSDC into two pools. The Receiver side is a token that follows a price, such as rAAPL. | [nUSDC backs two pools](/how-null-works/nusdc-backs-two-pools), [Payers earn interest and fees](/how-null-works/payers-earn-interest-and-fees), [Receivers hold synthetics](/how-null-works/receivers-hold-synthetics) |
+| Synthetics | Each market splits nUSDC into two pools. The Receiver side is a token that follows a price, such as AAPLr. | [nUSDC backs two pools](/how-null-works/nusdc-backs-two-pools), [Payers earn interest and fees](/how-null-works/payers-earn-interest-and-fees), [Receivers hold synthetics](/how-null-works/receivers-hold-synthetics) |
 | Long and short markets | Every synthetic gets two Morpho markets, one to borrow nUSDC against it and one to borrow it. | [Synthetics go on Morpho](/how-null-works/synthetics-go-on-morpho) |
 | Lenders | Savers' nUSDC is lent into the long markets. Holders lend their synthetics into the short markets. | [Savers lend to longs](/how-null-works/savers-lend-to-longs), [Holders lend to shorts](/how-null-works/holders-lend-to-shorts) |
 

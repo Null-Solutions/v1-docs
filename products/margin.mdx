@@ -7,18 +7,18 @@ description: "Leverage Long or Leverage Short on any synthetic, by borrowing on 
 Margin is for when a view no longer fits inside your cash. You borrow, so a given price move matters more than it would on Spot. That cuts both ways, which is why Margin has its own desk and the one thing Spot never has: a liquidation price.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
-  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of rAAPL in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
+  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of AAPLr in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
+  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 2,000 nUSDC. Together they buy 3,000 of AAPLr in the Receiver Pool, which is posted on the long market. The long market lends 2,000 nUSDC that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
 </Frame>
 
 ## How it works
 
 | | Leverage Long | Leverage Short |
 | --- | --- | --- |
-| Market | The long market, such as `rAAPL \| nUSDC` | The short market, such as `nUSDC \| rAAPL` |
-| You post | rAAPL | nUSDC |
-| You borrow | nUSDC, from the Savings Vault and other lenders | rAAPL, from holders who lend it |
-| What happens | The borrowed nUSDC buys more rAAPL than your own money could. | The borrowed rAAPL is sold. You repay it later, hopefully cheaper. |
+| Market | The long market, such as `AAPLr \| nUSDC` | The short market, such as `nUSDC \| AAPLr` |
+| You post | AAPLr | nUSDC |
+| You borrow | nUSDC, from the Savings Vault and other lenders | AAPLr, from holders who lend it |
+| What happens | The borrowed nUSDC buys more AAPLr than your own money could. | The borrowed AAPLr is sold. You repay it later, hopefully cheaper. |
 | You pay | **Long borrow APR** | **Short borrow APR** |
 
 Underneath, the price exposure is the same Receiver Pool share as on [Spot](/products/spot). Margin just borrows against it. It is usually cheaper than a perp, because USDC borrow rates tend to run below perp DEX funding.
@@ -33,17 +33,17 @@ The desk opens a leveraged position in one transaction, using a flash loan: mone
 | --- | --- |
 | Deposit | Your 1,000 USDC goes into the Collateral Vault, which mints 1,000 nUSDC. |
 | Flash loan | The router borrows 2,000 nUSDC for a moment. |
-| Buy | The 3,000 nUSDC buys 3,000 of rAAPL in the Receiver Pool. |
-| Post | The rAAPL is posted as collateral on the long market. |
+| Buy | The 3,000 nUSDC buys 3,000 of AAPLr in the Receiver Pool. |
+| Post | The AAPLr is posted as collateral on the long market. |
 | Borrow and repay | The long market lends 2,000 nUSDC, which repays the flash loan. |
 
-You end with 3,000 of rAAPL and a 2,000 nUSDC loan. Closing runs the same loop in reverse.
+You end with 3,000 of AAPLr and a 2,000 nUSDC loan. Closing runs the same loop in reverse.
 
 ### Leverage Short
 
 <Frame>
-  <img className="block dark:hidden" src="/images/margin-short.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of rAAPL. The rAAPL is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
-  <img className="hidden dark:block" src="/images/margin-short-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of rAAPL. The rAAPL is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
+  <img className="block dark:hidden" src="/images/margin-short.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of AAPLr. The AAPLr is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
+  <img className="hidden dark:block" src="/images/margin-short-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 nUSDC. A flash loan adds 3,000 nUSDC. All 4,000 nUSDC is posted on the short market, which lends 3,000 of AAPLr. The AAPLr is sold to the Receiver Pool for 3,000 nUSDC, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
 </Frame>
 
 | Step | What happens, at 3× on 1,000 USDC |
@@ -51,10 +51,10 @@ You end with 3,000 of rAAPL and a 2,000 nUSDC loan. Closing runs the same loop i
 | Deposit | Your 1,000 USDC goes into the Collateral Vault, which mints 1,000 nUSDC. |
 | Flash loan | The router borrows 3,000 nUSDC for a moment. |
 | Post | All 4,000 nUSDC is posted as collateral on the short market. |
-| Borrow and sell | The short market lends 3,000 of rAAPL, which is sold to the Receiver Pool for 3,000 nUSDC. |
+| Borrow and sell | The short market lends 3,000 of AAPLr, which is sold to the Receiver Pool for 3,000 nUSDC. |
 | Repay | That 3,000 nUSDC repays the flash loan. |
 
-You end with 4,000 nUSDC posted and a 3,000 rAAPL loan: you gain if rAAPL falls. Your nUSDC collateral keeps earning interest while the position is open. Closing mints the rAAPL you owe and repays the loan.
+You end with 4,000 nUSDC posted and a 3,000 AAPLr loan: you gain if AAPLr falls. Your nUSDC collateral keeps earning interest while the position is open. Closing mints the AAPLr you owe and repays the loan.
 
 The borrow rate is what holding costs. You pay it on the whole loan for as long as the position is open, it adds to the debt, and it rises when borrowers use more of the market. Leverage only pays if the price move beats it.
 
@@ -72,37 +72,37 @@ short carry ≈ collateral × nUSDC interest - loan × short borrow APR
 
 The examples below use 1,000 USDC of equity and illustrative rates: nUSDC interest 5%, long borrow APR 4%, short borrow APR 2%. Live rates are on **Parameters** and change all the time. Fees are left out.
 
-### 3× long on rAAPL
+### 3× long on AAPLr
 
-You hold 3,000 of rAAPL against a 2,000 nUSDC loan. Loan-to-value starts at 67%.
+You hold 3,000 of AAPLr against a 2,000 nUSDC loan. Loan-to-value starts at 67%.
 
 | | |
 | --- | --- |
-| rAAPL rises 10% | Position 3,300, loan 2,000. Your equity is 1,300: **+30%**. |
-| rAAPL falls 10% | Position 2,700, loan 2,000. Your equity is 700: **−30%**. |
+| AAPLr rises 10% | Position 3,300, loan 2,000. Your equity is 1,300: **+30%**. |
+| AAPLr falls 10% | Position 2,700, loan 2,000. Your equity is 700: **−30%**. |
 | Liquidation | A fall of about 31%. |
-| Carry | Borrow costs 80 a year and the nUSDC loan grows by about 100 in dollars: about **−180 a year**, or 15 a month. rAAPL has to rise about 6% a year just to cover it. |
+| Carry | Borrow costs 80 a year and the nUSDC loan grows by about 100 in dollars: about **−180 a year**, or 15 a month. AAPLr has to rise about 6% a year just to cover it. |
 | After a year, price flat | The loan is about 2,180, loan-to-value about 73%, and the fall to liquidation shrinks to about 25%. |
 
-### 3× short on rAAPL
+### 3× short on AAPLr
 
-You post 4,000 nUSDC against a loan of 3,000 of rAAPL. Loan-to-value starts at 75%.
+You post 4,000 nUSDC against a loan of 3,000 of AAPLr. Loan-to-value starts at 75%.
 
 | | |
 | --- | --- |
-| rAAPL falls 10% | The loan is worth 2,700. Your equity is 1,300: **+30%**. |
-| rAAPL rises 10% | The loan is worth 3,300. Your equity is 700: **−30%**. |
+| AAPLr falls 10% | The loan is worth 2,700. Your equity is 1,300: **+30%**. |
+| AAPLr rises 10% | The loan is worth 3,300. Your equity is 700: **−30%**. |
 | Liquidation | A rise of about 29%. |
 | Carry | Your collateral earns about 200 a year and borrowing costs 60: about **+140 a year**. You are paid to wait, as long as the short borrow APR stays below the interest your collateral earns. |
 | After a year, price flat | Collateral is about 4,200, the loan about 3,060, and the rise to liquidation grows to about 32%. |
 
-### 10× long on rAAPL
+### 10× long on AAPLr
 
-You hold 10,000 of rAAPL against a 9,000 nUSDC loan. Loan-to-value starts at 90%.
+You hold 10,000 of AAPLr against a 9,000 nUSDC loan. Loan-to-value starts at 90%.
 
 | | |
 | --- | --- |
-| rAAPL rises 5% | Your equity is 1,500: **+50%**. |
+| AAPLr rises 5% | Your equity is 1,500: **+50%**. |
 | Liquidation | A fall of about 6.7%. |
 | Carry | About **−810 a year**, or 68 a month, on 1,000 of equity. |
 | Price flat | Carry alone pushes loan-to-value to 96.5% in about ten months. You can be liquidated without the price moving. |
