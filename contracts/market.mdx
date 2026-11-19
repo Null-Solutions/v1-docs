@@ -34,16 +34,15 @@ function receiverPool() external view returns (INullV1Pool);
 function payerPool() external view returns (INullV1Pool);
 function entryFee() external view returns (uint16);
 function exitFee() external view returns (uint16);
-function collateralFee() external view returns (uint16);
 ```
 
-Fees are basis points. Entry and exit default to 25 bps and are capped at `250` (2.5%). They are charged on settleable-R notional. The collateral fee is capped at `0`. Where entry and exit land depends on the factory's `allowProtocolFees` flag: the opposite pool, or `protocolFees`. See [Fees](/protocol/fees).
+Fees are basis points. Entry and exit default to 25 bps and are capped at `250` (2.5%). They are charged on settleable-R notional. There is no other fee. Where a fee lands depends on the side that pays it: Receiver-side fees go to the Payer pool (or back to the Receiver pool while the Payer pool is at or below `MIN_POOL_ASSETS`), and Payer-side fees go to `protocolFees`. See [Fees](/protocol/fees).
 
 ## Settlement
 
-State accrual is interaction-driven. There is no permissionless public “poke”: `updateState()` is callable only by the two pools. Every pool deposit, mint, withdrawal, or redemption settles first. `setFees` and `sweepFees` also settle before applying their changes.
+State accrual is interaction-driven. There is no permissionless public “poke”: `updateState()` is callable only by the two pools. Every pool deposit, mint, withdrawal, or redemption settles first. `setFees` also settles before applying its change. `sweepFees` does not settle.
 
-Settlement reconciles the market's actual collateral balance, accrues collateral fees, obtains the signed WAD-scaled funding rate from `frm`, and settles funding and price PnL between pools. Positive funding means receivers pay payers; negative funding means payers pay receivers.
+Settlement reconciles the market's actual collateral balance, obtains the signed WAD-scaled funding rate from `frm`, and settles funding and price PnL between pools. Positive funding means receivers pay payers; negative funding means payers pay receivers.
 
 When both pools have assets, price PnL is skipped if a move exceeds the time-scaled circuit-breaker cap; funding still settles and `UpdateState.circuitBreakerFired` is `true`. If either pool is empty, both price PnL and funding transfer are skipped and the flag is `false`. Settlement transfers are capped so the debited pool retains `MIN_POOL_ASSETS` (`1e6` raw collateral units).
 
@@ -54,14 +53,15 @@ The protocol owner is the current `owner()` of the factory.
 ```solidity
 function setFees(
     uint16 newEntryFee,
-    uint16 newExitFee,
-    uint16 newCollateralFee
+    uint16 newExitFee
 ) external;
 
 function sweepFees() external returns (uint256 amount);
 ```
 
-`sweepFees` settles, transfers all accrued protocol fees to the protocol owner, and emits `CollectFees` only when the amount is nonzero.
+`setFees` settles the market, then checks each fee against its cap and stores both.
+
+`sweepFees` transfers the `protocolFees` recorded at the last settlement to the protocol owner, and emits `CollectFees` only when the amount is nonzero. It does not settle the market, reads no oracle price, and emits no `UpdateState`. Collateral donated while both pools are empty is counted into `protocolFees` only by the next settlement (any deposit or redemption, including a zero-amount deposit), so it can be swept only after that.
 
 ## Events
 
@@ -77,8 +77,7 @@ event UpdateState(
 
 event SetFees(
     uint16 entryFee,
-    uint16 exitFee,
-    uint16 collateralFee
+    uint16 exitFee
 );
 
 event CollectFees(uint256 fee);

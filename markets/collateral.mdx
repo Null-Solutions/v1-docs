@@ -21,7 +21,7 @@ The core does not track a separate underlying price for ERC-4626 collateral. It 
 
 ## Reconciliation
 
-On settlement (pool writes and fee sweeps), the market reconciles `collateral.balanceOf(market)` against internal accounting before collateral fees, funding, and price PnL.
+On settlement (pool writes and `setFees`; `sweepFees` does not settle), the market reconciles `collateral.balanceOf(market)` against internal accounting before funding and price PnL.
 
 1. Reserve recorded `protocolFees` (capped to actual balance if needed)
 2. Compare remainder to `receiverPool + payerPool`

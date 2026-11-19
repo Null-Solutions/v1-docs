@@ -53,7 +53,7 @@ function applySlippageFloor(quotedOutput: bigint): bigint {
 }
 ```
 
-Pool previews include the entry fee but use the last settled market state. Execution settles first, so funding, price PnL, collateral fees, reconciliation, or another transaction can change the result. For a settlement projection, use `NullV1Lens.previewMarket`; still enforce router minimums.
+Pool previews include the entry fee but use the last settled market state. Execution settles first, so funding, price PnL, reconciliation, or another transaction can change the result. For a settlement projection, use `NullV1Lens.previewMarket`; still enforce router minimums.
 
 ## ERC-4626 collateral example
 

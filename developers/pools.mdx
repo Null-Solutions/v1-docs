@@ -67,9 +67,9 @@ Notional is `assets × settleableR / ownAssets` for both pools. In practical ter
 - `withdraw`: the pool deducts the requested assets plus the exit fee, with the same revert.
 - `redeem`: the exit fee is deducted from the gross asset quote, and can consume the full redemption.
 
-The previews use the last settled state. Funding, price PnL, collateral fees, balance reconciliation, or other transactions can move the execution rate. Use `NullV1Lens.previewMarket` for a settlement projection and a router minimum for execution protection.
+The previews use the last settled state. Funding, price PnL, balance reconciliation, or other transactions can move the execution rate. Use `NullV1Lens.previewMarket` for a settlement projection and a router minimum for execution protection.
 
-Fees credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/protocol/fees).
+`feeOnTotal(notional)` is `ceil(notional × feeBps / (10000 + feeBps))`, capped at the assets of the trade. Receiver-pool fees credit the Payer pool (or the Receiver pool itself while the Payer pool is at or below `MIN_POOL_ASSETS`). Payer-pool fees credit `protocolFees`. See [Fees](/protocol/fees).
 
 <Warning>
 `maxDeposit` and `maxMint` always return `type(uint256).max`. Never use them to size inputs. `maxWithdraw` is net of the exit fee but reads the last settled state, so a full exit via `withdraw(maxWithdraw(owner))` can revert once execution settles the market. Exit fully with `redeem(balanceOf(owner))` instead. See [Max functions](/contracts/pool#max-functions).

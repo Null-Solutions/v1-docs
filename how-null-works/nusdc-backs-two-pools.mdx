@@ -40,7 +40,7 @@ If the asset falls, money moves the other way. A Receiver can never gain more th
 | Prices | Chainlink price feeds. The market reads a fresh price before every deposit and withdrawal. |
 | Settlement | Gains and losses move between the pools at that price, then your trade goes through. |
 | Backing | Every position is fully backed. Settlement only moves collateral that is already in the pools, so nobody can end up owing money. |
-| Fees | Receivers pay an opening and closing fee, and it goes to the Payer pool, not to Null. Payers' own fees go to the Receiver pool. See [What it costs](/how-null-works/what-it-costs). |
+| Fees | Receivers pay an opening and closing fee, and it goes to the Payer pool, not to Null. Payers' own fees go to the protocol. See [What it costs](/how-null-works/what-it-costs). |
 | If Payers run out | Returns stop until new Payers join. Missed price moves are not made up later. |
 | Big jumps | A single move of more than 20% is skipped, not settled. The new price becomes the starting point. |
 | Rules | Each market's collateral, price feed and funding model are fixed when it is created. |

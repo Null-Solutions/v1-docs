@@ -46,15 +46,14 @@ Both pools are cloned at init and emitted in `CreateMarket`.
 
 ## Mutable fees
 
-Factory owner can set three fees. Entry and exit default to 25 bps and are capped at 250 bps. The collateral fee is disabled.
+Factory owner can set two fees with `setFees(newEntryFee, newExitFee)`. Entry and exit default to 25 bps and are capped at 250 bps.
 
 | Accessor | Charged on | Maximum |
 | --- | --- | ---: |
 | `entryFee()` | `deposit` / `mint`, on settleable-R notional | 250 bps (2.5%) |
 | `exitFee()` | `withdraw` / `redeem`, same notional | 250 bps (2.5%) |
-| `collateralFee()` | Pool assets, annualized during settlement | 0 (disabled) |
 
-Entry and exit credit the opposite pool unless the factory was deployed with `allowProtocolFees`. `sweepFees()` settles first, then pays the factory owner any `protocolFees`. Details: [Fees](/protocol/fees).
+Receiver-side fees credit the Payer pool (or the Receiver pool while the Payer pool is at or below `MIN_POOL_ASSETS`). Payer-side fees credit `protocolFees`. `sweepFees()` pays the factory owner the `protocolFees` recorded at the last settlement; it does not settle the market. Details: [Fees](/protocol/fees).
 
 ## Funding model (product)
 
@@ -83,7 +82,6 @@ address payerPool    = address(market.payerPool());
 
 uint16 entryFee      = market.entryFee();
 uint16 exitFee       = market.exitFee();
-uint16 collateralFee = market.collateralFee();
 ```
 
 Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/protocol/settlement). Morpho periphery: [Morpho](/how-null-works/synthetics-go-on-morpho).

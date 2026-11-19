@@ -81,11 +81,11 @@ event UpdateState(
     bool circuitBreakerFired
 );
 
-event SetFees(uint16 entryFee, uint16 exitFee, uint16 collateralFee);
+event SetFees(uint16 entryFee, uint16 exitFee);
 event CollectFees(uint256 fee);
 ```
 
-`UpdateState` fires when a pool action or a fee operation settles the market. There is no periodic permissionless settlement call. When `circuitBreakerFired` is true, the market records the new price but skips price PnL; funding still settles.
+`UpdateState` fires when a pool action or `setFees` settles the market. `sweepFees` does not settle: it emits only `CollectFees`, and the `protocolFees` value in the last `UpdateState` stays stale until the next settlement, so subtract swept amounts yourself. There is no periodic permissionless settlement call. When `circuitBreakerFired` is true, the market records the new price but skips price PnL; funding still settles.
 
 Prices are `1e36`-scaled. Pool assets and protocol fees are raw market-collateral units. If collateral is ERC-4626, use Lens `collateralSharePrice` or vault conversion for underlying terms.
 

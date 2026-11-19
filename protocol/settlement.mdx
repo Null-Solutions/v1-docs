@@ -17,7 +17,7 @@ That design has a quiet consequence worth understanding. A market that nobody to
 
 Settlement begins in `SettlementLib.prepareUpdate`, and it begins with the balance sheet rather than the price. The market reads `collateral.balanceOf(market)` and reconciles it against its booked split of Receiver assets, Payer assets, and protocol fees. If the real balance is higher, because the vault share price rose, because someone donated collateral, or for any other reason, the surplus is divided between the pools in proportion to their current sizes. If it is lower, the shortfall is taken from them the same way. When both pools are empty there is nothing to divide between, and any balance falls to protocol fees.
 
-Only once the books match reality does the collateral fee step run. In principle it would skim an annualised fee from both pools into protocol fees at this point. In practice `MAX_COLLATERAL_FEE` is zero, so no market can be configured to charge it and the step is idle. It remains in the sequence because the accounting order matters if that ever changes, and because fees elsewhere in the system assume reconciliation has already happened.
+No fee is charged at this step. Settlement itself takes nothing from the pools: entry and exit fees belong to the deposit or redemption that follows it, as described in [Fees](/protocol/fees).
 
 With the state prepared, the market calls `frm.fundingRate` on that prepared state. The order is the point: the funding model sees pools that already reflect the collateral the market truly holds, and its answer can then be combined with the price movement that follows. The model for current markets is described in [Funding rate model](/protocol/funding-rate-model).
 

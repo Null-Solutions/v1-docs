@@ -52,8 +52,8 @@ back.
 
 ## Fees, gas, and costs elsewhere
 
-Entry and exit fees, where set, are charged on notional and usually credit the other pool rather than Null. They reach Null only where the
-factory was deployed with protocol fee routing, and the annualized collateral fee is disabled. Funding moving between Receiver and Payer
+Entry and exit fees, where set, are charged on notional. Fees paid on the Receiver side credit the Payer pool rather than Null. Fees paid
+on the Payer side are protocol fees and reach the factory owner. There is no fee for holding a position. Funding moving between Receiver and Payer
 is part of protocol settlement, not a fee paid to Null.
 
 Everything else still costs money. You are responsible for Ethereum gas and for any wallet, transfer, onramp, off ramp, collateral,

@@ -59,7 +59,7 @@ function simulateMarket(
 ) public view returns (SimulateResponse memory);
 ```
 
-`previewState` and `previewMarket` use `market.oracle().priceView()`. The `simulate` variants use the caller-provided price. All four reconcile the current market collateral balance, accrue collateral fees, read `frm.fundingRateView`, and apply funding and price settlement in memory.
+`previewState` and `previewMarket` use `market.oracle().priceView()`. The `simulate` variants use the caller-provided price. All four reconcile the current market collateral balance, read `frm.fundingRateView`, and apply funding and price settlement in memory.
 
 These are projections at the block being queried. They do not update oracle storage or market state. A zero price reverts with `ZeroOraclePrice()`, and `priceView()` may retain the oracle implementation's own staleness and revert behavior.
 

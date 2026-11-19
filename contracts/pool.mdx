@@ -65,7 +65,7 @@ function redeem(
 
 Before conversion, each entry point locks the market's reentrancy guard and calls `market.updateState()`. Deposits transfer collateral directly from the caller to the market; withdrawals are paid by the market. If the caller redeems or withdraws another owner's shares, the owner must approve the caller.
 
-Entry and exit fees are sized on settleable-R notional (`assets × settleableR / ownAssets`), not on collateral alone. Entry fees are included in the `assets` paid by depositors and excluded from assets converted into shares. Exit fees are charged in addition to withdrawn assets or deducted from redeemed assets. They credit the opposite pool unless the factory was deployed with `allowProtocolFees`. See [Fees](/protocol/fees).
+Entry and exit fees are sized on settleable-R notional (`assets × settleableR / ownAssets`), not on collateral alone. Entry fees are included in the `assets` paid by depositors and excluded from assets converted into shares. Exit fees are charged in addition to withdrawn assets or deducted from redeemed assets. The fee is `min(assets, ceil(notional × feeBps / (10000 + feeBps)))`. Receiver-pool fees credit the Payer pool (or the Receiver pool itself while the Payer pool is at or below `MIN_POOL_ASSETS`). Payer-pool fees credit `protocolFees`. See [Fees](/protocol/fees).
 
 ## Previews
 
@@ -76,7 +76,7 @@ function previewWithdraw(uint256 assets) public view returns (uint256 shares);
 function previewRedeem(uint256 shares) public view returns (uint256 assets);
 ```
 
-These functions include entry or exit fees and use the market's **last settled state**. Execution settles funding, collateral fees, balance changes, and price PnL first, so a stale market can produce materially different results. This is an accepted deviation from strict ERC-4626 preview semantics.
+These functions include entry or exit fees and use the market's **last settled state**. Execution settles funding, balance changes, and price PnL first, so a stale market can produce materially different results. This is an accepted deviation from strict ERC-4626 preview semantics.
 
 <Warning>
 Use `NullV1Lens.previewMarket` for a settlement-accurate state projection, then enforce `minReceiverShares`, `minPayerShares`, `minReceiverAssets`, or `minPayerAssets` through the appropriate router.
