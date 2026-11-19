@@ -16,6 +16,12 @@ Three costs can show up around a position. A market may charge a fee when you en
 | What it's charged on | Notional: the size of the position you open or close. |
 | Where it goes | It depends on your side. A Receiver's opening and closing fees are paid to the Payers. A Payer's fees go to the protocol. |
 
+## Why there is a fee at all
+
+Prices reach a market in steps, so for a short while a trader can see a move the pools have not settled yet. Without a fee, they could step in on the winning side at the old price and straight back out at the new one, taking the difference from everyone else. Entry and exit fees make that cost more than it pays.
+
+With 0.25% each way, a round trip on 10,000 costs about 50. Catching a 0.3% move earns 30, so it loses money. That's why fees are charged on both sides and on notional, and why more volatile markets need higher fees. See [Fees](/protocol/fees#the-trade-fees-stop).
+
 ## Why Payer fees look bigger
 
 For a Receiver, notional is roughly what you put in. A Payer backs the whole Receiver pool, so its notional is scaled by `R / P`. The same fee rate is charged on a bigger position.

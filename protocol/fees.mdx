@@ -8,6 +8,24 @@ Fees in Null exist to price an option that would otherwise be free. Oracle price
 
 That purpose shapes where the money goes. The destination depends on the side that pays. A fee paid on the Receiver side is not protocol revenue: it is paid across to the Payer pool, compensating the holders who were on the other side of the stale price. A fee paid on the Payer side goes to the market's `protocolFees` balance and is later swept to the factory owner. Understanding a Null fee therefore means asking two separate questions: how it is sized, and whose balance it lands in.
 
+## The trade fees stop
+
+Settlement only moves when someone interacts, and the price it settles to comes from a signed report the trader submits, which can be up to 60 seconds old. That leaves a window in which a trader can see that the market has moved before the pools have. Without fees, they could sandwich the move: enter the winning side at the old price, let the new price settle, and leave straight away with the difference, taken from the other pool.
+
+Fees on both sides of the door close that window. The entry fee prices getting in at the old price, and the exit fee prices getting out at it, so leaving just before a known loss is not free either. Both are charged on notional, because the gain from a sandwich scales with the exposure taken, not with the cash posted.
+
+With a 0.25% entry fee and a 0.25% exit fee, a round trip costs about 0.5% of notional. A sandwich only pays when the move it captures is bigger than that.
+
+| Trade | Notional | Move captured | Gain | Fees, both ways | Result |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Receiver posts 10,000 | 10,000 | +0.3% | 30 | about 50 | about −20 |
+| Receiver posts 10,000 | 10,000 | +1.0% | 100 | about 50 | about +50 |
+| Payer posts 1,000, `R / P` = 5 | 5,000 | −0.3% | 15 | about 25 | about −10 |
+
+The last row shows why the Payer fee is scaled by the pool ratio. A Payer posting 1,000 against a pool five times its size takes on about 5,000 of exposure, and a 0.3% fall earns it about 15. Charged only on the 1,000 posted, the fees would come to about 5, and the sandwich would clear about 10 every time. Charged on the 5,000 of notional, it loses money.
+
+When a Receiver pays, the fee goes to the Payer pool: the side that was exposed to the stale price is the side that is compensated.
+
 ## How the charge is sized
 
 Entry and exit fees are quoted in basis points, but they are not charged on the raw amount handed over. They are charged on notional, worked out with `feeOnTotal`, and the distinction matters most exactly when a trade matters most. The notional base is grossed up to Receiver exposure: it includes the assets being added, so a depositor pays on the full position they are about to hold rather than only on the net amount that survives the fee. For a Payer deposit, the base is further scaled by the current pool ratio, because Payer collateral backs a slice of the whole Receiver book. When Receiver assets are large relative to Payer assets, a modest Payer deposit supports a much larger notional, and the fee follows the notional it actually puts at risk.
@@ -53,6 +71,19 @@ Receivers and Payers do not experience these fees identically. A Receiver fee is
 Each market starts with default entry and exit fees, and the factory owner can retune a market afterwards by calling `setFees(newEntryFee, newExitFee)` on it. The call settles the market first, so the old fees apply up to that moment. The caps exist so that this discretion cannot become a trap: whatever governance does later, entry and exit fees can never exceed the maximums below, and changing them never rewrites positions already taken.
 
 Entry and exit are the only fees. There is no fee for holding a position: nothing is charged on pool assets over time.
+
+## Matching fees to volatility
+
+A fee is only enough if the round trip costs more than the market usually moves inside the stale window. That depends on the asset, so fees should be set per market and rise with volatility:
+
+| Market | How far it moves in a minute | Fee each way, roughly |
+| --- | --- | ---: |
+| Broad index, gold | Rarely more than a few hundredths of a percent | 0.05 to 0.10% |
+| Large-cap stock such as AAPL | Usually under 0.1%, more around news | 0.10 to 0.25% |
+| BTC, ETH | Can reach 0.5% or more in a fast market | 0.25 to 0.50% |
+| Small caps, volatile tokens | Can reach several percent | 1.00 to 2.50% |
+
+These ranges are illustrative, not settings of any live market. Fees too low for an asset hand value from passive holders to fast traders. Fees too high tax the holders the market is built for. The 2.5% cap bounds the top of the range, so an asset that routinely moves more than about 5% in the stale window is a poor fit for a Null market at any fee.
 
 ## Reference
 
