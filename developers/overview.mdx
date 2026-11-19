@@ -6,7 +6,7 @@ description: "Integrate Null V1 markets, pools, routers, oracles, and read surfa
 
 Null V1 is a **contracts-first** protocol. Integrators discover markets, read state, and deposit or redeem through Solidity interfaces, typically via `viem`, `ethers`, or a wallet SDK. There is no published Null npm SDK and no partner trading API with API keys.
 
-These integration guides target **Ethereum mainnet**. Copy addresses only from [Deployments](/developers/addresses). If a constant is not listed there yet, treat it as unknown.
+These integration guides target **Ethereum mainnet**. Copy addresses only from [Deployments](/developers/deployments). If a constant is not listed there yet, treat it as unknown.
 
 <Note>
 The app uses Buy / Sell for Spot deposit and redeem flows. Onchain and in these docs, use ERC-4626 `deposit` / `redeem` (and router `depositMarket` / `redeemMarket`).
@@ -128,14 +128,14 @@ Use `NullV1Router` for Chainlink updates. Do not attach `msg.value`. Margin writ
 | --- | --- |
 | Published Null SDK | Use ABIs + `viem` / `ethers` against the contracts |
 | Public partner REST API / webhooks | Reads are onchain (Lens) or your own indexer; the product indexer is not a keyed public API |
-| Ethereum deployment constants | Copy them from [Deployments](/developers/addresses); do not guess |
+| Ethereum deployment constants | Copy them from [Deployments](/developers/deployments); do not guess |
 | Order book / MM credentials | Markets are pooled deposit and redeem, not a central limit order book |
 
 ## Recommended path
 
 <Steps>
   <Step title="Understand the payoff">
-    Read [Protocol overview](/protocol/overview), then [Funding-rate model](/protocol/funding-rate-model). Use [Risks](/concepts/risks) for the limits.
+    Read [Protocol overview](/protocol/overview), then [Funding-rate model](/protocol/funding-rate-model). Use [Risks](/how-null-works/what-can-go-wrong) for the limits.
   </Step>
   <Step title="Build the first transaction">
     Follow the [Quickstart](/developers/quickstart). It resolves a market, reads both pools, previews a deposit, and submits router calls.
@@ -144,6 +144,6 @@ Use `NullV1Router` for Chainlink updates. Do not attach `msg.value`. Margin writ
     Read [Settlement](/protocol/settlement), [Depositing](/developers/depositing), [Redeeming](/developers/redeeming), and [Oracles](/markets/oracles).
   </Step>
   <Step title="Prepare for production">
-    Add the [Router](/developers/router), then build a [Frontend](/contracts/integration/ui) or [Indexer](/contracts/integration/indexer). Revisit [Audits](/protocol/audits) and [Risks](/concepts/risks) before shipping.
+    Add the [Router](/developers/router), then build a [Frontend](/contracts/integration/frontend) or [Indexer](/contracts/integration/indexer). Revisit [Audits](/protocol/audits) and [Risks](/how-null-works/what-can-go-wrong) before shipping.
   </Step>
 </Steps>

@@ -6,7 +6,7 @@ description: "Open and close a Morpho long or short with NullV1MorphoRouter."
 
 Margin positions on Null live on Morpho Blue, not inside the Null market itself. `NullV1MorphoRouter` is the contract that connects the two. In a single transaction it moves your equity into the right Null pool, posts the resulting position as collateral on Morpho, and borrows against it. Closing runs the same path in reverse.
 
-This guide covers the write path with `viem`. Position reads, borrow rates, LLTV, and health checks come from Morpho and from the loop helpers on `NullV1Lens`. Before you ship an integration, confirm the router address on the [Deployments](/developers/addresses) page. The addresses in any example, including this one, are placeholders for the shape of the call, not values to hardcode.
+This guide covers the write path with `viem`. Position reads, borrow rates, LLTV, and health checks come from Morpho and from the loop helpers on `NullV1Lens`. Before you ship an integration, confirm the router address on the [Deployments](/developers/deployments) page. The addresses in any example, including this one, are placeholders for the shape of the call, not values to hardcode.
 
 ## Authorize the router on Morpho first
 

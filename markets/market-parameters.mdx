@@ -25,7 +25,7 @@ Product funding is **yield share of collateral APR** (Receivers pay Payers; neve
 </ParamField>
 
 <ParamField path="frm" type="INullV1FundingRateModel" required>
-  Funding-rate model queried every settlement. The factory must enable it before market creation. Product economics treat funding as a share of collateral APR paid to Payers; see [Funding and carry](/concepts/funding-and-yield).
+  Funding-rate model queried every settlement. The factory must enable it before market creation. Product economics treat funding as a share of collateral APR paid to Payers; see [Funding and carry](/how-null-works/payers-earn-interest-and-fees).
 </ParamField>
 
 <Warning>
@@ -86,4 +86,4 @@ uint16 exitFee       = market.exitFee();
 uint16 collateralFee = market.collateralFee();
 ```
 
-Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/protocol/settlement). Morpho periphery: [Morpho](/concepts/morpho-markets).
+Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/protocol/settlement). Morpho periphery: [Morpho](/how-null-works/synthetics-go-on-morpho).

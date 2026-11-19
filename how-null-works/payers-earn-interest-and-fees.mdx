@@ -1,0 +1,86 @@
+---
+title: "Payers earn interest and fees"
+sidebarTitle: "Payers earn interest and fees"
+description: "Receivers hand Payers the interest on their deposits, and pay them a fee each time they open or close. That is the pay for taking the other side."
+---
+
+Both pools hold nUSDC, and nUSDC earns interest in the [Collateral Vault](/how-null-works/usdc-becomes-nusdc). Receivers hand their share of that interest to Payers. That is what following the price costs a Receiver, and what a Payer is paid for taking the opposite side.
+
+The app calls this transfer **funding**. On Null it only ever flows one way, from Receivers to Payers, because its source is interest that has already been earned.
+
+## A worked example
+
+Take the $100 Receiver and $50 Payer from [Two pools](/how-null-works/nusdc-backs-two-pools), with the vault earning 5% a year. The Receiver's interest goes to the Payer, on top of the Payer's own.
+
+<Frame caption="Each dot is $1, each small dot 50¢. 5% a year. Price moves and fees not included.">
+  <img className="block dark:hidden" src="/images/payer-interest.svg" alt="The Receiver deposits 100 dollars and the Payer 50. At 5 percent a year, the Receiver's 5 dollars of interest goes to the Payer, on top of the Payer's own 2 dollars 50. The Receiver stays at 100 dollars and the Payer grows to 57 dollars 50." />
+  <img className="hidden dark:block" src="/images/payer-interest-dark.svg" alt="The Receiver deposits 100 dollars and the Payer 50. At 5 percent a year, the Receiver's 5 dollars of interest goes to the Payer, on top of the Payer's own 2 dollars 50. The Receiver stays at 100 dollars and the Payer grows to 57 dollars 50." />
+</Frame>
+
+| | Exposure | Deposit | Interest kept, at 5% a year |
+| --- | --- | --- | --- |
+| Receiver | $100 | $100 | $0. It goes to the Payer. |
+| Payer | $100, the other side | $50 | $7.50, which is 7.5% of the exposure it backs |
+
+The Payer keeps the interest on both deposits: $2.50 on its own $50 and $5 from the Receiver's $100. Measured against the $50 it put in, that is 15% a year before any price move.
+
+This is an example only. Rates change, Payers share the interest between them, and price moves and fees are not included.
+
+## Fees go to Payers too
+
+Every time a Receiver opens or closes a position, the market charges a small fee, and that fee goes to the Payer pool, not to Null. It sits on top of the interest. The busier the Receiver side, the more Payers collect.
+
+<Frame caption="Example only. Fees vary by market, capped at 2.5%. Interest rates change.">
+  <img className="block dark:hidden" src="/images/payer-fees.svg" alt="Fees go to Payers. A Receiver opens 10,000 dollars of exposure and later closes it. At 0.1 percent each way, 10 dollars to open and 10 dollars to close go to the Payer pool, 20 dollars per round trip. Over a year, 5,000 dollars of Payers backing 10,000 dollars of Receivers at 5 percent earn 250 dollars of their own interest, 500 dollars of the Receivers' interest and 20 dollars of fees per round trip, about 770 dollars or 15.4 percent." />
+  <img className="hidden dark:block" src="/images/payer-fees-dark.svg" alt="Fees go to Payers. A Receiver opens 10,000 dollars of exposure and later closes it. At 0.1 percent each way, 10 dollars to open and 10 dollars to close go to the Payer pool, 20 dollars per round trip. Over a year, 5,000 dollars of Payers backing 10,000 dollars of Receivers at 5 percent earn 250 dollars of their own interest, 500 dollars of the Receivers' interest and 20 dollars of fees per round trip, about 770 dollars or 15.4 percent." />
+</Frame>
+
+| What Payers earn | Where it comes from | How it grows |
+| --- | --- | --- |
+| Their own interest | The Collateral Vault, on the Payer deposit. | With the vault rate. |
+| Receivers' interest | The Collateral Vault, on the Receiver deposits. | With the vault rate and `R / P`. |
+| Receiver fees | The opening and closing fee on every Receiver trade. | With how often Receivers trade. |
+
+It works the other way too: when a Payer opens or closes, that fee goes to the Receiver pool. See [What it costs](/how-null-works/what-it-costs) for rates and caps.
+
+## Why this beats paying funding
+
+On a perpetual future, you pay funding on your whole position, and the rate can swing against you. On Null, a Receiver pays nothing while holding. You give up the interest your own deposit would have earned, and pay a small fee only when you open or close.
+
+## The rule for Payers
+
+For a Payer, the interest works out at roughly:
+
+```text
+carry ≈ y × (1 + R / P)
+```
+
+`y` is the vault's interest rate. The `1` is your own deposit earning. The `R / P` part is the Receivers' interest, spread across the Payer pool. When Receivers outnumber Payers, each Payer earns more, and carries more price risk. [Payers](/payers) goes deeper.
+
+## The rates in the app
+
+| Rate | What it means |
+| --- | --- |
+| **Collateral APR** | What the Null Collateral Vault is earning right now. |
+| **Funding APR** | That interest, as paid from the Receiver pool to Payers. |
+| **Net APR** | The total for the side you hold. For a Payer it is scaled by `R / P`. It describes current rates, not a promise. |
+| **AER** | The Savings rate. It comes from the Null Savings Vault lending into long markets, not from funding. |
+
+## Rules that keep it simple
+
+| Rule | What it does |
+| --- | --- |
+| Only real interest | Funding pays out interest the vault has actually earned, measured against its previous high. |
+| Never negative | If the vault has a bad stretch, funding pauses until it recovers. Payers never pay Receivers. |
+| Capped | A single interval cannot pass across more than a 100% annual rate. Anything above stays with Receivers. |
+| Tiny pools skip | If either pool is at its minimum size, that interval's interest is not charged later. |
+
+Never negative describes the transfer, not your position. If the vault loses value, the collateral in both pools falls with it.
+
+## What funding is not
+
+Funding is not a fee. It stays inside the market and moves between its two pools. Null does not take it as revenue. Entry and exit fees are separate, see [Fees](/how-null-works/what-it-costs).
+
+If you hedge a Payer position somewhere else, that hedge has its own funding, fees and margin. Judge the two together. The contract detail is in [Funding rate model](/protocol/funding-rate-model).
+
+Next: [Receivers hold synthetics](/how-null-works/receivers-hold-synthetics), the Receiver side of a market as a token you can use anywhere.

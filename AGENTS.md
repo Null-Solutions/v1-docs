@@ -11,14 +11,14 @@
 
 Guides follow the product overview and deck: one idea per page, explained so a first-time reader understands it. "How Null works" walks up the four layers, bottom to top, and every page ends with a "Next" link to the following one. Sidebar titles are short statements, so reading the sidebar alone tells the story.
 
-1. **Null is four layers** (`concepts/everything-app`): the four-layer map and where each product sits.
-2. **USDC becomes nUSDC** (`concepts/collateral-vault`): layer 1. USDC becomes nUSDC, which earns interest and backs everything.
-3. **nUSDC backs two pools** (`concepts/the-primitive`): layer 2. Each market splits nUSDC into a Receiver Pool and a Payer Pool.
-4. **Payers earn the interest** (`concepts/funding-and-yield`): Receivers hand their interest to Payers.
-5. **Receivers hold synthetics** (`concepts/building-block`): the Receiver Pool share as a token (rAAPL etc.), and what it can build.
-6. **Synthetics go on Morpho** (`concepts/morpho-markets`): layer 3. Two Morpho markets per synthetic.
-7. **Savers lend to the longs** (`concepts/savings-vault`): layer 4. The Savings Vault lends nUSDC into every long market.
-8. **Holders lend to the shorts** (`concepts/short-lending`): layer 4. Holders lend synthetics into the short markets, keeping price exposure.
+1. **Null is four layers** (`how-null-works/null-is-four-layers`): the four-layer map and where each product sits.
+2. **USDC becomes nUSDC** (`how-null-works/usdc-becomes-nusdc`): layer 1. USDC becomes nUSDC, which earns interest and backs everything.
+3. **nUSDC backs two pools** (`how-null-works/nusdc-backs-two-pools`): layer 2. Each market splits nUSDC into a Receiver Pool and a Payer Pool.
+4. **Payers earn interest and fees** (`how-null-works/payers-earn-interest-and-fees`): Receivers hand their interest, and their opening and closing fees, to Payers.
+5. **Receivers hold synthetics** (`how-null-works/receivers-hold-synthetics`): the Receiver Pool share as a token (rAAPL etc.), and what it can build.
+6. **Synthetics go on Morpho** (`how-null-works/synthetics-go-on-morpho`): layer 3. Two Morpho markets per synthetic.
+7. **Savers lend to the longs** (`how-null-works/savers-lend-to-longs`): layer 4. The Savings Vault lends nUSDC into every long market.
+8. **Holders lend to the shorts** (`how-null-works/holders-lend-to-shorts`): layer 4. Holders lend synthetics into the short markets, keeping price exposure.
 9. Then fees, risks, products and Payers.
 
 ## Terminology
@@ -38,7 +38,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 - **Add money / Withdraw**: Savings. **Lend / Recall**: Lending. **Place Order / Close** and **Long / Short**: Margin.
 - **Settlement**: market update before pool actions (not a separate public poke)
 - **Circuit breaker**: a single settlement move above 20% (`MAX_ABS_CHANGE_BPS = 2000`) skips price transfer and resets the stored price
-- Do not publish deployment addresses until [developers/addresses](/developers/addresses) lists verified mainnet values for this stack
+- Do not publish deployment addresses until [developers/addresses](/developers/deployments) lists verified mainnet values for this stack
 - Prefer **contracts-first**. Do not document a published Null SDK or partner trading API unless one ships
 - Contract source of truth is `v1-contracts` branch `feat/morpho-loop` (yield-share model, no depositor allow-list, no deposit pause)
 
@@ -65,7 +65,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 - Ship every diagram as a pair: `name.svg` on a sage `#DFE4DA` panel for light mode, and `name-dark.svg` on warm black `#26241D` for dark mode (green and warm black swap to sage, white fills to warm black; terracotta, fjord blue and sand stay). Embed both in one `<Frame>` with `className="block dark:hidden"` and `className="hidden dark:block"`.
 - Visual language: circles, not boxes. Receiver = solid green circle; Payer = terracotta outline; vaults carry the Null mark (sage on green, or green on sage with a green outline); Morpho markets = small outline circles with the Morpho mark (green for long, terracotta for short). Grey lines show structure; dashed fjord-blue lines show lending.
 - Include `role="img"`, `aria-label`, and `<title>` in every SVG, and a full `alt` on the `<img>`.
-- Current set: `two-pools`, `price-move`, `payer-interest`, `two-vaults`, `spot-buy`, `savings-flow`, `lending-flow`, `margin-loop`, `margin-short`, `payer-hedge`, `short-lending`, `building-block`, `everything-app`, `long-short-markets`; developer diagrams `architecture` and `settlement-pipeline`.
+- Current set: `two-pools`, `price-move`, `payer-interest`, `two-vaults`, `spot-buy`, `savings-flow`, `lending-flow`, `margin-loop`, `margin-short`, `payer-hedge`, `payer-fees`, `short-lending`, `building-block`, `everything-app`, `long-short-markets`; developer diagrams `architecture` and `settlement-pipeline`.
 
 ## Content boundaries
 
@@ -76,3 +76,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 - Do not invent SDK packages, API keys, webhooks, order books, or mainnet addresses
 - Do not document removed behavior: depositor allow-lists, deposit pause, a signed funding curve, a time-scaled 7 percent breaker, or a price-oracle vendor other than Chainlink Data Streams
 - `liquidation-compare/` is a research note. The public explanation is the formula on the Margin page
+
+## URLs
+
+- Every Guides page's URL is its title, slugified, under `how-null-works/` for the How Null works section. When a title changes, move the file to match and add a redirect from the old path in `docs.json`.

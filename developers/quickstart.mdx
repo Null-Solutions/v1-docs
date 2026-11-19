@@ -6,7 +6,7 @@ description: "Configure an Ethereum integration, discover a market, preview shar
 
 This guide targets Ethereum mainnet and shows an ERC-4626 collateral flow using the generic names `collateralVault` and `underlying`.
 
-Take every address and deployment block from [Deployments](/developers/addresses). Never substitute addresses, deployment blocks, collateral, markets, or oracles from another network.
+Take every address and deployment block from [Deployments](/developers/deployments). Never substitute addresses, deployment blocks, collateral, markets, or oracles from another network.
 
 ## Prerequisites
 
@@ -15,11 +15,11 @@ Take every address and deployment block from [Deployments](/developers/addresses
 - Published Ethereum infrastructure constants and a published market tuple
 - The verified oracle type and any required signed update payload
 
-This page uses minimal inline ABIs because no ABI package is assumed. For production, use the verified Etherscan ABI linked from [Deployments](/developers/addresses) and confirm the contract name and compiler metadata before generating types.
+This page uses minimal inline ABIs because no ABI package is assumed. For production, use the verified Etherscan ABI linked from [Deployments](/developers/deployments) and confirm the contract name and compiler metadata before generating types.
 
 ## 1. Build typed configuration
 
-Copy published values from [Deployments](/developers/addresses). Keep infrastructure and selected-market data typed and explicit:
+Copy published values from [Deployments](/developers/deployments). Keep infrastructure and selected-market data typed and explicit:
 
 ```ts
 import type { Address } from "viem";
@@ -303,4 +303,4 @@ await publicClient.waitForTransactionReceipt({ hash: redeemHash });
 1. Read [Settlement](/protocol/settlement) to understand why previews can move.
 2. Review every parameter in [Depositing](/developers/depositing) and [Redeeming](/developers/redeeming).
 3. Read [Router](/developers/router) and [Oracles](/markets/oracles) before handling user funds.
-4. Add position reads with [Frontend integration](/contracts/integration/ui) or history with [Indexer integration](/contracts/integration/indexer).
+4. Add position reads with [Frontend integration](/contracts/integration/frontend) or history with [Indexer integration](/contracts/integration/indexer).

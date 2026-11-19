@@ -28,7 +28,7 @@ The threshold is a flat 20 percent per settlement. It is deliberately not scaled
 
 That flatness also limits what the breaker can protect against. It caps each individual settlement, not the cumulative path. Two consecutive accepted moves of 19 percent settle in full, one after the other, and together carry the price much further than a single clipped move would have. Anyone sizing a position, especially on the thinner Payer side where transfers are amplified, should think in terms of paths of acceptable moves rather than treating 20 percent as a bound on their loss. See [Settlement](/protocol/settlement) for how transfers are amplified between pools.
 
-The breaker only guards against large moves, not wrong ones within bounds. A fresh price that is incorrect by 15 percent settles completely, and a zero price or a reverting oracle stops settlement altogether before the breaker is ever consulted, since the comparison has nothing trustworthy to compare. Oracle selection therefore remains a first order risk, covered in [Risks](/concepts/risks).
+The breaker only guards against large moves, not wrong ones within bounds. A fresh price that is incorrect by 15 percent settles completely, and a zero price or a reverting oracle stops settlement altogether before the breaker is ever consulted, since the comparison has nothing trustworthy to compare. Oracle selection therefore remains a first order risk, covered in [Risks](/how-null-works/what-can-go-wrong).
 
 ## Living with a skipped move
 

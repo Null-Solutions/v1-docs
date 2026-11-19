@@ -15,10 +15,10 @@ Null is built in four layers. Each one uses the layer below it, so you can under
 
 | Layer | In one line | Read |
 | --- | --- | --- |
-| Collateral Vault | USDC becomes nUSDC, which earns interest and backs every market. | [USDC becomes nUSDC](/concepts/collateral-vault) |
-| Synthetics | Each market splits nUSDC into two pools. The Receiver side is a token that follows a price, such as rAAPL. | [nUSDC backs two pools](/concepts/the-primitive), [Payers earn the interest](/concepts/funding-and-yield), [Receivers hold synthetics](/concepts/building-block) |
-| Long and short markets | Every synthetic gets two Morpho markets, one to borrow nUSDC against it and one to borrow it. | [Synthetics go on Morpho](/concepts/morpho-markets) |
-| Lenders | Savers' nUSDC is lent into the long markets. Holders lend their synthetics into the short markets. | [Savers lend to longs](/concepts/savings-vault), [Holders lend to shorts](/concepts/short-lending) |
+| Collateral Vault | USDC becomes nUSDC, which earns interest and backs every market. | [USDC becomes nUSDC](/how-null-works/usdc-becomes-nusdc) |
+| Synthetics | Each market splits nUSDC into two pools. The Receiver side is a token that follows a price, such as rAAPL. | [nUSDC backs two pools](/how-null-works/nusdc-backs-two-pools), [Payers earn interest and fees](/how-null-works/payers-earn-interest-and-fees), [Receivers hold synthetics](/how-null-works/receivers-hold-synthetics) |
+| Long and short markets | Every synthetic gets two Morpho markets, one to borrow nUSDC against it and one to borrow it. | [Synthetics go on Morpho](/how-null-works/synthetics-go-on-morpho) |
+| Lenders | Savers' nUSDC is lent into the long markets. Holders lend their synthetics into the short markets. | [Savers lend to longs](/how-null-works/savers-lend-to-longs), [Holders lend to shorts](/how-null-works/holders-lend-to-shorts) |
 
 ## Where each product sits
 
@@ -28,10 +28,10 @@ Every action in the app happens on one of these layers.
 | --- | --- | --- |
 | **Save** | Savings Vault | [Savings](/products/savings) |
 | **Hold** a price | Synthetics | [Spot](/products/spot) |
-| **Back** a market | Synthetics, the Payer side | [Payers](/market-making/overview) |
+| **Back** a market | Synthetics, the Payer side | [Payers](/payers) |
 | **Lend** nUSDC or a synthetic | Long and short markets | [Lending](/products/lending) |
 | **Leverage** long or short | Long and short markets | [Margin](/products/margin) |
 
 That is why we call it the everything app. One vault and one kind of token are enough to rebuild saving, holding, lending and leverage, with open settlement underneath.
 
-Start at the bottom: [USDC becomes nUSDC](/concepts/collateral-vault).
+Start at the bottom: [USDC becomes nUSDC](/how-null-works/usdc-becomes-nusdc).

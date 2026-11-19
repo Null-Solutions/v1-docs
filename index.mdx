@@ -15,7 +15,7 @@ Receivers get the price return of an asset, such as Apple or the S&P 500, withou
   <img className="hidden dark:block" src="/images/two-pools-dark.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits, plus Receivers' opening and closing fees, goes to the Payer Pool." />
 </Frame>
 
-That is the whole idea. Everything else in Null is built on it. [nUSDC backs two pools](/concepts/the-primitive) walks through it with a worked example.
+That is the whole idea. Everything else in Null is built on it. [nUSDC backs two pools](/how-null-works/nusdc-backs-two-pools) walks through it with a worked example.
 
 ## What you can do with it
 
@@ -25,27 +25,27 @@ That is the whole idea. Everything else in Null is built on it. [nUSDC backs two
 | Hold a price | [Spot](/products/spot) | You buy a token that follows a stock, index, commodity or coin. |
 | Earn on what you hold | [Lending](/products/lending) | You lend nUSDC to longs, or your synthetic to shorts. |
 | Take a bigger position | [Margin](/products/margin) | You borrow on Morpho to go long or short. |
-| Back the market | [Payers](/market-making/overview) | You take the other side and earn both pools' interest. |
+| Back the market | [Payers](/payers) | You take the other side and earn both pools' interest. |
 
-These are all one app. [Null is four layers](/concepts/everything-app) shows how the pieces stack: one curated vault, many synthetics, a long and a short market for each, and a savings vault that lends into them.
+These are all one app. [Null is four layers](/how-null-works/null-is-four-layers) shows how the pieces stack: one curated vault, many synthetics, a long and a short market for each, and a savings vault that lends into them.
 
 ## Where to start
 
 <CardGroup cols={2}>
-  <Card title="Null is four layers" icon="layers" href="/concepts/everything-app">
+  <Card title="Null is four layers" icon="layers" href="/how-null-works/null-is-four-layers">
     How the four layers fit together.
   </Card>
-  <Card title="nUSDC backs two pools" icon="circle-dot" href="/concepts/the-primitive">
+  <Card title="nUSDC backs two pools" icon="circle-dot" href="/how-null-works/nusdc-backs-two-pools">
     The one idea behind every market.
   </Card>
   <Card title="Fund your account" icon="wallet" href="/get-started/fund-your-account">
     Connect your wallet and add USDC.
   </Card>
-  <Card title="What can go wrong" icon="shield-alert" href="/concepts/risks">
+  <Card title="What can go wrong" icon="shield-alert" href="/how-null-works/what-can-go-wrong">
     What can go wrong, in plain terms.
   </Card>
 </CardGroup>
 
 <Note>
-Prices come from Chainlink oracles, and markets settle when someone uses them. A value on screen is the last settled state, not a live quote. Positions can lose value, leveraged ones can be wiped out, and Null is not offered in the United Kingdom. Read [Risks](/concepts/risks) before you start.
+Prices come from Chainlink oracles, and markets settle when someone uses them. A value on screen is the last settled state, not a live quote. Positions can lose value, leveraged ones can be wiped out, and Null is not offered in the United Kingdom. Read [Risks](/how-null-works/what-can-go-wrong) before you start.
 </Note>

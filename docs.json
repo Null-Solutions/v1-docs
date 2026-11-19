@@ -73,7 +73,7 @@
     },
     {
       "source": "/private-beta/about-null/the-primitive",
-      "destination": "/concepts/the-primitive"
+      "destination": "/how-null-works/nusdc-backs-two-pools"
     },
     {
       "source": "/private-beta/about-null/smart-contracts",
@@ -101,7 +101,7 @@
     },
     {
       "source": "/private-beta/getting-started/before-you-trade",
-      "destination": "/concepts/risks"
+      "destination": "/how-null-works/what-can-go-wrong"
     },
     {
       "source": "/private-beta/trading",
@@ -117,7 +117,7 @@
     },
     {
       "source": "/private-beta/trading/position-types",
-      "destination": "/concepts/the-primitive"
+      "destination": "/how-null-works/nusdc-backs-two-pools"
     },
     {
       "source": "/private-beta/trading/placing-a-position",
@@ -125,7 +125,7 @@
     },
     {
       "source": "/private-beta/trading/fees",
-      "destination": "/concepts/fees"
+      "destination": "/how-null-works/what-it-costs"
     },
     {
       "source": "/private-beta/portfolio",
@@ -137,27 +137,27 @@
     },
     {
       "source": "/private-beta/strategies",
-      "destination": "/market-making/overview"
+      "destination": "/payers"
     },
     {
       "source": "/private-beta/strategies/about-strategies",
-      "destination": "/market-making/overview"
+      "destination": "/payers"
     },
     {
       "source": "/private-beta/strategies/null-strategies",
-      "destination": "/market-making/overview"
+      "destination": "/payers"
     },
     {
       "source": "/private-beta/market-make/overview",
-      "destination": "/market-making/overview"
+      "destination": "/payers"
     },
     {
       "source": "/private-beta/market-make/farm-the-basis",
-      "destination": "/market-making/overview"
+      "destination": "/payers"
     },
     {
       "source": "/private-beta/support/market-making",
-      "destination": "/market-making/overview"
+      "destination": "/payers"
     },
     {
       "source": "/points",
@@ -193,11 +193,11 @@
     },
     {
       "source": "/private-beta/legal/private-beta-notices",
-      "destination": "/legal"
+      "destination": "/legal-notices"
     },
     {
       "source": "/private-beta/faq",
-      "destination": "/faq"
+      "destination": "/questions"
     },
     {
       "source": "/private-beta/support",
@@ -221,19 +221,19 @@
     },
     {
       "source": "/learn/funding-and-carry",
-      "destination": "/concepts/funding-and-yield"
+      "destination": "/how-null-works/payers-earn-interest-and-fees"
     },
     {
       "source": "/learn/vaults",
-      "destination": "/concepts/collateral-vault"
+      "destination": "/how-null-works/usdc-becomes-nusdc"
     },
     {
       "source": "/learn/morpho",
-      "destination": "/concepts/morpho-markets"
+      "destination": "/how-null-works/synthetics-go-on-morpho"
     },
     {
       "source": "/learn/risks-and-parameters",
-      "destination": "/concepts/risks"
+      "destination": "/how-null-works/what-can-go-wrong"
     },
     {
       "source": "/developers/settlement",
@@ -249,11 +249,11 @@
     },
     {
       "source": "/security/risks",
-      "destination": "/concepts/risks"
+      "destination": "/how-null-works/what-can-go-wrong"
     },
     {
       "source": "/resources/addresses",
-      "destination": "/developers/addresses"
+      "destination": "/developers/deployments"
     },
     {
       "source": "/contracts/oracles/pyth",
@@ -301,15 +301,15 @@
     },
     {
       "source": "/receive/overview",
-      "destination": "/concepts/the-primitive"
+      "destination": "/how-null-works/nusdc-backs-two-pools"
     },
     {
       "source": "/pay/overview",
-      "destination": "/concepts/the-primitive"
+      "destination": "/how-null-works/nusdc-backs-two-pools"
     },
     {
       "source": "/mechanics/funding",
-      "destination": "/concepts/funding-and-yield"
+      "destination": "/how-null-works/payers-earn-interest-and-fees"
     },
     {
       "source": "/mechanics/price-returns",
@@ -329,7 +329,67 @@
     },
     {
       "source": "/concepts/vaults",
-      "destination": "/concepts/collateral-vault"
+      "destination": "/how-null-works/usdc-becomes-nusdc"
+    },
+    {
+      "source": "/concepts/everything-app",
+      "destination": "/how-null-works/null-is-four-layers"
+    },
+    {
+      "source": "/concepts/collateral-vault",
+      "destination": "/how-null-works/usdc-becomes-nusdc"
+    },
+    {
+      "source": "/concepts/the-primitive",
+      "destination": "/how-null-works/nusdc-backs-two-pools"
+    },
+    {
+      "source": "/concepts/funding-and-yield",
+      "destination": "/how-null-works/payers-earn-interest-and-fees"
+    },
+    {
+      "source": "/concepts/building-block",
+      "destination": "/how-null-works/receivers-hold-synthetics"
+    },
+    {
+      "source": "/concepts/morpho-markets",
+      "destination": "/how-null-works/synthetics-go-on-morpho"
+    },
+    {
+      "source": "/concepts/savings-vault",
+      "destination": "/how-null-works/savers-lend-to-longs"
+    },
+    {
+      "source": "/concepts/short-lending",
+      "destination": "/how-null-works/holders-lend-to-shorts"
+    },
+    {
+      "source": "/concepts/fees",
+      "destination": "/how-null-works/what-it-costs"
+    },
+    {
+      "source": "/concepts/risks",
+      "destination": "/how-null-works/what-can-go-wrong"
+    },
+    {
+      "source": "/market-making/overview",
+      "destination": "/payers"
+    },
+    {
+      "source": "/faq",
+      "destination": "/questions"
+    },
+    {
+      "source": "/legal",
+      "destination": "/legal-notices"
+    },
+    {
+      "source": "/developers/addresses",
+      "destination": "/developers/deployments"
+    },
+    {
+      "source": "/contracts/integration/ui",
+      "destination": "/contracts/integration/frontend"
     }
   ],
   "navigation": {
@@ -347,16 +407,16 @@
           {
             "group": "How Null works",
             "pages": [
-              "concepts/everything-app",
-              "concepts/collateral-vault",
-              "concepts/the-primitive",
-              "concepts/funding-and-yield",
-              "concepts/building-block",
-              "concepts/morpho-markets",
-              "concepts/savings-vault",
-              "concepts/short-lending",
-              "concepts/fees",
-              "concepts/risks"
+              "how-null-works/null-is-four-layers",
+              "how-null-works/usdc-becomes-nusdc",
+              "how-null-works/nusdc-backs-two-pools",
+              "how-null-works/payers-earn-interest-and-fees",
+              "how-null-works/receivers-hold-synthetics",
+              "how-null-works/synthetics-go-on-morpho",
+              "how-null-works/savers-lend-to-longs",
+              "how-null-works/holders-lend-to-shorts",
+              "how-null-works/what-it-costs",
+              "how-null-works/what-can-go-wrong"
             ]
           },
           {
@@ -371,15 +431,15 @@
           {
             "group": "Earn as a Payer",
             "pages": [
-              "market-making/overview"
+              "payers"
             ]
           },
           {
             "group": "More",
             "pages": [
-              "faq",
+              "questions",
               "glossary",
-              "legal"
+              "legal-notices"
             ]
           }
         ]
@@ -393,7 +453,7 @@
               "developers/overview",
               "developers/quickstart",
               "developers/ai-llms",
-              "developers/addresses"
+              "developers/deployments"
             ]
           },
           {
@@ -417,7 +477,7 @@
               "developers/pools",
               "developers/router",
               "developers/morpho-router",
-              "contracts/integration/ui",
+              "contracts/integration/frontend",
               "contracts/integration/indexer"
             ]
           },

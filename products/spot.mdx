@@ -13,7 +13,7 @@ Spot is Null in its simplest form. You want a price in your wallet, without borr
 
 ## What you're buying
 
-**Buy** puts you in a market's Receiver pool. You get a Receiver Pool share, a synthetic such as rAAPL, that rises and falls with the asset. You don't own the asset itself, and nobody holds it for you. [Two pools](/concepts/the-primitive) explains the machinery.
+**Buy** puts you in a market's Receiver pool. You get a Receiver Pool share, a synthetic such as rAAPL, that rises and falls with the asset. You don't own the asset itself, and nobody holds it for you. [Two pools](/how-null-works/nusdc-backs-two-pools) explains the machinery.
 
 Holding has one ongoing cost: the interest your deposit earns goes to Payers. On a perp you would pay funding on your whole position instead.
 
@@ -32,7 +32,7 @@ Markets are listed at `/trade`. Your positions are under **Home** and then **Spo
     Every trade has a review step before your wallet signs. The fee is included in the amount you see.
   </Step>
   <Step title="Want the other side? Turn on Pro Mode">
-    In the account menu, turn on **Pro Mode**. The ticket then adds **Payer buy** and **Payer sell**. Read [Payers](/market-making/overview) first.
+    In the account menu, turn on **Pro Mode**. The ticket then adds **Payer buy** and **Payer sell**. Read [Payers](/payers) first.
   </Step>
 </Steps>
 
@@ -46,7 +46,7 @@ Once you hold a synthetic, you can lend it into its short market through [Lendin
 
 | | |
 | --- | --- |
-| Fees | The market's entry and exit fee, folded into the amount you review. See [Fees](/concepts/fees). |
+| Fees | The market's entry and exit fee, folded into the amount you review. See [Fees](/how-null-works/what-it-costs). |
 | Interest | As a Receiver you give up your deposit's interest. Your position can drift slightly from the pure price move because of it. |
 | Price | Prices fall as well as rise. A Payer position moves faster than the price, scaled by `R / P`. |
-| Feeds and contracts | Oracles can misbehave and contracts carry risk. See [Risks](/concepts/risks). |
+| Feeds and contracts | Oracles can misbehave and contracts carry risk. See [Risks](/how-null-works/what-can-go-wrong). |

@@ -6,7 +6,7 @@ description: "How a Null V1 market settles: two ERC-4626 pools, one collateral t
 
 A Null market exists to turn an oracle price into a transfer between two groups of holders, without either group having to find the other. One side, the Receiver pool, is long the tracked return. The other side, the Payer pool, backs that exposure and takes the opposite return. Both pools hold the same collateral token and issue their own fungible ERC-4626 shares, so a position is simply a share of a pool rather than a private contract with a named counterparty.
 
-That pooled design is the whole protocol in miniature. The market never lends the tracked asset, never holds it, and never liquidates a spot holder. It holds collateral, watches a price, and periodically rewrites how much of that collateral belongs to each pool. Everything else in Null, including leveraged positions through Morpho, is built around that single act of redistribution. For the product level explanation, start with [Two pools](/concepts/the-primitive).
+That pooled design is the whole protocol in miniature. The market never lends the tracked asset, never holds it, and never liquidates a spot holder. It holds collateral, watches a price, and periodically rewrites how much of that collateral belongs to each pool. Everything else in Null, including leveraged positions through Morpho, is built around that single act of redistribution. For the product level explanation, start with [Two pools](/how-null-works/nusdc-backs-two-pools).
 
 ## What a market is
 

@@ -4,7 +4,7 @@ sidebarTitle: "nUSDC backs two pools"
 description: "Every Null market has two pools. Receivers follow the price. Payers take the other side."
 ---
 
-This is the second layer. A market takes nUSDC from the [Collateral Vault](/concepts/collateral-vault) and splits it into two pools. Receivers get the price return of an asset, such as the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
+This is the second layer. A market takes nUSDC from the [Collateral Vault](/how-null-works/usdc-becomes-nusdc) and splits it into two pools. Receivers get the price return of an asset, such as the S&P 500, without owning it. Payers take the opposite side. When the price rises, Payers pay Receivers. When it falls, Receivers pay Payers.
 
 <Frame>
   <img className="block dark:hidden" src="/images/two-pools.svg" alt="Every Null market has two pools. The Receiver Pool gains when the price rises and the Payer Pool gains when it falls. Gains and losses move between them at the oracle price, and the interest on Receiver deposits, plus Receivers' opening and closing fees, goes to the Payer Pool." />
@@ -40,7 +40,7 @@ If the asset falls, money moves the other way. A Receiver can never gain more th
 | Prices | Chainlink price feeds. The market reads a fresh price before every deposit and withdrawal. |
 | Settlement | Gains and losses move between the pools at that price, then your trade goes through. |
 | Backing | Every position is fully backed. Settlement only moves collateral that is already in the pools, so nobody can end up owing money. |
-| Fees | Receivers pay an opening and closing fee, and it goes to the Payer pool, not to Null. Payers' own fees go to the Receiver pool. See [What it costs](/concepts/fees). |
+| Fees | Receivers pay an opening and closing fee, and it goes to the Payer pool, not to Null. Payers' own fees go to the Receiver pool. See [What it costs](/how-null-works/what-it-costs). |
 | If Payers run out | Returns stop until new Payers join. Missed price moves are not made up later. |
 | Big jumps | A single move of more than 20% is skipped, not settled. The new price becomes the starting point. |
 | Rules | Each market's collateral, price feed and funding model are fixed when it is created. |
@@ -49,8 +49,8 @@ If the asset falls, money moves the other way. A Receiver can never gain more th
 
 A Payer backs the whole Receiver pool with a smaller deposit. In the example, $50 backs $100 of exposure, so each Payer dollar carries two dollars of the other side. The ratio is `R / P`: Receiver pool assets divided by Payer pool assets.
 
-That ratio works both ways. It makes a Payer's share of the interest bigger, and it makes price moves hit harder. It also changes as people join and leave either pool. [Payers](/market-making/overview) covers how to size and hedge it.
+That ratio works both ways. It makes a Payer's share of the interest bigger, and it makes price moves hit harder. It also changes as people join and leave either pool. [Payers](/payers) covers how to size and hedge it.
 
 ## Next
 
-Next: [Payers earn the interest](/concepts/funding-and-yield), where the interest on all that nUSDC goes.
+Next: [Payers earn interest and fees](/how-null-works/payers-earn-interest-and-fees), where the interest on all that nUSDC goes.

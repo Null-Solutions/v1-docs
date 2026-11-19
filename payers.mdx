@@ -39,7 +39,7 @@ Together, before fees and hedge costs:
 carry ≈ y × (1 + R / P)
 ```
 
-`y` is the vault's interest rate. With 5% interest and Receivers twice the size of Payers, carry is about 15% a year on your Payer capital. Thin coverage raises your interest and your exposure at the same time. [How Payers earn](/concepts/funding-and-yield) has the worked example.
+`y` is the vault's interest rate. With 5% interest and Receivers twice the size of Payers, carry is about 15% a year on your Payer capital. Thin coverage raises your interest and your exposure at the same time. [How Payers earn](/how-null-works/payers-earn-interest-and-fees) has the worked example.
 
 ## Hedging is your job
 
@@ -56,7 +56,7 @@ The hedge should match your short notional, `p × R / P`, and that drifts as the
     Check `R`, `P`, **Collateral APR** and **Funding APR**. They tell you how short you'll be and what you're paid to hold it.
   </Step>
   <Step title="Buy Payer in Pro Mode">
-    Use **Payer buy**. Fees are charged on notional, which scales with `R / P`, so check them first. See [Fees](/concepts/fees).
+    Use **Payer buy**. Fees are charged on notional, which scales with `R / P`, so check them first. See [Fees](/how-null-works/what-it-costs).
   </Step>
   <Step title="Hedge elsewhere, if you want to">
     Match the short notional on another venue. Its funding, fees and margin calls are yours. An unhedged Payer is a deliberate short.
