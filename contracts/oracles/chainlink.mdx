@@ -16,16 +16,19 @@ store the accepted report, and normalize its price to `1e36`.
 ## V3 crypto feeds
 
 V3 uses one feed ID. It reads the report's `price` and
-`observationsTimestamp`. An update must:
+`validFromTimestamp`. An update must:
 
 - use report schema version 3
 - match the configured feed ID
+- have a `validFromTimestamp` inside the oracle's freshness window: no more
+  than `maxValidFromAge` seconds old and no more than `maxValidFromFutureSkew`
+  seconds ahead of the block timestamp
 - contain a positive price
-- be strictly newer than the stored report, unless it has the same timestamp
-- have an observation timestamp no more than 60 seconds old and not in the
-  future
 
-A report with the same timestamp is ignored. An older report reverts.
+A report outside the window reverts with `ReportStaleTimestamp`. A report
+inside the window that is not strictly newer than the stored one (same
+timestamp or older) is ignored without a revert, so the same report can be
+submitted twice in one block.
 
 The display key is `keccak256("CHAINLINK_DATA_STREAMS_V3")`.
 
@@ -41,10 +44,21 @@ The report's own `marketStatus` selects the only feed accepted for that report:
 - `4`: overnight feed
 - any other value: no active feed; the report is rejected
 
-The oracle reads `mid` as the price and converts `lastSeenTimestampNs` to whole
-seconds. The report must use schema version 11, identify one of the configured
-feeds, identify the feed selected by its status, carry a positive price, and
-have a timestamp within 60 seconds before or after the block timestamp.
+The oracle reads `mid` as the price and `validFromTimestamp` as the report
+timestamp. The report must use schema version 11, identify one of the
+configured feeds, identify the feed selected by its status, and carry a
+positive price. It must pass two timestamp checks against the block timestamp:
+
+- `validFromTimestamp` no more than `maxValidFromAge` seconds old and no more
+  than `maxValidFromFutureSkew` seconds ahead (else `ReportStaleTimestamp`)
+- `lastSeenTimestampNs`, converted to whole seconds, no more than
+  `maxLastSeenAge` seconds old and no more than `maxLastSeenFutureSkew` seconds
+  ahead (else `ReportStaleLastSeenTimestamp`)
+
+Replay protection is per feed: a report must be strictly newer than the last
+report accepted from its own feed, or it is ignored without a revert. The
+served price only moves forward: an accepted report older than the served
+timestamp updates its feed's mark but not the price.
 
 <Note>
   Session validation is report-driven. The contract does not calculate exchange
@@ -82,14 +96,29 @@ normalizedPrice = reportPrice * 10^(36 - priceDecimals)
 
 ## Staleness and escape behavior
 
-For both schemas, `price()` normally accepts a stored timestamp up to 60
-seconds old. It reverts when the age is greater than 60 seconds but less than
-10 days. At exactly 10 days old, and afterward, it returns the stored positive
-price through the emergency escape path.
+The freshness windows are set per oracle at creation and cannot change. Read
+them from the oracle:
 
-The read path also tolerates a stored timestamp up to 60 seconds in the future.
-V3 never accepts a future timestamp during update; V11 accepts one up to 60
-seconds ahead.
+```solidity
+function maxValidFromAge() external view returns (uint16);        // seconds
+function maxValidFromFutureSkew() external view returns (uint16); // seconds
+function maxLastSeenAge() external view returns (uint16);         // V11 only
+function maxLastSeenFutureSkew() external view returns (uint16);  // V11 only
+```
+
+For both schemas, `price()` accepts a stored timestamp up to `maxValidFromAge`
+seconds old. It reverts with `StalePrice` when the age is greater than
+`maxValidFromAge` but less than 15 days. At exactly 15 days old, and afterward,
+it returns the stored positive price through the emergency escape path
+(`STALE_PRICE_ESCAPE_PERIOD = 15 days`).
+
+The escape is final. Once the stored price is 15 days old, `update` ignores
+every later report, so the served price never moves again. Until that moment a
+fresh report still recovers the oracle.
+
+The read path also tolerates a stored timestamp up to `maxValidFromFutureSkew`
+seconds in the future. Both schemas accept a report up to the same skew ahead
+during update.
 
 ## Creation
 
@@ -97,6 +126,8 @@ seconds ahead.
 INullV1Oracle cryptoOracle = factory.createOracleV3(
     feedId,
     priceDecimals,
+    maxValidFromAge,
+    maxValidFromFutureSkew,
     baseName,
     baseSymbol,
     quoteName,
@@ -108,9 +139,17 @@ INullV1Oracle rwaOracle = factory.createOracleV11(
     extendedFeedId,
     overnightFeedId,
     priceDecimals,
+    maxValidFromAge,
+    maxValidFromFutureSkew,
+    maxLastSeenAge,
+    maxLastSeenFutureSkew,
     baseName,
     baseSymbol,
     quoteName,
     quoteSymbol
 );
 ```
+
+The four window arguments are `uint16` seconds. `factory` here is
+`NullV1ChainlinkOracleFactory`, not the market factory. The three V11 feed IDs
+must be nonzero and distinct.

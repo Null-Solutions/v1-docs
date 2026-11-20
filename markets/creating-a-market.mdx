@@ -33,7 +33,7 @@ oracle.update(updateData); // fee-less, anyone can call it
 INullV1Market market = factory.createMarket(collateral, oracle, frm);
 ```
 
-A Chainlink report stays readable for 60 seconds. Send the two calls close together, or run them in one transaction from your own contract or a batching wallet. If the price goes stale between them, `createMarket` reverts and nothing is created.
+A stored report stays readable only for the oracle's freshness window (`maxValidFromAge()` seconds). Send the two calls close together, or run them in one transaction from your own contract or a batching wallet. If the price goes stale between them, `createMarket` reverts and nothing is created.
 
 Skip the update only when the oracle's stored price is already readable.
 
@@ -132,7 +132,7 @@ export async function createNullMarket({
     if (updateReceipt.status !== "success") throw new Error("Oracle update reverted");
   }
 
-  // Step 2: create the market while that price is still fresh (60 seconds).
+  // Step 2: create the market while that price is still fresh (oracle.maxValidFromAge() seconds).
   const { request, result: simulatedMarket } =
     await publicClient.simulateContract({
       account,
