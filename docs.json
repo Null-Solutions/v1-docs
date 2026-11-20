@@ -27,9 +27,7 @@
       "family": "Newsreader"
     },
     "eyebrow": {
-      "source": "group",
-      "style": "plain",
-      "color": "#23412E"
+      "source": "none"
     }
   },
   "appearance": {
