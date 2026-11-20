@@ -75,6 +75,14 @@
   },
   "redirects": [
     {
+      "source": "/how-null-works/usdc-becomes-nusdc",
+      "destination": "/how-null-works/usdc-becomes-usdcn"
+    },
+    {
+      "source": "/how-null-works/nusdc-backs-two-pools",
+      "destination": "/how-null-works/usdcn-backs-two-pools"
+    },
+    {
       "source": "/private-beta/overview",
       "destination": "/"
     },
@@ -84,7 +92,7 @@
     },
     {
       "source": "/private-beta/about-null/the-primitive",
-      "destination": "/how-null-works/nusdc-backs-two-pools"
+      "destination": "/how-null-works/usdcn-backs-two-pools"
     },
     {
       "source": "/private-beta/about-null/smart-contracts",
@@ -128,7 +136,7 @@
     },
     {
       "source": "/private-beta/trading/position-types",
-      "destination": "/how-null-works/nusdc-backs-two-pools"
+      "destination": "/how-null-works/usdcn-backs-two-pools"
     },
     {
       "source": "/private-beta/trading/placing-a-position",
@@ -236,7 +244,7 @@
     },
     {
       "source": "/learn/vaults",
-      "destination": "/how-null-works/usdc-becomes-nusdc"
+      "destination": "/how-null-works/usdc-becomes-usdcn"
     },
     {
       "source": "/learn/morpho",
@@ -312,11 +320,11 @@
     },
     {
       "source": "/receive/overview",
-      "destination": "/how-null-works/nusdc-backs-two-pools"
+      "destination": "/how-null-works/usdcn-backs-two-pools"
     },
     {
       "source": "/pay/overview",
-      "destination": "/how-null-works/nusdc-backs-two-pools"
+      "destination": "/how-null-works/usdcn-backs-two-pools"
     },
     {
       "source": "/mechanics/funding",
@@ -340,7 +348,7 @@
     },
     {
       "source": "/concepts/vaults",
-      "destination": "/how-null-works/usdc-becomes-nusdc"
+      "destination": "/how-null-works/usdc-becomes-usdcn"
     },
     {
       "source": "/concepts/everything-app",
@@ -348,11 +356,11 @@
     },
     {
       "source": "/concepts/collateral-vault",
-      "destination": "/how-null-works/usdc-becomes-nusdc"
+      "destination": "/how-null-works/usdc-becomes-usdcn"
     },
     {
       "source": "/concepts/the-primitive",
-      "destination": "/how-null-works/nusdc-backs-two-pools"
+      "destination": "/how-null-works/usdcn-backs-two-pools"
     },
     {
       "source": "/concepts/funding-and-yield",
@@ -419,8 +427,8 @@
             "group": "How Null works",
             "pages": [
               "how-null-works/null-is-four-layers",
-              "how-null-works/usdc-becomes-nusdc",
-              "how-null-works/nusdc-backs-two-pools",
+              "how-null-works/usdc-becomes-usdcn",
+              "how-null-works/usdcn-backs-two-pools",
               "how-null-works/payers-earn-interest-and-fees",
               "how-null-works/receivers-hold-synthetics",
               "how-null-works/synthetics-go-on-morpho",

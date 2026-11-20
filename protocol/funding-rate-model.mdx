@@ -16,7 +16,7 @@ The model prices the collateral by asking the vault to convert a deliberately ov
 sharePrice = vault.convertToAssets(1e36)
 ```
 
-Quoting for `1e36` shares rather than one share preserves precision when a single share is worth far less than one unit of the underlying asset. That is the normal case here, since `nUSDC` carries 18 decimals over 6 decimal USDC, and rounding at this step would otherwise become a slow leak or gift between the pools, repeated at every settlement.
+Quoting for `1e36` shares rather than one share preserves precision when a single share is worth far less than one unit of the underlying asset. That is the normal case here, since `USDCn` carries 18 decimals over 6 decimal USDC, and rounding at this step would otherwise become a slow leak or gift between the pools, repeated at every settlement.
 
 For each market the model remembers two things together: the highest share price it has seen at a settlement, its high water mark, and the annualised rate produced by the most recent settlement. Both matter to what happens next.
 

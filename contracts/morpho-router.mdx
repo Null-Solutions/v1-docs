@@ -6,7 +6,7 @@ description: "Reference for long and short open and close on NullV1MorphoRouter.
 
 `NullV1MorphoRouter` is a stateless helper that opens and closes leveraged Null positions on Morpho Blue. It holds no balances between transactions and keeps no position state of its own. Morpho owns the debt and collateral records, the Null pools own the underlying exposure, and the router simply sequences the two inside Morpho's flash loan and callback flow.
 
-One deployment serves both books. A long borrows the loan token against Receiver pool shares. A short borrows Receiver shares against the market collateral, `nUSDC`. Before any flow that borrows or withdraws collateral, the caller must authorize the router on Morpho with `setAuthorization(router, true)`. The one exception is a long opened with zero debt, which only supplies collateral.
+One deployment serves both books. A long borrows the loan token against Receiver pool shares. A short borrows Receiver shares against the market collateral, `USDCn`. Before any flow that borrows or withdraws collateral, the caller must authorize the router on Morpho with `setAuthorization(router, true)`. The one exception is a long opened with zero debt, which only supplies collateral.
 
 Every function takes a `deadline` and reverts with `TransactionTooOld` once `block.timestamp` passes it, and an `updateData` array carrying any oracle reports the Null market needs in order to settle before trading.
 
@@ -38,11 +38,11 @@ function close(
 
 `openWithPermit2` behaves exactly like `open`, except the equity is pulled through Permit2 rather than an ERC-20 allowance. The abbreviated signature above takes the same leading arguments as `open`, followed by the permit. `close` unwinds the caller's whole position on the book and returns the loan token left after repayment, which must meet `minAssetsOut`.
 
-For a long, `marketParams.collateralToken` must be the Receiver pool. `loanToken` must be the market collateral, `nUSDC` in the current stack.
+For a long, `marketParams.collateralToken` must be the Receiver pool. `loanToken` must be the market collateral, `USDCn` in the current stack.
 
 ## Short functions
 
-`openShort` posts `nUSDC` collateral, borrows `shortShares` of the Receiver pool from Morpho, and sells them through the Null market. It returns the collateral posted, which must meet `minCollateral`. `closeShort` returns the assets left after the short is covered.
+`openShort` posts `USDCn` collateral, borrows `shortShares` of the Receiver pool from Morpho, and sells them through the Null market. It returns the collateral posted, which must meet `minCollateral`. `closeShort` returns the assets left after the short is covered.
 
 ```solidity
 function openShort(

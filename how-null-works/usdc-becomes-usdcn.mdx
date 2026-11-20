@@ -1,25 +1,25 @@
 ---
-title: "USDC becomes nUSDC"
-sidebarTitle: "USDC becomes nUSDC"
-description: "Every dollar in Null starts here. USDC becomes nUSDC, which earns interest and backs every market."
+title: "USDC becomes USDCn"
+sidebarTitle: "USDC becomes USDCn"
+description: "Every dollar in Null starts here. USDC becomes USDCn, which earns interest and backs every market."
 ---
 
-Every dollar that enters Null goes into the Null Collateral Vault first. You deposit USDC and the vault gives you nUSDC, its share. nUSDC is the collateral in every market, so it is the one currency that the rest of Null is built on.
+Every dollar that enters Null goes into the Null Collateral Vault first. You deposit USDC and the vault gives you USDCn, its share. USDCn is the collateral in every market, so it is the one currency that the rest of Null is built on.
 
 ## What it is
 
 | | |
 | --- | --- |
 | The vault | A curated Morpho Vault V2 over USDC. |
-| Its share | nUSDC. |
-| What it earns | The vault lends USDC out in DeFi. Interest shows up as each nUSDC becoming worth more USDC over time, not as new tokens arriving. |
-| Where it's used | Every market holds nUSDC in its pools. The long and short markets lend it and take it as collateral. The Savings Vault holds it. |
+| Its share | USDCn. |
+| What it earns | The vault lends USDC out in DeFi. Interest shows up as each USDCn becoming worth more USDC over time, not as new tokens arriving. |
+| Where it's used | Every market holds USDCn in its pools. The long and short markets lend it and take it as collateral. The Savings Vault holds it. |
 
-You rarely touch nUSDC directly. When you **Buy** on Spot or open a Margin trade, your USDC becomes nUSDC on the way in. When you leave, it comes back as USDC.
+You rarely touch USDCn directly. When you **Buy** on Spot or open a Margin trade, your USDC becomes USDCn on the way in. When you leave, it comes back as USDC.
 
 ## Where the USDC goes
 
-nUSDC backs every market, so the Collateral Vault is curated for safety first and interest second. It lends USDC only to established, low-risk places where loans are overcollateralised and you can get money back quickly. It does not chase high rates.
+USDCn backs every market, so the Collateral Vault is curated for safety first and interest second. It lends USDC only to established, low-risk places where loans are overcollateralised and you can get money back quickly. It does not chase high rates.
 
 | Kind of allocation | Example | Why it's considered safe |
 | --- | --- | --- |
@@ -33,9 +33,9 @@ Safe is not the same as risk-free. Each allocation has its own smart contract, c
 
 ## Who gets the interest
 
-It depends on what your nUSDC is doing.
+It depends on what your USDCn is doing.
 
-| Your nUSDC is | The interest goes to |
+| Your USDCn is | The interest goes to |
 | --- | --- |
 | In a Receiver pool | Payers. That is what following a price costs. See [Payers earn interest and fees](/how-null-works/payers-earn-interest-and-fees). |
 | In a Payer pool | You, plus the Receivers' interest. |
@@ -46,4 +46,4 @@ It depends on what your nUSDC is doing.
 
 If the Collateral Vault loses value, everything built on it loses with it: every pool, the Savings Vault and every Morpho market. The vault's curator and allocations deserve the same scrutiny as Null's own contracts.
 
-Next: [nUSDC backs two pools](/how-null-works/nusdc-backs-two-pools). For contract detail, see [Collateral](/protocol/collateral).
+Next: [USDCn backs two pools](/how-null-works/usdcn-backs-two-pools). For contract detail, see [Collateral](/protocol/collateral).

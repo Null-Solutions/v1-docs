@@ -7,7 +7,7 @@ description: "Ethereum mainnet addresses for the current Null stack. Copy them o
 This page is the single source of truth for Null contract addresses on Ethereum mainnet. Integrations should read addresses from here, or resolve them onchain from the factory, rather than copying them out of code samples, forum posts, or earlier versions of these docs.
 
 <Warning>
-Mainnet addresses for the current stack are not yet published. That stack is the yield share funding model, `nUSDC` collateral, `NullV1Router`, and `NullV1MorphoRouter`. Until addresses appear below, treat every address for this stack as unknown.
+Mainnet addresses for the current stack are not yet published. That stack is the yield share funding model, `USDCn` collateral, `NullV1Router`, and `NullV1MorphoRouter`. Until addresses appear below, treat every address for this stack as unknown.
 </Warning>
 
 ## Do not reuse legacy addresses
@@ -24,8 +24,8 @@ When the deployment is verified, this page will list the core contracts first:
 | `NullV1Router` | Handles spot deposit and redeem. Chainlink updates through it are fee-less. |
 | `NullV1MorphoRouter` | Handles Margin `open`, `close`, `openShort`, and `closeShort`. |
 | `NullV1YieldShareFundingRateModel` | The funding model the factory has enabled for new markets. |
-| `nUSDC` | The Null Collateral Vault share, a Morpho Vault V2 over USDC, used as market collateral. |
-| Null Savings Vault | The Morpho vault that holds `nUSDC` and lends it into each market's long book. |
+| `USDCn` | The Null Collateral Vault share, a Morpho Vault V2 over USDC, used as market collateral. |
+| Null Savings Vault | The Morpho vault that holds `USDCn` and lends it into each market's long book. |
 | Morpho Blue | The singleton the router calls. Use Morpho's canonical Ethereum address, and verify it against the router. |
 
 Per market rows come second, and only after each one is checked. Expect the oracle proxy, the market proxy, the Receiver pool, the Payer pool, the long book id, and the short book id for every live market. A per market address will not be listed until it has been checked on Etherscan against the factory that created it.
@@ -36,7 +36,7 @@ You do not have to trust this page blindly, and once addresses exist you should 
 
 ```text
 factory.getMarket(collateral, oracle, frm) == market
-market.collateral() == nUSDC
+market.collateral() == USDCn
 market.frm() == yield-share model
 market.receiverPool() / market.payerPool() match the tokens you will spend
 ```

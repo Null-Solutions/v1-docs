@@ -23,7 +23,7 @@ With the state prepared, the market calls `frm.fundingRate` on that prepared sta
 
 ## Then, decide whether anything may move
 
-`finalizeUpdate` guards everything that follows with a floor, `MIN_POOL_ASSETS`, set at `1e18` raw collateral units: one whole token of 18-decimal collateral, about one dollar of `nUSDC`. The constant is not scaled by the collateral's decimals, so markets are expected to use 18-decimal collateral. If either pool sits at or below that floor, funding and price profit and loss are both skipped for this settlement. The market still records the new price and timestamp, but no value changes hands.
+`finalizeUpdate` guards everything that follows with a floor, `MIN_POOL_ASSETS`, set at `1e18` raw collateral units: one whole token of 18-decimal collateral, about one dollar of `USDCn`. The constant is not scaled by the collateral's decimals, so markets are expected to use 18-decimal collateral. If either pool sits at or below that floor, funding and price profit and loss are both skipped for this settlement. The market still records the new price and timestamp, but no value changes hands.
 
 The floor exists for symmetry as much as for safety. A pool that cannot be debited below the floor must not be allowed to keep collecting from the other side either, or holding a nearly empty pool would become a free option on its counterparty. Below the floor, both directions close together.
 

@@ -7,17 +7,17 @@ description: "Add USDC and earn two layers of interest. No price exposure, no po
 Savings is for USDC you want working while you decide what to do next. You don't track a price, a funding rate or a liquidation level. You add money, it earns, and you withdraw when you need it.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/savings-flow.svg" alt="Add money turns your USDC into nUSDC in the Null Collateral Vault. The nUSDC goes into the Null Savings Vault, which lends it into the long markets, where Leverage Long traders borrow it against AAPLr. You earn two layers of interest, shown as AER." />
-  <img className="hidden dark:block" src="/images/savings-flow-dark.svg" alt="Add money turns your USDC into nUSDC in the Null Collateral Vault. The nUSDC goes into the Null Savings Vault, which lends it into the long markets, where Leverage Long traders borrow it against AAPLr. You earn two layers of interest, shown as AER." />
+  <img className="block dark:hidden" src="/images/savings-flow.svg" alt="Add money turns your USDC into USDCn in the Null Collateral Vault. The USDCn goes into the Null Savings Vault, which lends it into the long markets, where Leverage Long traders borrow it against AAPLr. You earn two layers of interest, shown as AER." />
+  <img className="hidden dark:block" src="/images/savings-flow-dark.svg" alt="Add money turns your USDC into USDCn in the Null Collateral Vault. The USDCn goes into the Null Savings Vault, which lends it into the long markets, where Leverage Long traders borrow it against AAPLr. You earn two layers of interest, shown as AER." />
 </Frame>
 
 ## How it earns
 
-Your deposit becomes nUSDC, a share of the [Null Collateral Vault](/how-null-works/usdc-becomes-nusdc), and goes into the Null Savings Vault. The Savings Vault lends that nUSDC into the long market of every synthetic, where Leverage Long traders borrow it.
+Your deposit becomes USDCn, a share of the [Null Collateral Vault](/how-null-works/usdc-becomes-usdcn), and goes into the Null Savings Vault. The Savings Vault lends that USDCn into the long market of every synthetic, where Leverage Long traders borrow it.
 
 | Layer | Where it comes from |
 | --- | --- |
-| First | nUSDC earns interest in the Null Collateral Vault. |
+| First | USDCn earns interest in the Null Collateral Vault. |
 | Second | Borrowers on the long markets pay interest to the Savings Vault. |
 
 The app shows the combined rate as **AER**, to two decimal places. It is a snapshot of what the vault earns now, not a promise about the year ahead. If the app can't fetch a rate, it says so rather than show a stale one.
@@ -50,7 +50,7 @@ Your history sits in a ledger with **Transaction**, **Date**, **Status**, **Acco
 | The rate moves | It rises when traders borrow more and falls when markets are quiet. |
 | Withdrawals | Limited by what borrowers aren't using. Savings suits money you don't need on a precise date. |
 | Lending risk | If a borrower is liquidated for less than the debt, lenders can lose principal. |
-| Vault risk | If the Collateral Vault loses value, your nUSDC does too. |
+| Vault risk | If the Collateral Vault loses value, your USDCn does too. |
 
 This is not a bank deposit and it is not insured. Size it like an onchain lending position, because that is what it is. More in [Risks](/how-null-works/what-can-go-wrong).
 

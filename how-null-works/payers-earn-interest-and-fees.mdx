@@ -4,13 +4,13 @@ sidebarTitle: "Payers earn interest and fees"
 description: "Receivers hand Payers the interest on their deposits, and pay them a fee each time they open or close. That is the pay for taking the other side."
 ---
 
-Both pools hold nUSDC, and nUSDC earns interest in the [Collateral Vault](/how-null-works/usdc-becomes-nusdc). Receivers hand their share of that interest to Payers. That is what following the price costs a Receiver, and what a Payer is paid for taking the opposite side.
+Both pools hold USDCn, and USDCn earns interest in the [Collateral Vault](/how-null-works/usdc-becomes-usdcn). Receivers hand their share of that interest to Payers. That is what following the price costs a Receiver, and what a Payer is paid for taking the opposite side.
 
 The app calls this transfer **funding**. On Null it only ever flows one way, from Receivers to Payers, because its source is interest that has already been earned.
 
 ## A worked example
 
-Take the $100 Receiver and $50 Payer from [Two pools](/how-null-works/nusdc-backs-two-pools), with the vault earning 5% a year. The Receiver's interest goes to the Payer, on top of the Payer's own.
+Take the $100 Receiver and $50 Payer from [Two pools](/how-null-works/usdcn-backs-two-pools), with the vault earning 5% a year. The Receiver's interest goes to the Payer, on top of the Payer's own.
 
 <Frame caption="Each green or terracotta dot is $1, each gold dot 50¢. 5% a year. Price moves and fees not included.">
   <img className="block dark:hidden" src="/images/payer-interest.svg" alt="The Receiver deposits 100 dollars and the Payer 50. At 5 percent a year, the Receiver's 5 dollars of interest goes to the Payer, on top of the Payer's own 2 dollars 50. The Receiver stays at 100 dollars and the Payer grows to 57 dollars 50." />

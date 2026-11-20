@@ -20,7 +20,7 @@ Work through these in order. Almost every spot failure is one of them.
 
 First, check what **Cash** actually is. Cash is USDC held in your connected wallet on Ethereum. USDC on another network, or USDC sitting inside a product, is not Cash and cannot fund a Buy. Move it to the wallet on Ethereum first.
 
-Second, check the approval. Spot trades through the router spend USDC directly when the market collateral is a vault, not `nUSDC`, and the router needs an allowance for the token it asks for. Approve the amount the wallet requests.
+Second, check the approval. Spot trades through the router spend USDC directly when the market collateral is a vault, not `USDCn`, and the router needs an allowance for the token it asks for. Approve the amount the wallet requests.
 
 Third, for a **Sell**, remember it spends pool shares held by the connected wallet. If you bought from a different wallet, this wallet's share balance is genuinely zero, and the Sell has nothing to spend. Connect the wallet that made the Buy.
 
