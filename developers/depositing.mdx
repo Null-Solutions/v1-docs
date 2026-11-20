@@ -185,6 +185,8 @@ After the vault deposit confirms, use the actual `collateralVault` share balance
 
 The direct call has no router deadline, output floor, oracle payload, or automatic vault wrap. Add those safeguards in your integration.
 
+A Receiver deposit, direct or through the router, reverts with `ERC4626ExceededMaxDeposit` if it would leave the Receiver pool larger than 5 times the Payer pool. Read `maxDeposit` on the Receiver pool first. See [Pool ratio cap](/contracts/pool#pool-ratio-cap).
+
 ## Related
 
 [Redeeming](/developers/redeeming) · [Pools](/developers/pools) · [Settlement](/protocol/settlement) · [Deployments](/developers/deployments)

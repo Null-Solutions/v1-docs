@@ -6,7 +6,7 @@ description: "How a Null V1 market settles: two ERC-4626 pools, one collateral t
 
 A Null market exists to turn an oracle price into a transfer between two groups of holders, without either group having to find the other. One side, the Receiver pool, is long the tracked return. The other side, the Payer pool, backs that exposure and takes the opposite return. Both pools hold the same collateral token and issue their own fungible ERC-4626 shares, so a position is simply a share of a pool rather than a private contract with a named counterparty.
 
-That pooled design is the whole protocol in miniature. The market never lends the tracked asset, never holds it, and never liquidates a spot holder. It holds collateral, watches a price, and periodically rewrites how much of that collateral belongs to each pool. Everything else in Null, including leveraged positions through Morpho, is built around that single act of redistribution. For the product level explanation, start with [Two pools](/how-null-works/nusdc-backs-two-pools).
+That pooled design is the whole protocol in miniature. The market never lends the tracked asset, never holds it, and never liquidates a spot holder. It holds collateral, watches a price, and periodically rewrites how much of that collateral belongs to each pool. Everything else in Null, including leveraged positions through Morpho, is built around that single act of redistribution. For the product level explanation, start with [Two pools](/how-null-works/usdcn-backs-two-pools).
 
 ## What a market is
 
@@ -14,13 +14,15 @@ A market is fixed at creation by three addresses, its collateral, its oracle, an
 
 Creation is permissionless. Anyone can call the factory to create a market for a tuple that does not exist yet, and in this deployment there is no deposit whitelist and no pause standing in the way of using it once created. The one gate sits earlier, at the level of models rather than markets: the factory owner must enable a funding rate model before any market can point at it, and enabling is irreversible. That asymmetry is deliberate. Markets should be free to form, but the code that decides how money moves on every settlement should be admitted once, carefully, and never quietly withdrawn.
 
-On the current stack the collateral is `nUSDC`, a Morpho Vault V2 share over USDC, which is why funding and collateral cannot really be understood apart. See [Collateral](/protocol/collateral) and [Collateral in the markets section](/markets/collateral).
+On the current stack the collateral is `USDCn`, a Morpho Vault V2 share over USDC, which is why funding and collateral cannot really be understood apart. See [Collateral](/protocol/collateral) and [Collateral in the markets section](/markets/collateral).
 
 ## How value moves
 
 When the accepted oracle price rises, collateral moves from the Payer pool to the Receiver pool. When it falls, the same amount of logic runs in reverse. The size of the transfer is set by the Receiver side: it is the price change, expressed through the `1e36` price scale, applied to the Receiver assets that are actually available to settle. Receivers therefore gain or lose roughly in proportion to the price move itself.
 
 Payers feel the identical transfer through a smaller or larger base, which is where their leverage comes from. If Receiver assets are `R` and Payer assets are `P`, a transfer that is a modest percentage of `R` can be a large percentage of `P`, and the ratio `R / P` is the Payer short scale. Nobody chooses that number at entry. It drifts as the pools grow, shrink, and settle against each other, and following it is most of what it means to hold the Payer side responsibly.
+
+Deposits and redemptions cannot push that ratio without limit. A Receiver deposit or a Payer redemption may not leave the Receiver pool larger than five times the Payer pool (`MAX_POOL_RATIO = 5`), and it reverts if it would. Payer deposits and Receiver redemptions lower the ratio and are never limited. Settlement can still carry the ratio above five, and while it is above, the two limited flows stay closed until the ratio comes back down. The exact rules are in [Pool ratio cap](/contracts/pool#pool-ratio-cap).
 
 Funding runs alongside price, and on this stack it has a specific source. The collateral vault earns yield, and the yield share funding model measures that yield and charges it to Receivers, paying it across to Payers. Payers thus earn the yield on their own vault shares and the yield on the Receiver pool as well, while Receivers keep the price return and give the yield away. That exchange is the economic bargain at the centre of the market, and it is covered in [Funding rate model](/protocol/funding-rate-model).
 

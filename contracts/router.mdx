@@ -1,7 +1,7 @@
 ---
-title: "Null V1 routers"
+title: "NullV1Router"
 sidebarTitle: "Router"
-description: "Atomic oracle updates, market creation, deposits, and redemptions."
+description: "Atomic oracle updates, deposits, and redemptions, with ERC-20 allowance or Permit2."
 ---
 
 `NullV1Router` is stateless, ownerless, and nonpayable. It never holds or forwards ETH. When `updateData` is nonempty it calls:
@@ -12,23 +12,11 @@ INullV1UpdatableOracle(address(oracle)).update(updateData);
 
 Use it for the Null V1 Chainlink oracles. Pass an empty array to skip the update. Do not send ETH with the call.
 
+The router has no market-creation function. Create markets on the factory. See [Creating a market](/markets/creating-a-market).
+
 Margin writes use [`NullV1MorphoRouter`](/contracts/morpho-router).
 
-## Shared market operations
-
-### Create
-
-```solidity
-function createMarket(
-    INullV1Factory factory,
-    IERC20 collateral,
-    INullV1Oracle oracle,
-    INullV1FundingRateModel frm,
-    bytes[] calldata updateData
-) external returns (INullV1Market market);
-```
-
-The router optionally updates the oracle, then calls `factory.createMarket(collateral, oracle, frm)`. The router does not verify that the supplied factory is canonical. The FRM must be enabled on that factory.
+## Market operations
 
 ### Deposit
 
@@ -49,6 +37,10 @@ function depositMarket(
 
 Set either asset amount to zero to skip that side. Shares are minted to `msg.sender`. For plain ERC-20 collateral, asset amounts are collateral units. If market collateral is detected as ERC-4626, asset amounts are units of that vault's underlying; the router pulls the underlying and wraps it before depositing. Approve the router for the token it will pull.
 
+The router deposits into the Payer pool first and the Receiver pool second. A Receiver deposit is limited by the [pool ratio cap](/contracts/pool#pool-ratio-cap), so the Payer leg of the same call already counts toward it.
+
+The router does not check that `market` comes from the canonical factory.
+
 ### Redeem
 
 ```solidity
@@ -68,18 +60,62 @@ function redeemMarket(
 
 Set either share amount to zero to skip that side. Approve the router to spend the relevant pool shares. Plain collateral is returned directly to `msg.sender`; ERC-4626 collateral is redeemed and its underlying is returned. Minimum-asset checks apply to the amount the caller actually receives.
 
+The router redeems Receiver shares first and Payer shares second.
+
+## Permit2 variants
+
+Both operations have a form that pulls tokens through a Permit2 signature transfer, so the caller needs no ERC-20 allowance on the router. The caller approves the canonical Permit2 contract once per token instead.
+
+```solidity
+struct Permit2Signature {
+    uint256 nonce;
+    bytes signature;
+}
+
+function depositMarketWithPermit2(
+    INullV1Market market,
+    uint256 receiverAssets,
+    uint256 payerAssets,
+    uint256 minReceiverShares,
+    uint256 minPayerShares,
+    uint256 deadline,
+    bytes[] calldata updateData,
+    Permit2Signature calldata permit
+) external returns (uint256 receiverShares, uint256 payerShares);
+
+function redeemMarketWithPermit2(
+    INullV1Market market,
+    uint256 receiverShares,
+    uint256 payerShares,
+    uint256 minReceiverAssets,
+    uint256 minPayerAssets,
+    uint256 deadline,
+    bytes[] calldata updateData,
+    Permit2Signature calldata permit
+) external returns (uint256 receiverAssets, uint256 payerAssets);
+
+function permit2() external view returns (IPermit2);
+```
+
+The router rebuilds the permit from the call arguments. A signature is valid only for the exact action it was signed for.
+
+| Function | What the signed permit must contain |
+|---|---|
+| `depositMarketWithPermit2` | One token and amount: the token the caller pays (the vault underlying for ERC-4626 collateral, else the collateral) and `receiverAssets + payerAssets`. |
+| `redeemMarketWithPermit2` | A batch: the Receiver pool for `receiverShares`, then the Payer pool for `payerShares`. Skip a side whose amount is zero. |
+
+In both cases the spender is the router, the nonce is `permit.nonce`, and the permit deadline is the call's `deadline`. Nothing is pulled when all amounts are zero.
+
 ## Update order and errors
 
-For deposits and redemptions the router checks the deadline, applies a nonempty oracle update, and then calls the pools. Pool execution performs market settlement.
-
-Both routers define:
+The router checks the deadline, applies a nonempty oracle update, and then calls the pools. Pool execution performs market settlement.
 
 | Error | Condition |
 |---|---|
-| `TransactionTooOld(uint256 deadline)` | `block.timestamp > deadline`. |
+| `TransactionTooOld(uint256 deadline)` | `block.timestamp > deadline`. Defined in the shared base contract, so `NullV1MorphoRouter` uses it too. |
 | `SlippageReceiverShares(uint256 expected, uint256 actual)` | Receiver shares are below the minimum. |
 | `SlippagePayerShares(uint256 expected, uint256 actual)` | Payer shares are below the minimum. |
 | `SlippageReceiverAssets(uint256 expected, uint256 actual)` | Receiver assets are below the minimum. |
 | `SlippagePayerAssets(uint256 expected, uint256 actual)` | Payer assets are below the minimum. |
 
-The payable router additionally defines `InsufficientUpdateFeeBalance(uint256 balance, uint256 required)`.
+Pool errors pass through the router unchanged, including `ERC4626ExceededMaxDeposit` and `ERC4626ExceededMaxRedeem` from the pool ratio cap.

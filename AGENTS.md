@@ -12,12 +12,12 @@
 Guides follow the product overview and deck: one idea per page, explained so a first-time reader understands it. "How Null works" walks up the four layers, bottom to top, and every page ends with a "Next" link to the following one. Sidebar titles are short statements, so reading the sidebar alone tells the story.
 
 1. **Null is four layers** (`how-null-works/null-is-four-layers`): the four-layer map and where each product sits.
-2. **USDC becomes nUSDC** (`how-null-works/usdc-becomes-nusdc`): layer 1. USDC becomes nUSDC, which earns interest and backs everything.
-3. **nUSDC backs two pools** (`how-null-works/nusdc-backs-two-pools`): layer 2. Each market splits nUSDC into a Receiver Pool and a Payer Pool.
+2. **USDC becomes USDCn** (`how-null-works/usdc-becomes-usdcn`): layer 1. USDC becomes USDCn, which earns interest and backs everything.
+3. **USDCn backs two pools** (`how-null-works/usdcn-backs-two-pools`): layer 2. Each market splits USDCn into a Receiver Pool and a Payer Pool.
 4. **Payers earn interest and fees** (`how-null-works/payers-earn-interest-and-fees`): Receivers hand their interest, and their opening and closing fees, to Payers.
 5. **Receivers hold synthetics** (`how-null-works/receivers-hold-synthetics`): the Receiver Pool share as a token (AAPLr etc.), and what it can build.
 6. **Synthetics go on Morpho** (`how-null-works/synthetics-go-on-morpho`): layer 3. Two Morpho markets per synthetic.
-7. **Savers lend to the longs** (`how-null-works/savers-lend-to-longs`): layer 4. The Savings Vault lends nUSDC into every long market.
+7. **Savers lend to the longs** (`how-null-works/savers-lend-to-longs`): layer 4. The Savings Vault lends USDCn into every long market.
 8. **Holders lend to the shorts** (`how-null-works/holders-lend-to-shorts`): layer 4. Holders lend synthetics into the short markets, keeping price exposure.
 9. Then fees, risks, products and Payers.
 
@@ -26,11 +26,11 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 - **Receiver** / **Payer**: the two ERC-4626 pools in a market. The token a Receiver holds is a **Receiver Pool share** (never "pool shares" on their own).
 - **Synthetic**: a Receiver Pool share named after its asset: AAPLr, SPXr, BTCr, GOLDr. These are examples; the live list is `/trade`.
 - **Payer**: a negative-size position in the Receiver pool, with the market's collateral inside it. Short scale is `R / P`. Do not describe that scale as a leverage setting.
-- **nUSDC**: the share of the **Null Collateral Vault**, a curated Morpho Vault V2 over USDC. It is the collateral in every market and its interest pays the Payers.
-- **Null Savings Vault**: a separate Morpho vault whose asset is `nUSDC`. It lends `nUSDC` into every long market only. Savers earn two layers: the Collateral Vault's interest and the long-market borrow interest.
-- **Long market**: `Xr | nUSDC` (collateral | loan). Lends `nUSDC` against the synthetic. Used by **Leverage Long**.
-- **Short market**: `nUSDC | Xr`. Lends the synthetic against `nUSDC`. Supplied by holders through **Lend**, used by **Leverage Short**. Lending a synthetic here makes it yield-bearing.
-- Inside tables, escape the pipe in market names: `AAPLr \| nUSDC`.
+- **USDCn**: the share of the **Null Collateral Vault**, a curated Morpho Vault V2 over USDC. It is the collateral in every market and its interest pays the Payers.
+- **Null Savings Vault**: a separate Morpho vault whose asset is `USDCn`. Its share is **USDCns**. It lends `USDCn` into every long market only. Savers earn two layers: the Collateral Vault's interest and the long-market borrow interest.
+- **Long market**: `Xr | USDCn` (collateral | loan). Lends `USDCn` against the synthetic. Used by **Leverage Long**.
+- **Short market**: `USDCn | Xr`. Lends the synthetic against `USDCn`. Supplied by holders through **Lend**, used by **Leverage Short**. Lending a synthetic here makes it yield-bearing.
+- Inside tables, escape the pipe in market names: `AAPLr \| USDCn`.
 - **Market identity**: `(collateral, oracle, frm)`
 - **Funding**: the interest on Receiver deposits, paid to Payers by `NullV1YieldShareFundingRateModel`. Never negative. High-water mark. Capped at 100% APR for one interval. In Guides, explain it as interest first, then name it funding.
 - **Buy / Sell**: app words for pool deposit and redeem. Use those words in Guides.

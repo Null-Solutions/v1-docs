@@ -13,7 +13,7 @@ Supported market oracles are Chainlink Data Streams clones:
 | `NullV1ChainlinkOracleV3` | One 24/7 report | `NullV1Router` |
 | `NullV1ChainlinkOracleV11` | Regular, extended, and overnight session reports | `NullV1Router` |
 
-The router calls `update(bytes[])` before `price()`. Chainlink's `getUpdateFee` on this integration is zero. Do not send ETH with `depositMarket`, `redeemMarket`, or `createMarket`.
+The router calls `update(bytes[])` before `price()`. Chainlink's `getUpdateFee` on this integration is zero. Do not send ETH with `depositMarket` or `redeemMarket`. The router does not create markets: for market creation, call `oracle.update(updateData)` yourself and then the factory. See [Creating a market](/markets/creating-a-market).
 
 ## Update flow
 
@@ -26,7 +26,9 @@ Never fabricate report bytes. If `price()` reverts, the market action reverts wi
 
 ## Freshness
 
-Each oracle enforces its own timestamp window inside `update` and `price`. A stale report does not settle. V11 can accept a report slightly ahead of chain time (up to 60 seconds). That does not refresh a stored price by itself. You still submit the report.
+Each oracle enforces its own timestamp window inside `update` and `price`. The window is set when the oracle is created: read `maxValidFromAge()` and `maxValidFromFutureSkew()` (seconds) from the oracle. A stale report does not settle. Both oracle types can accept a report slightly ahead of chain time, up to `maxValidFromFutureSkew`. That does not refresh a stored price by itself. You still submit the report.
+
+If no report is stored for 15 days, the oracle serves the last stored price for good and ignores later reports. See [Chainlink](/contracts/oracles/chainlink#staleness-and-escape-behavior).
 
 Margin books use a different oracle, built on pool previews. See [Morpho oracles](/contracts/oracles/morpho).
 

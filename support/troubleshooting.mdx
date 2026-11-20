@@ -20,11 +20,13 @@ Work through these in order. Almost every spot failure is one of them.
 
 First, check what **Cash** actually is. Cash is USDC held in your connected wallet on Ethereum. USDC on another network, or USDC sitting inside a product, is not Cash and cannot fund a Buy. Move it to the wallet on Ethereum first.
 
-Second, check the approval. Spot trades through the router spend USDC directly when the market collateral is a vault, not `nUSDC`, and the router needs an allowance for the token it asks for. Approve the amount the wallet requests.
+Second, check the approval. Spot trades through the router spend USDC directly when the market collateral is a vault, not `USDCn`, and the router needs an allowance for the token it asks for. Approve the amount the wallet requests.
 
 Third, for a **Sell**, remember it spends pool shares held by the connected wallet. If you bought from a different wallet, this wallet's share balance is genuinely zero, and the Sell has nothing to spend. Connect the wallet that made the Buy.
 
 Fourth, consider the oracle. If the feed's report is stale, the transaction reverts rather than pricing your trade from invented data. The app attaches an update when it has one. If the feed itself is down, waiting is the fix.
+
+Fifth, check the balance of the two pools. A Receiver **Buy** or a **Payer sell** cannot leave the Receiver pool more than five times the Payer pool. If your trade would cross that line, it reverts. Try a smaller amount, or wait until Payers join or Receivers sell.
 
 Finally, the circuit breaker. A move larger than 20% in a single settlement skips the price transfer, and the trade still completes. Your share count changes with your deposit or redemption, but the skipped price move is not applied to you and is not paid later. This feels wrong the first time it happens to you. It is the protocol refusing to settle a violent move all at once. See [Circuit breaker](/protocol/circuit-breaker).
 
@@ -51,6 +53,8 @@ If instead your equity is the problem, the ticket will say so: your wallet USDC 
 That signature is expected. Before the router can borrow or withdraw collateral for you, you must authorize `NullV1MorphoRouter` on Morpho. If you rejected that signature, the open cannot borrow, and it will keep failing until you accept it. It is a one time authorization per wallet, separate from token approvals.
 
 Closing a short surprises people in the opposite way. It does not need spare Receiver shares sitting in the book, because the router mints the shares it owes while repaying. If a short close still fails, check the deadline, check that the oracle update went through, and confirm the position actually belongs to the wallet you have connected.
+
+Opening a long and closing a short can also fail because of the balance of the two pools. Both buy the synthetic, and a buy cannot leave the Receiver pool more than five times the Payer pool. If the pools are at that limit, try a smaller long, or wait until Payers join or Receivers sell. A short keeps accruing interest while it waits, so watch its **Liq. price**.
 
 And a standing warning: a Margin position can be liquidated when its loan to value reaches LLTV, even if you never send another transaction. **Liq. price** is an estimate. It does not include interest that accrues later, so leave yourself room.
 

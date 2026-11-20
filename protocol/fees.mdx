@@ -10,7 +10,7 @@ That purpose shapes where the money goes. The destination depends on the side th
 
 ## The trade fees stop
 
-Settlement only moves when someone interacts, and the price it settles to comes from a signed report the trader submits, which can be up to 60 seconds old. That leaves a window in which a trader can see that the market has moved before the pools have. Without fees, they could sandwich the move: enter the winning side at the old price, let the new price settle, and leave straight away with the difference, taken from the other pool.
+Settlement only moves when someone interacts, and the price it settles to comes from a signed report the trader submits, which can be as old as the oracle's freshness window allows (`maxValidFromAge`, set per oracle). That leaves a window in which a trader can see that the market has moved before the pools have. Without fees, they could sandwich the move: enter the winning side at the old price, let the new price settle, and leave straight away with the difference, taken from the other pool.
 
 Fees on both sides of the door close that window. The entry fee prices getting in at the old price, and the exit fee prices getting out at it, so leaving just before a known loss is not free either. Both are charged on notional, because the gain from a sandwich scales with the exposure taken, not with the cash posted.
 

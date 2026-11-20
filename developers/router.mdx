@@ -1,18 +1,20 @@
 ---
 title: "Router"
 sidebarTitle: "Router"
-description: "Use NullV1Router for create, deposit, redeem, deadlines, slippage, and Chainlink oracle updates."
+description: "Use NullV1Router for deposit, redeem, deadlines, slippage, Permit2, and Chainlink oracle updates."
 ---
 
 `NullV1Router` is the Spot router. It is stateless, ownerless, and nonpayable. Chainlink Data Streams updates are fee-less: the router calls `update(bytes[])` and forwards no ETH.
 
-User-facing `createMarket`, `depositMarket`, and `redeemMarket` calls are not payable. Do not attach `msg.value`.
+`depositMarket`, `redeemMarket`, and their Permit2 forms are not payable. Do not attach `msg.value`.
+
+The router does not create markets. Call the factory for that. See [Creating a market](/markets/creating-a-market).
 
 Margin opens and closes go through [`NullV1MorphoRouter`](/developers/morpho-router), not this router.
 
 ## Oracle update data
 
-The router applies nonempty `updateData` before market creation, deposit, or redemption by calling the fee-less `update(updateData)` interface.
+The router applies nonempty `updateData` before a deposit or redemption by calling the fee-less `update(updateData)` interface.
 
 Fetch and encode data from Chainlink:
 
@@ -20,21 +22,7 @@ Fetch and encode data from Chainlink:
 
 Pass `[]` only when the stored oracle price is usable.
 
-## Create market
-
-```solidity
-function createMarket(
-    INullV1Factory factory,
-    IERC20 collateral,
-    INullV1Oracle oracle,
-    INullV1FundingRateModel frm,
-    bytes[] calldata updateData
-) external returns (INullV1Market market);
-```
-
-The router optionally updates the oracle, then calls the supplied factory. It does **not** verify that the factory is a canonical Null deployment. Copy the factory from [Deployments](/developers/deployments) and validate untrusted configuration. Do not substitute an address from another network.
-
-The factory requires nonzero dependencies, an enabled FRM, a nonzero initial oracle price, and an unused `(collateral, oracle, frm)` tuple.
+The router does **not** verify that a `market` address comes from a canonical Null deployment. Resolve markets from the factory in [Deployments](/developers/deployments) and validate untrusted configuration.
 
 ## Deposit
 
@@ -55,10 +43,10 @@ Flow:
 1. Check `deadline`
 2. Optionally update the oracle
 3. Pull collateral (wrapping ERC-4626 underlying when needed)
-4. Deposit into each side where assets `> 0`
+4. Deposit into each side where assets `> 0`, Payer pool first, then Receiver pool
 5. Enforce `minReceiverShares` / `minPayerShares`
 
-Reverts: `TransactionTooOld`, `SlippageReceiverShares`, `SlippagePayerShares`.
+Reverts: `TransactionTooOld`, `SlippageReceiverShares`, `SlippagePayerShares`. A Receiver deposit above the [pool ratio cap](/contracts/pool#pool-ratio-cap) reverts with the pool's `ERC4626ExceededMaxDeposit`. The Payer leg of the same call counts toward the cap because it runs first.
 
 ## Redeem
 
@@ -84,7 +72,20 @@ Flow:
 
 Reverts: `TransactionTooOld`, `SlippageReceiverAssets`, `SlippagePayerAssets`.
 
+A Payer redemption that would break the pool ratio cap reverts with the pool's `ERC4626ExceededMaxRedeem`.
+
 The router redeems pool shares owned by `msg.sender`. The caller must approve the router to spend each active Receiver or Payer pool token.
+
+## Permit2
+
+`depositMarketWithPermit2` and `redeemMarketWithPermit2` take the same arguments as the plain calls plus a `Permit2Signature { nonce, signature }`. The router pulls the tokens through the canonical Permit2 contract, so it needs no ERC-20 allowance of its own. Approve Permit2 once for each token instead.
+
+| Call | Sign a Permit2 transfer for |
+| --- | --- |
+| `depositMarketWithPermit2` | `receiverAssets + payerAssets` of the token you pay (vault underlying for ERC-4626 collateral) |
+| `redeemMarketWithPermit2` | A batch: Receiver pool shares first, then Payer pool shares. Leave out a side whose amount is zero |
+
+The spender is the router and the permit deadline must equal the call's `deadline`. See [Permit2 variants](/contracts/router#permit2-variants).
 
 ## Collateral detection and units
 
