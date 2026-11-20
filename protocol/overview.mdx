@@ -22,6 +22,8 @@ When the accepted oracle price rises, collateral moves from the Payer pool to th
 
 Payers feel the identical transfer through a smaller or larger base, which is where their leverage comes from. If Receiver assets are `R` and Payer assets are `P`, a transfer that is a modest percentage of `R` can be a large percentage of `P`, and the ratio `R / P` is the Payer short scale. Nobody chooses that number at entry. It drifts as the pools grow, shrink, and settle against each other, and following it is most of what it means to hold the Payer side responsibly.
 
+Deposits and redemptions cannot push that ratio without limit. A Receiver deposit or a Payer redemption may not leave the Receiver pool larger than five times the Payer pool (`MAX_POOL_RATIO = 5`), and it reverts if it would. Payer deposits and Receiver redemptions lower the ratio and are never limited. Settlement can still carry the ratio above five, and while it is above, the two limited flows stay closed until the ratio comes back down. The exact rules are in [Pool ratio cap](/contracts/pool#pool-ratio-cap).
+
 Funding runs alongside price, and on this stack it has a specific source. The collateral vault earns yield, and the yield share funding model measures that yield and charges it to Receivers, paying it across to Payers. Payers thus earn the yield on their own vault shares and the yield on the Receiver pool as well, while Receivers keep the price return and give the yield away. That exchange is the economic bargain at the centre of the market, and it is covered in [Funding rate model](/protocol/funding-rate-model).
 
 ## Settlement in one paragraph

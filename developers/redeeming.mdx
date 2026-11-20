@@ -190,6 +190,8 @@ await walletClient.writeContract({
 
 If the transaction sender differs from the share owner, the owner must approve the sender. Direct calls have no router deadline, output floor, oracle payload, or automatic vault unwrap.
 
+A Payer redemption, direct or through the router, reverts with `ERC4626ExceededMaxRedeem` if it would leave the Payer pool smaller than one fifth of the Receiver pool. Read `maxRedeem(owner)` on the Payer pool first. See [Pool ratio cap](/contracts/pool#pool-ratio-cap).
+
 ## Related
 
 [Depositing](/developers/depositing) · [Fees](/protocol/fees) · [Pools](/developers/pools) · [Router](/developers/router)

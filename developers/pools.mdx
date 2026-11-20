@@ -68,7 +68,7 @@ The previews use the last settled state. Funding, price PnL, balance reconciliat
 `feeOnTotal(notional)` is `ceil(notional × feeBps / (10000 + feeBps))`, capped at the assets of the trade. Receiver-pool fees credit the Payer pool (or the Receiver pool itself while the Payer pool is at or below `MIN_POOL_ASSETS`). Payer-pool fees credit `protocolFees`. See [Fees](/protocol/fees).
 
 <Warning>
-`maxDeposit` always returns `type(uint256).max`. Never use it to size inputs. `maxMint` and `maxWithdraw` always return `0` because `mint` and `withdraw` are disabled. Exit fully with `redeem(balanceOf(owner))`. See [Max functions](/contracts/pool#max-functions).
+A deposit or redemption may not leave the Receiver pool larger than 5 times the Payer pool (`MAX_POOL_RATIO`). Receiver deposits and Payer redemptions are limited by it, so check `maxDeposit` on the Receiver pool and `maxRedeem(owner)` on the Payer pool before you size an input. A Payer may not be able to exit in full with `redeem(balanceOf(owner))`. Payer deposits and Receiver redemptions are never limited. `maxMint` and `maxWithdraw` always return `0` because `mint` and `withdraw` are disabled. See [Pool ratio cap](/contracts/pool#pool-ratio-cap).
 </Warning>
 
 ## Unit pipelines

@@ -26,6 +26,8 @@ Third, for a **Sell**, remember it spends pool shares held by the connected wall
 
 Fourth, consider the oracle. If the feed's report is stale, the transaction reverts rather than pricing your trade from invented data. The app attaches an update when it has one. If the feed itself is down, waiting is the fix.
 
+Fifth, check the balance of the two pools. A Receiver **Buy** or a **Payer sell** cannot leave the Receiver pool more than five times the Payer pool. If your trade would cross that line, it reverts. Try a smaller amount, or wait until Payers join or Receivers sell.
+
 Finally, the circuit breaker. A move larger than 20% in a single settlement skips the price transfer, and the trade still completes. Your share count changes with your deposit or redemption, but the skipped price move is not applied to you and is not paid later. This feels wrong the first time it happens to you. It is the protocol refusing to settle a violent move all at once. See [Circuit breaker](/protocol/circuit-breaker).
 
 ## "Savings will only let me withdraw part of my balance"

@@ -82,15 +82,41 @@ Use `NullV1Lens.previewMarket` for a settlement-accurate state projection, then 
 ## Max functions
 
 ```solidity
-function maxDeposit(address) public view returns (uint256);  // type(uint256).max
+function maxDeposit(address) public view returns (uint256);
 function maxMint(address) public pure returns (uint256);     // 0
 function maxWithdraw(address) public pure returns (uint256); // 0
 function maxRedeem(address owner) public view returns (uint256);
 ```
 
-- `maxDeposit` keeps the OpenZeppelin v5 default and always returns `type(uint256).max`. It does not reflect wallet balances, market state, or any protocol cap. Do not use it to size deposit inputs.
+- `maxDeposit` depends on the pool kind. The Payer pool returns `type(uint256).max`. The Receiver pool returns the room left under the pool ratio cap: `MAX_POOL_RATIO × payerPool − receiverPool`, or `0` when the Receiver pool is already at or above the cap. It does not reflect wallet balances.
 - `maxMint` and `maxWithdraw` always return `0`. This is the ERC-4626 signal that `mint` and `withdraw` are disabled; check it before calling them.
-- `maxRedeem(owner)` keeps the default and returns `balanceOf(owner)`. Use `redeem` with the full share balance for a full exit.
+- `maxRedeem(owner)` depends on the pool kind. The Receiver pool returns `balanceOf(owner)`. The Payer pool returns `balanceOf(owner)` capped by the shares the pool ratio cap lets out, which can be `0`.
+
+## Pool ratio cap
+
+A deposit or redemption may not leave the Receiver pool larger than `MAX_POOL_RATIO` times the Payer pool. `MAX_POOL_RATIO` is `5`:
+
+```text
+receiverPool <= 5 × payerPool
+```
+
+Only two flows raise `R / P`, and only those two are limited:
+
+| Flow | Effect on `R / P` | Limit |
+|---|---|---|
+| Receiver deposit | Raises it | At most `5 × payerPool − receiverPool` assets. Reverts with `ERC4626ExceededMaxDeposit`. |
+| Payer redemption | Raises it | Must leave `payerPool >= ceil(receiverPool / 5)`. Reverts with `ERC4626ExceededMaxRedeem`. |
+| Payer deposit | Lowers it | None. |
+| Receiver redemption | Lowers it | Only the owner's share balance. |
+
+Details that matter for integrations:
+
+- An empty market takes Payer deposits first. With an empty Payer pool, `maxDeposit` on the Receiver pool is `0`.
+- The Receiver limit ignores the entry fee, so it is slightly conservative when the fee goes to the Payer pool.
+- The Payer limit is on gross assets (the net amount plus the exit fee), because that is what leaves the Payer pool.
+- The Payer limit is off while the Receiver pool holds at most `MIN_POOL_ASSETS`. Nothing settles then, so the last Payer can always exit in full.
+- Settlement (price PnL and funding) can still push `R / P` above `5`. While it is above, Receiver deposits and Payer redemptions are closed. A Payer deposit or a Receiver redemption brings the ratio back down and is always allowed.
+- `maxDeposit` and `maxRedeem` read the last settled state. `deposit` and `redeem` settle first and then enforce the limit, so the enforced value can differ from the view on a stale market.
 
 ## Errors
 
@@ -98,6 +124,7 @@ function maxRedeem(address owner) public view returns (uint256);
 |---|---|
 | `NotImplemented()` | `mint`, `withdraw`, `previewMint`, or `previewWithdraw` is called. |
 | `ZeroShares()` | A nonzero deposit would mint zero shares. |
-| `ERC4626ExceededMaxRedeem(address owner, uint256 shares, uint256 max)` | `redeem` asks for more shares than the owner holds. |
+| `ERC4626ExceededMaxDeposit(address receiver, uint256 assets, uint256 max)` | A Receiver `deposit` would push the Receiver pool above the [pool ratio cap](#pool-ratio-cap). |
+| `ERC4626ExceededMaxRedeem(address owner, uint256 shares, uint256 max)` | `redeem` asks for more shares than the owner holds, or a Payer `redeem` would leave the Payer pool below the [pool ratio cap](#pool-ratio-cap). |
 
 Pools emit the standard ERC-20 `Transfer` and ERC-4626 `Deposit` and `Withdraw` events. `Withdraw` is emitted by `redeem`.

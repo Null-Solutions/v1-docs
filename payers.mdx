@@ -26,6 +26,8 @@ Payer short notional = p × R / P
 
 `R` is the Receiver pool's assets and `P` the Payer pool's, both in USDCn. `p` is your Payer position's value. If the Receiver pool is three times the Payer pool, each Payer dollar carries about three dollars of short exposure. When Payers are scarce, the same position becomes a bigger bet without you adding anything.
 
+Trades cannot push the scale above 5. A Receiver buy or a Payer sell that would leave the Receiver pool more than five times the Payer pool does not go through. Price moves can still carry the scale above 5. While it is above, you cannot sell Payer until new Payers join or Receivers sell.
+
 ## What you earn
 
 | Source | What it is |
