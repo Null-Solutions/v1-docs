@@ -49,6 +49,19 @@ Null doesn't open, size or manage that hedge. The other venue charges its own fu
 
 The hedge should match your short notional, `p × R / P`, and that drifts as the pools change. Recheck it after large flows into either pool.
 
+## Receiver fees pay for your rehedging
+
+Your hedge has to follow the Receiver pool. Every time a Receiver buys, your short grows and you buy more hedge. Every time a Receiver sells, your short shrinks and you sell hedge. Price moves alone don't change how many units you are short, so the rehedging is driven by flows, and each new unit of short opens at the current oracle price.
+
+That rehedging costs you spread and execution. Receivers pay an entry fee and an exit fee on the notional they trade, and on the standard deployment those fees go to the Payer pool. The fee is charged on exactly the volume you have to rehedge, so it grows one for one with the work it pays for.
+
+| Step | Receiver flow | Your rehedge | Fee to the Payer pool | Your cost to rehedge | You keep |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| A Receiver buys | 10,000 | Buy 10,000 of hedge | 10 (0.10%) | 3 (0.03%) | 7 |
+| The Receiver sells | 10,000 | Sell 10,000 of hedge | 10 (0.10%) | 3 (0.03%) | 7 |
+
+Example only. Fees are set per market and capped at 2.5%. Your rehedging cost depends on where and how fast you hedge. A market's fee is meant to sit above the cost of rehedging its asset, which is one reason more volatile markets carry higher fees. See [Fees](/protocol/fees#matching-fees-to-volatility).
+
 ## Running a Payer position
 
 <Steps>

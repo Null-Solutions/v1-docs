@@ -26,6 +26,10 @@ The last row shows why the Payer fee is scaled by the pool ratio. A Payer postin
 
 When a Receiver pays, the fee goes to the Payer pool: the side that was exposed to the stale price is the side that is compensated.
 
+## The fees pay for Payer rehedging
+
+A Payer's short is the Receiver pool, so every Receiver deposit or redemption is volume the Payers must rehedge on another venue. The Receiver fees are charged on that same notional and paid to the Payer pool, so they scale one for one with the rehedging they compensate. With a 0.10% fee and a 0.03% cost to rehedge, a 10,000 Receiver trade pays Payers 10 for 3 of hedging work. See [Payers](/payers#receiver-fees-pay-for-your-rehedging).
+
 ## How the charge is sized
 
 Entry and exit fees are quoted in basis points, but they are not charged on the raw amount handed over. They are charged on notional, worked out with `feeOnTotal`, and the distinction matters most exactly when a trade matters most. The notional base is grossed up to Receiver exposure: it includes the assets being added, so a depositor pays on the full position they are about to hold rather than only on the net amount that survives the fee. For a Payer deposit, the base is further scaled by the current pool ratio, because Payer collateral backs a slice of the whole Receiver book. When Receiver assets are large relative to Payer assets, a modest Payer deposit supports a much larger notional, and the fee follows the notional it actually puts at risk.
