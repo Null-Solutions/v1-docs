@@ -46,12 +46,16 @@ Both pools are cloned at init and emitted in `CreateMarket`.
 
 ## Mutable fees
 
-Factory owner can set two fees with `setFees(newEntryFee, newExitFee)`. Entry and exit default to 25 bps and are capped at 250 bps.
+Factory owner can set four fees with `setFees(newReceiverEntryFee, newReceiverExitFee, newPayerEntryFee, newPayerExitFee)`. Receivers and Payers each have their own entry fee and exit fee. All four default to 25 bps and are capped at 250 bps each.
 
 | Accessor | Charged on | Maximum |
 | --- | --- | ---: |
-| `entryFee()` | `deposit`, on settleable-R notional | 250 bps (2.5%) |
-| `exitFee()` | `redeem`, same notional | 250 bps (2.5%) |
+| `receiverEntryFee()` | Receiver pool `deposit`, on settleable-R notional | 250 bps (2.5%) |
+| `receiverExitFee()` | Receiver pool `redeem`, same notional | 250 bps (2.5%) |
+| `payerEntryFee()` | Payer pool `deposit`, on settleable-R notional | 250 bps (2.5%) |
+| `payerExitFee()` | Payer pool `redeem`, same notional | 250 bps (2.5%) |
+
+`entryFee(kind)` and `exitFee(kind)` return the same values for one side (`NullV1PoolKind.Receiver = 0`, `NullV1PoolKind.Payer = 1`).
 
 Receiver-side fees credit the Payer pool (or the Receiver pool while the Payer pool is at or below `MIN_POOL_ASSETS`). Payer-side fees credit `protocolFees`. `sweepFees()` pays the factory owner the `protocolFees` recorded at the last settlement; it does not settle the market. Details: [Fees](/protocol/fees).
 
@@ -80,8 +84,10 @@ address frm          = address(market.frm());
 address receiverPool = address(market.receiverPool());
 address payerPool    = address(market.payerPool());
 
-uint16 entryFee      = market.entryFee();
-uint16 exitFee       = market.exitFee();
+uint16 receiverEntryFee = market.receiverEntryFee();
+uint16 receiverExitFee  = market.receiverExitFee();
+uint16 payerEntryFee    = market.payerEntryFee();
+uint16 payerExitFee     = market.payerExitFee();
 ```
 
 Discover with `factory.getMarket(collateral, oracle, frm)`. Settlement order: [Settlement](/protocol/settlement). Morpho periphery: [Morpho](/how-null-works/synthetics-go-on-morpho).

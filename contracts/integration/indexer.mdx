@@ -81,7 +81,12 @@ event UpdateState(
     bool circuitBreakerFired
 );
 
-event SetFees(uint16 entryFee, uint16 exitFee);
+event SetFees(
+    uint16 receiverEntryFee,
+    uint16 receiverExitFee,
+    uint16 payerEntryFee,
+    uint16 payerExitFee
+);
 event CollectFees(uint256 fee);
 ```
 

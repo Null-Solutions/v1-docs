@@ -1,7 +1,7 @@
 ---
 title: "Fees"
 sidebarTitle: "Fees"
-description: "Entry and exit fees are basis points on notional. Receiver fees go to the Payer pool, Payer fees go to the protocol."
+description: "Entry and exit fees are basis points on notional, set separately for Receivers and Payers. Receiver fees go to the Payer pool, Payer fees go to the protocol."
 ---
 
 Fees in Null exist to price an option that would otherwise be free. Oracle prices update in discrete steps, and anyone who can deposit or redeem at a price the market has not yet moved away from is, in effect, trading on information the pools have not absorbed. Entry and exit fees charge for that privilege on both sides of the door, because an entry only fee would leave the mirror image attack, redeeming at a stale price to dodge a move that has already happened, completely unpriced.
@@ -72,7 +72,9 @@ Receivers and Payers do not experience these fees identically. A Receiver fee is
 
 ## Setting fees
 
-Each market starts with default entry and exit fees, and the factory owner can retune a market afterwards by calling `setFees(newEntryFee, newExitFee)` on it. The call settles the market first, so the old fees apply up to that moment. The caps exist so that this discretion cannot become a trap: whatever governance does later, entry and exit fees can never exceed the maximums below, and changing them never rewrites positions already taken.
+Each market has four fees: an entry fee and an exit fee for Receivers, and an entry fee and an exit fee for Payers. The two sides are independent, so a market can charge Receivers and Payers different rates. A pool charges only the fees of its own side.
+
+Each market starts with the default fees on both sides, and the factory owner can retune a market afterwards by calling `setFees(newReceiverEntryFee, newReceiverExitFee, newPayerEntryFee, newPayerExitFee)` on it. One call sets all four fees. The call settles the market first, so the old fees apply up to that moment. The caps exist so that this discretion cannot become a trap: whatever governance does later, no entry or exit fee on either side can exceed the maximums below, and changing them never rewrites positions already taken.
 
 Entry and exit are the only fees. There is no fee for holding a position: nothing is charged on pool assets over time.
 
@@ -93,10 +95,10 @@ These ranges are illustrative, not settings of any live market. Fees too low for
 
 | Constant | Value | Meaning |
 | --- | ---: | --- |
-| `DEFAULT_ENTRY_FEE` | 25 bps | Entry fee at market creation |
-| `DEFAULT_EXIT_FEE` | 25 bps | Exit fee at market creation |
-| `MAX_ENTRY_FEE` | 250 bps | Highest entry fee the owner can set |
-| `MAX_EXIT_FEE` | 250 bps | Highest exit fee the owner can set |
+| `DEFAULT_ENTRY_FEE` | 25 bps | Entry fee of each side at market creation |
+| `DEFAULT_EXIT_FEE` | 25 bps | Exit fee of each side at market creation |
+| `MAX_ENTRY_FEE` | 250 bps | Highest entry fee the owner can set, for either side |
+| `MAX_EXIT_FEE` | 250 bps | Highest exit fee the owner can set, for either side |
 | `MAX_BASIS_POINTS` | 10000 | Basis point denominator |
 
 Those defaults deserve a word of interpretation. At 25 basis points each way, a round trip costs half a percent of notional before funding, vault movement, or any Morpho interest on a leveraged position. That is cheap enough that ordinary rebalancing is not meaningfully discouraged, and expensive enough that depositing and redeeming in rapid succession around every oracle update is a losing habit. The fee schedule is, in effect, a statement about the timescale the market wants its holders to trade on: positions held across settlements, not churn within them.

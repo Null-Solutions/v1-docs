@@ -32,11 +32,15 @@ function oracle() external view returns (INullV1Oracle);
 function frm() external view returns (INullV1FundingRateModel);
 function receiverPool() external view returns (INullV1Pool);
 function payerPool() external view returns (INullV1Pool);
-function entryFee() external view returns (uint16);
-function exitFee() external view returns (uint16);
+function receiverEntryFee() external view returns (uint16);
+function receiverExitFee() external view returns (uint16);
+function payerEntryFee() external view returns (uint16);
+function payerExitFee() external view returns (uint16);
+function entryFee(NullV1PoolKind kind) external view returns (uint16);
+function exitFee(NullV1PoolKind kind) external view returns (uint16);
 ```
 
-Fees are basis points. Entry and exit default to 25 bps and are capped at `250` (2.5%). They are charged on settleable-R notional. There is no other fee. Where a fee lands depends on the side that pays it: Receiver-side fees go to the Payer pool (or back to the Receiver pool while the Payer pool is at or below `MIN_POOL_ASSETS`), and Payer-side fees go to `protocolFees`. See [Fees](/protocol/fees).
+Fees are basis points. Each side has its own entry fee and exit fee, so a market has four fees. The Receiver fees and the Payer fees are independent. `entryFee(kind)` and `exitFee(kind)` return the fee of one side (`NullV1PoolKind.Receiver = 0`, `NullV1PoolKind.Payer = 1`); the pools use them. All four fees default to 25 bps and are capped at `250` (2.5%) each. They are charged on settleable-R notional. There is no other fee. Where a fee lands depends on the side that pays it: Receiver-side fees go to the Payer pool (or back to the Receiver pool while the Payer pool is at or below `MIN_POOL_ASSETS`), and Payer-side fees go to `protocolFees`. See [Fees](/protocol/fees).
 
 ## Settlement
 
@@ -52,14 +56,16 @@ The protocol owner is the current `owner()` of the factory.
 
 ```solidity
 function setFees(
-    uint16 newEntryFee,
-    uint16 newExitFee
+    uint16 newReceiverEntryFee,
+    uint16 newReceiverExitFee,
+    uint16 newPayerEntryFee,
+    uint16 newPayerExitFee
 ) external;
 
 function sweepFees() external returns (uint256 amount);
 ```
 
-`setFees` settles the market, then checks each fee against its cap and stores both.
+`setFees` settles the market, then checks each of the four fees against its cap and stores them. One call always sets all four, so pass the current value for a fee you do not want to change.
 
 `sweepFees` transfers the `protocolFees` recorded at the last settlement to the protocol owner, and emits `CollectFees` only when the amount is nonzero. It does not settle the market, reads no oracle price, and emits no `UpdateState`. Collateral donated while both pools are empty is counted into `protocolFees` only by the next settlement (any deposit or redemption, including a zero-amount deposit), so it can be swept only after that.
 
@@ -76,8 +82,10 @@ event UpdateState(
 );
 
 event SetFees(
-    uint16 entryFee,
-    uint16 exitFee
+    uint16 receiverEntryFee,
+    uint16 receiverExitFee,
+    uint16 payerEntryFee,
+    uint16 payerExitFee
 );
 
 event CollectFees(uint256 fee);
