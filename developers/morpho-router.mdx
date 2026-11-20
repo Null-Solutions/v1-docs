@@ -26,7 +26,7 @@ There is one exception worth knowing before you prompt the user for a signature.
 
 ## Open a long
 
-A long posts Receiver pool shares as collateral and borrows the loan token, `USDCn`, which is the market collateral itself. Two amounts describe your position. `equity` is what you contribute, and `debt` is what the router borrows on top of it. Both are denominated in the loan token. `minCollateralShares` is your slippage floor: the smallest number of Receiver shares the combined deposit may return.
+A long posts Receiver pool shares as collateral and borrows the loan token, `USDCn`, which is the market collateral itself. Two amounts describe your position. `equity` is what you contribute, and `debt` is what the router borrows on top of it. They use different units. `equity` is in the loan asset you pay with: the vault underlying (USDC) when the market collateral is an ERC-4626 share. `debt` is in the loan token, `USDCn`. Approve the router for `equity` of the underlying. `minCollateralShares` is your slippage floor: the smallest number of Receiver shares the combined deposit may return.
 
 ```ts
 await walletClient.writeContract({
@@ -52,7 +52,7 @@ If you would rather not grant an ERC-20 allowance, `openWithPermit2` pulls the e
 
 ## Close a long
 
-`close` unwinds your entire position on that book. The router repays the debt, withdraws the collateral, redeems the Receiver shares, and returns whatever loan token remains. `minAssetsOut` is the smallest amount you will accept back, so set it from your quote rather than defaulting it to zero.
+`close` unwinds your entire position on that book. The router repays the debt, withdraws the collateral, redeems the Receiver shares, and returns what remains, unwrapped into the loan asset (USDC). `minAssetsOut` is the smallest amount you will accept back, so set it from your quote rather than defaulting it to zero.
 
 ```ts
 await walletClient.writeContract({
@@ -66,7 +66,7 @@ await walletClient.writeContract({
 
 ## Open and close a short
 
-A short inverts the book. The router borrows Receiver shares from Morpho and sells them, posting `USDCn` as collateral. Here `equity` is in the loan asset side of the trade, `shortShares` is the number of Receiver shares to borrow and sell, and `minCollateral` is the minimum `USDCn` the finished position must post.
+A short inverts the book. The router borrows Receiver shares from Morpho and sells them, posting `USDCn` as collateral. Here `equity` is again in the loan asset you pay with (USDC), `shortShares` is the number of Receiver shares to borrow and sell, and `minCollateral` is the minimum `USDCn` the finished position must post.
 
 ```ts
 await walletClient.writeContract({

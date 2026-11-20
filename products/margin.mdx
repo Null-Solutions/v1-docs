@@ -7,8 +7,8 @@ description: "Leverage Long or Leverage Short on any synthetic, by borrowing on 
 Margin is for when a view no longer fits inside your cash. You borrow, so a given price move matters more than it would on Spot. That cuts both ways, which is why Margin has its own desk and the one thing Spot never has: a liquidation price.
 
 <Frame>
-  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. A flash loan adds 2,000 USDCn. Together they buy 3,000 of AAPLr in the Receiver Pool, which is posted on the long market. The long market lends 2,000 USDCn that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
-  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. A flash loan adds 2,000 USDCn. Together they buy 3,000 of AAPLr in the Receiver Pool, which is posted on the long market. The long market lends 2,000 USDCn that repays the flash loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
+  <img className="block dark:hidden" src="/images/margin-loop.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. The long market lends 2,000 USDCn. Together they buy 3,000 of AAPLr in the Receiver Pool, which is posted on the long market as collateral for the loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
+  <img className="hidden dark:block" src="/images/margin-loop-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. The long market lends 2,000 USDCn. Together they buy 3,000 of AAPLr in the Receiver Pool, which is posted on the long market as collateral for the loan, all in one transaction: 3x leverage. Loan-to-value starts at about 67 percent and liquidation comes at Null's 96.5 percent LLTV, a price drop of about 31 percent. The borrow rate adds to the loan over time." />
 </Frame>
 
 ## How it works
@@ -25,34 +25,32 @@ Underneath, the price exposure is the same Receiver Pool share as on [Spot](/pro
 
 ## How the loop works
 
-The desk opens a leveraged position in one transaction, using a flash loan: money borrowed and repaid inside the same transaction.
+The desk opens a leveraged position in one transaction. No flash loan is needed. Morpho lets the router borrow first and hand over the collateral at the end of the same call, and it checks that the position is safe before the loan goes out.
 
 ### Leverage Long
 
 | Step | What happens, at 3× on 1,000 USDC |
 | --- | --- |
 | Deposit | Your 1,000 USDC goes into the Collateral Vault, which mints 1,000 USDCn. |
-| Flash loan | The router borrows 2,000 USDCn for a moment. |
+| Borrow | The long market lends you 2,000 USDCn. |
 | Buy | The 3,000 USDCn buys 3,000 of AAPLr in the Receiver Pool. |
 | Post | The AAPLr is posted as collateral on the long market. |
-| Borrow and repay | The long market lends 2,000 USDCn, which repays the flash loan. |
 
-You end with 3,000 of AAPLr and a 2,000 USDCn loan. Closing runs the same loop in reverse.
+You end with 3,000 of AAPLr and a 2,000 USDCn loan. Closing runs the same loop in reverse: the AAPLr is sold, the loan is repaid, and the rest comes back to you as USDC.
 
 ### Leverage Short
 
 <Frame>
-  <img className="block dark:hidden" src="/images/margin-short.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. A flash loan adds 3,000 USDCn. All 4,000 USDCn is posted on the short market, which lends 3,000 of AAPLr. The AAPLr is sold to the Receiver Pool for 3,000 USDCn, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
-  <img className="hidden dark:block" src="/images/margin-short-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. A flash loan adds 3,000 USDCn. All 4,000 USDCn is posted on the short market, which lends 3,000 of AAPLr. The AAPLr is sold to the Receiver Pool for 3,000 USDCn, which repays the flash loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
+  <img className="block dark:hidden" src="/images/margin-short.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. The short market lends 3,000 of AAPLr. The AAPLr is sold to the Receiver Pool for 3,000 USDCn. All 4,000 USDCn is posted on the short market as collateral for the loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
+  <img className="hidden dark:block" src="/images/margin-short-dark.svg" alt="1,000 USDC of equity goes into the Collateral Vault, which mints 1,000 USDCn. The short market lends 3,000 of AAPLr. The AAPLr is sold to the Receiver Pool for 3,000 USDCn. All 4,000 USDCn is posted on the short market as collateral for the loan, all in one transaction: a 3x short. Loan-to-value starts at 75 percent and liquidation comes at Null's 96.5 percent LLTV, a price rise of about 29 percent." />
 </Frame>
 
 | Step | What happens, at 3× on 1,000 USDC |
 | --- | --- |
 | Deposit | Your 1,000 USDC goes into the Collateral Vault, which mints 1,000 USDCn. |
-| Flash loan | The router borrows 3,000 USDCn for a moment. |
+| Borrow | The short market lends you 3,000 of AAPLr. |
+| Sell | The AAPLr is sold to the Receiver Pool for 3,000 USDCn. |
 | Post | All 4,000 USDCn is posted as collateral on the short market. |
-| Borrow and sell | The short market lends 3,000 of AAPLr, which is sold to the Receiver Pool for 3,000 USDCn. |
-| Repay | That 3,000 USDCn repays the flash loan. |
 
 You end with 4,000 USDCn posted and a 3,000 AAPLr loan: you gain if AAPLr falls. Your USDCn collateral keeps earning interest while the position is open. Closing mints the AAPLr you owe and repays the loan.
 

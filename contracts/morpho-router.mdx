@@ -1,18 +1,35 @@
 ---
 title: "NullV1MorphoRouter"
 sidebarTitle: "Morpho router"
-description: "Reference for long and short open and close on NullV1MorphoRouter."
+description: "Reference for long and short open and close, lending, and savings on NullV1MorphoRouter."
 ---
 
-`NullV1MorphoRouter` is a stateless helper that opens and closes leveraged Null positions on Morpho Blue. It holds no balances between transactions and keeps no position state of its own. Morpho owns the debt and collateral records, the Null pools own the underlying exposure, and the router simply sequences the two inside Morpho's flash loan and callback flow.
+`NullV1MorphoRouter` is a stateless helper that opens and closes leveraged Null positions on Morpho Blue. It holds no balances between transactions and keeps no position state of its own. Morpho owns the debt and collateral records, the Null pools own the underlying exposure, and the router sequences the two inside Morpho's callbacks. It uses no flash loans.
 
 One deployment serves both books. A long borrows the loan token against Receiver pool shares. A short borrows Receiver shares against the market collateral, `USDCn`. Before any flow that borrows or withdraws collateral, the caller must authorize the router on Morpho with `setAuthorization(router, true)`. The one exception is a long opened with zero debt, which only supplies collateral.
 
-Every function takes a `deadline` and reverts with `TransactionTooOld` once `block.timestamp` passes it, and an `updateData` array carrying any oracle reports the Null market needs in order to settle before trading.
+Every function takes a `deadline` and reverts with `TransactionTooOld` once `block.timestamp` passes it. The open and close functions also take an `updateData` array carrying any oracle reports the Null market needs in order to settle before trading.
+
+## Units
+
+The caller pays and receives the **loan asset**: the underlying of the market collateral when that collateral is an ERC-4626 vault (USDC for `USDCn`), else the collateral itself. `equity`, `minAssetsOut`, and `assetsOut` are in the loan asset. `debt` and the posted short `collateral` are in the market collateral (`USDCn`). Only the caller's equity is wrapped or unwrapped. The borrowed amount never leaves the market collateral.
+
+## How the callbacks work
+
+All four leveraged flows run inside one Morpho callback, so none of them depends on a token balance Morpho happens to hold.
+
+| Flow | Morpho call | Inside the callback |
+| --- | --- | --- |
+| `open` | `supplyCollateral` | Morpho credits the collateral first. The router borrows `debt` for the caller, deposits `equity + debt` of collateral into the Receiver pool, and hands Morpho the Receiver shares. |
+| `openShort` | `supplyCollateral` | Morpho credits the collateral first. The router borrows `shortShares` for the caller, redeems them in the Receiver pool, and hands Morpho the equity plus the redeemed collateral. |
+| `close` | `repay` | Morpho writes the debt off first. The router withdraws all Receiver shares, redeems them, and lets Morpho pull the collateral owed. |
+| `closeShort` | `repay` | Morpho writes the debt off first. The router withdraws all collateral and deposits just enough of it to mint the Receiver shares owed. |
+
+Morpho checks the health of the position when the router borrows. A close does not wait for lender liquidity on either book: it depends only on the Receiver pool. An open with zero debt and a close of a position with no debt use no callback.
 
 ## Long functions
 
-`open` deposits `equity` plus `debt` of the loan token into the Receiver pool, supplies the resulting shares to Morpho, and borrows `debt` to repay the flash loan. It returns the total collateral shares posted. `minCollateralShares` is the caller's floor on that return value.
+`open` wraps `equity` of the loan asset into the market collateral, borrows `debt` of the collateral on the caller's behalf, deposits both into the Receiver pool, and posts the Receiver shares on Morpho. It returns the total collateral shares posted. `minCollateralShares` is the caller's floor on that return value.
 
 ```solidity
 function open(
@@ -36,13 +53,13 @@ function close(
 ) external returns (uint256 assetsOut);
 ```
 
-`openWithPermit2` behaves exactly like `open`, except the equity is pulled through Permit2 rather than an ERC-20 allowance. The abbreviated signature above takes the same leading arguments as `open`, followed by the permit. `close` unwinds the caller's whole position on the book and returns the loan token left after repayment, which must meet `minAssetsOut`.
+`openWithPermit2` behaves exactly like `open`, except the equity is pulled through Permit2 rather than an ERC-20 allowance. The abbreviated signature above takes the same leading arguments as `open`, followed by the permit. `close` unwinds the caller's whole position on the book and returns the loan asset left after repayment, which must meet `minAssetsOut`.
 
 For a long, `marketParams.collateralToken` must be the Receiver pool. `loanToken` must be the market collateral, `USDCn` in the current stack.
 
 ## Short functions
 
-`openShort` posts `USDCn` collateral, borrows `shortShares` of the Receiver pool from Morpho, and sells them through the Null market. It returns the collateral posted, which must meet `minCollateral`. `closeShort` returns the assets left after the short is covered.
+`openShort` wraps `equity` of the loan asset into `USDCn`, borrows `shortShares` of the Receiver pool from Morpho, and redeems them in the Null market. The equity plus the redeemed `USDCn` is posted as collateral. It returns the collateral posted, which must meet `minCollateral`. `closeShort` returns the loan asset left after the short is covered.
 
 ```solidity
 function openShort(
@@ -70,6 +87,62 @@ function closeShort(
 
 For a short, `marketParams.loanToken` must be the Receiver pool and `collateralToken` must be `market.collateral()`.
 
+## Lending and savings functions
+
+These helpers move tokens for the caller in one transaction. They take no `updateData` and do not touch the Null market.
+
+```solidity
+function supplyWithPermit2(
+    MarketParams calldata marketParams,
+    uint256 assets,
+    uint256 deadline,
+    Permit2Signature calldata permit
+) external returns (uint256 supplyShares);
+
+function depositVaultWithPermit2(
+    IERC4626 vault,
+    uint256 assets,
+    uint256 minShares,
+    uint256 deadline,
+    Permit2Signature calldata permit
+) external returns (uint256 shares);
+
+function depositSavings(
+    IERC4626 savingsVault,
+    uint256 assets,
+    uint256 minShares,
+    uint256 deadline
+) external returns (uint256 shares);
+
+function depositSavingsWithPermit2(..., Permit2Signature calldata permit) external returns (uint256 shares);
+
+function redeemSavings(
+    IERC4626 savingsVault,
+    uint256 shares,
+    uint256 minAssetsOut,
+    uint256 deadline
+) external returns (uint256 assetsOut);
+```
+
+| Function | What it does |
+| --- | --- |
+| `supplyWithPermit2` | Lends `assets` of `marketParams.loanToken` to a Morpho Blue market for the caller, pulled through Permit2. Works for the long book and the short book. The caller withdraws from Morpho directly. |
+| `depositVaultWithPermit2` | Deposits `assets` of `vault.asset()` into any ERC-4626 vault for the caller, pulled through Permit2. |
+| `depositSavings` | Wraps `assets` of the loan asset into the collateral vault share and deposits that into the savings vault: USDC to `USDCn` to the Savings Vault share. |
+| `redeemSavings` | The reverse path. The caller approves the router for the savings shares first. Either vault reverts when it cannot pay. |
+
+`vault` and `savingsVault` are caller-supplied and not validated. `minShares` and `minAssetsOut` are the caller's protection.
+
+## Views
+
+```solidity
+function morpho() external view returns (IMorphoBlue);
+function marketId(MarketParams calldata marketParams) external pure returns (Id);
+function collateralForShares(INullV1Pool pool, uint256 shares) external view returns (uint256);
+```
+
+`collateralForShares` returns the market collateral a deposit must bring to mint at least `shares` Receiver shares at the pool's last settled state. Use it to quote a short close.
+
 ## Events
 
 Each completed flow emits one event, indexed by user and by market, so indexers can rebuild a position history from logs alone:
@@ -92,9 +165,19 @@ The router fails early and specifically. Most integrator bugs surface as one of 
 | `MarketMismatch` | The token pair is not the long or short shape this Null market requires. |
 | `ZeroEquity` | `equity` is zero on an open. |
 | `ZeroShort` | `shortShares` is zero on a short open. |
+| `ZeroAssets` | The amount is zero on a lending or savings function. |
 | `NoPosition` | A close is attempted with zero Morpho collateral on that book. |
+| `MintShortfall(uint256 expected, uint256 actual)` | A pool deposit inside a callback minted fewer Receiver shares than Morpho must receive. |
+| `RedeemShortfall(uint256 expected, uint256 actual)` | A pool redemption inside a callback returned less collateral than Morpho must receive. On a close this means the position is under water. |
 | `TransactionTooOld` | `block.timestamp` is past the supplied `deadline`. This error comes from the shared base contract. |
 
-Separately, the router reverts with slippage errors whenever Receiver shares, posted collateral, or returned assets come in below the floor the caller supplied. Treat those as pricing failures rather than contract failures, and re-quote before resubmitting.
+Separately, the router reverts with a slippage error when a result comes in below the floor the caller supplied. Treat those as pricing failures rather than contract failures, and re-quote before resubmitting.
+
+| Slippage error | Floor that failed |
+| --- | --- |
+| `SlippageCollateralShares(uint256 expected, uint256 actual)` | `minCollateralShares` on a long open. |
+| `SlippageCollateral(uint256 expected, uint256 actual)` | `minCollateral` on a short open. |
+| `SlippageAssetsOut(uint256 expected, uint256 actual)` | `minAssetsOut` on a close or on `redeemSavings`. |
+| `SlippageVaultShares(uint256 expected, uint256 actual)` | `minShares` on a vault or savings deposit. |
 
 For the narrative version of these flows, including callback order and liquidation, read [Morpho integration](/protocol/morpho-integration).
