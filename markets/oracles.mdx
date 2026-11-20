@@ -13,7 +13,7 @@ Supported market oracles are Chainlink Data Streams clones:
 | `NullV1ChainlinkOracleV3` | One 24/7 report | `NullV1Router` |
 | `NullV1ChainlinkOracleV11` | Regular, extended, and overnight session reports | `NullV1Router` |
 
-The router calls `update(bytes[])` before `price()`. Chainlink's `getUpdateFee` on this integration is zero. Do not send ETH with `depositMarket`, `redeemMarket`, or `createMarket`.
+The router calls `update(bytes[])` before `price()`. Chainlink's `getUpdateFee` on this integration is zero. Do not send ETH with `depositMarket` or `redeemMarket`. The router does not create markets: for market creation, call `oracle.update(updateData)` yourself and then the factory. See [Creating a market](/markets/creating-a-market).
 
 ## Update flow
 

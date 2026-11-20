@@ -22,29 +22,24 @@ address existing =
 
 Only the factory owner can enable an FRM. Enabling is irreversible because the factory has no disable function.
 
-## Choose the correct router
+## Update the oracle, then call the factory
 
-All supported oracles are pull-based, so the router can update the oracle before factory init reads `price()`:
+Markets are created on the factory. `NullV1Router` has no market-creation function.
 
-- **Chainlink V3 / V11** → `NullV1Router` (fee-less update)
+Factory initialization reads `oracle.price()`, and the factory does not update the oracle. All supported oracles are pull-based, so the stored price must be fresh when `createMarket` runs:
 
 ```solidity
-INullV1Market market = router.createMarket(
-    factory,
-    collateral,
-    oracle,
-    frm,
-    updateData
-);
+oracle.update(updateData); // fee-less, anyone can call it
+INullV1Market market = factory.createMarket(collateral, oracle, frm);
 ```
 
-Pass `updateData: []` only when the oracle's stored price is already readable. Both routers skip the update for an empty array. They do not make an empty payload valid for a stale or uninitialized oracle.
+A Chainlink report stays readable for 60 seconds. Send the two calls close together, or run them in one transaction from your own contract or a batching wallet. If the price goes stale between them, `createMarket` reverts and nothing is created.
 
-Call `factory.createMarket` directly only when the oracle already has a readable price. The factory does not update it.
+Skip the update only when the oracle's stored price is already readable.
 
 ## Create with viem
 
-On Ethereum mainnet, resolve every dependency from a verified deployment source before signing. The example takes the factory, matching router, collateral, oracle, enabled FRM, chain, and configured clients as required inputs; it does not assume that any particular deployment or collateral exists. Fetch `updateData` as described in [Oracles](/markets/oracles).
+On Ethereum mainnet, resolve every dependency from a verified deployment source before signing. The example takes the factory, collateral, oracle, enabled FRM, chain, and configured clients as required inputs; it does not assume that any particular deployment or collateral exists. Fetch `updateData` as described in [Oracles](/markets/oracles).
 
 ```ts
 import {
@@ -58,10 +53,11 @@ import {
   type WalletClient,
 } from "viem";
 
-const routerAbi = parseAbi([
-  "function createMarket(address factory, address collateral, address oracle, address frm, bytes[] updateData) returns (address market)",
+const oracleAbi = parseAbi([
+  "function update(bytes[] updateData)",
 ]);
 const factoryAbi = parseAbi([
+  "function createMarket(address collateral, address oracle, address frm) returns (address market)",
   "function isFrmEnabled(address frm) view returns (bool)",
   "function getMarket(address collateral, address oracle, address frm) view returns (address market)",
 ]);
@@ -75,7 +71,6 @@ const marketAbi = parseAbi([
 
 interface CreateNullMarketConfig {
   factory: Address;
-  router: Address;
   collateral: Address;
   oracle: Address;
   frm: Address;
@@ -87,7 +82,6 @@ interface CreateNullMarketConfig {
 
 export async function createNullMarket({
   factory,
-  router,
   collateral,
   oracle,
   frm,
@@ -124,13 +118,28 @@ export async function createNullMarket({
     throw new Error(`Market already exists: ${existingMarket}`);
   }
 
+  // Step 1: store a fresh price. Skip only when the stored price is still readable.
+  if (updateData.length > 0) {
+    const { request: updateRequest } = await publicClient.simulateContract({
+      account,
+      address: oracle,
+      abi: oracleAbi,
+      functionName: "update",
+      args: [updateData],
+    });
+    const updateHash = await walletClient.writeContract(updateRequest);
+    const updateReceipt = await publicClient.waitForTransactionReceipt({ hash: updateHash });
+    if (updateReceipt.status !== "success") throw new Error("Oracle update reverted");
+  }
+
+  // Step 2: create the market while that price is still fresh (60 seconds).
   const { request, result: simulatedMarket } =
     await publicClient.simulateContract({
       account,
-      address: router,
-      abi: routerAbi,
+      address: factory,
+      abi: factoryAbi,
       functionName: "createMarket",
-      args: [factory, collateral, oracle, frm, updateData],
+      args: [collateral, oracle, frm],
     });
 
   const hash = await walletClient.writeContract(request);
@@ -177,7 +186,7 @@ export async function createNullMarket({
 }
 ```
 
-Use `NullV1Router` for Chainlink. The market-creation call is nonpayable. Do not attach ETH.
+Both calls are nonpayable. Do not attach ETH. If the second call reverts because the price went stale, fetch a new report and start again from the update.
 
 ## Factory behavior
 
