@@ -19,6 +19,19 @@
     "href": "https://null.xyz"
   },
   "favicon": "/images/LogoIcon.svg",
+  "thumbnails": {
+    "preset": "classic",
+    "appearance": "light",
+    "surface": "brand",
+    "fonts": {
+      "family": "Newsreader"
+    },
+    "eyebrow": {
+      "source": "group",
+      "style": "plain",
+      "color": "#23412E"
+    }
+  },
   "appearance": {
     "default": "light"
   },
