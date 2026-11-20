@@ -70,7 +70,7 @@ long carry  ≈ - loan × (long borrow APR + nUSDC interest)
 short carry ≈ collateral × nUSDC interest - loan × short borrow APR
 ```
 
-The examples below use 1,000 USDC of equity and illustrative rates: nUSDC interest 5%, long borrow APR 4%, short borrow APR 2%. Live rates are on the market page and change all the time: **Overview** shows each side's **Net APR**, and **Details** shows the borrow APRs and **Collateral APR** behind it. Fees are left out.
+The examples below use 1,000 USDC of equity and illustrative rates: nUSDC interest 5%, long borrow APR 4%, short borrow APR 2%. Live rates are on the market page and change all the time: **Overview** shows each side's **carry** rate, and **Details** shows the borrow APRs and **Collateral APR** behind it. Fees are left out.
 
 ### 3× long on AAPLr
 
@@ -118,7 +118,7 @@ The desk is only reached through **Home** and then **Margin**. It opens with a m
     Choose a market, then the **Long** or **Short** tab. A side only shows where its Morpho market is set up.
   </Step>
   <Step title="Read the rates">
-    **Overview** shows the **Long net APR** and **Short net APR**: borrow cost and collateral interest combined, per unit borrowed. **Details** splits them into the **Long borrow APR**, **Short borrow APR** and **Collateral APR**, and **Parameters** shows the **LLTV** and max leverage. The **Carry chart** plots net APR over time; the **Rates chart** plots the parts. Borrow rates differ by market; the LLTV is 96.5%.
+    **Overview** shows the **Long carry** and **Short carry**: borrow cost and collateral interest combined, as a yearly rate per unit borrowed. **Details** splits them into the **Long borrow APR**, **Short borrow APR** and **Collateral APR**, and **Parameters** shows the **LLTV** and max leverage. The **Carry chart** plots both over time; the **Rates chart** plots the parts. Borrow rates differ by market; the LLTV is 96.5%.
   </Step>
   <Step title="Build the ticket">
     The ticket shows your **Position**, the **Loan (USDC)** it needs and the **Liquidation price**. Resize until that last number is one you can live with.
