@@ -30,6 +30,8 @@ A short uses the same supply-collateral callback. The router takes the caller's 
 
 Closing a short contains the integration's neatest trick. Repaying a loan of Receiver shares normally requires first obtaining Receiver shares, which would mean a separate deposit and an awkward intermediate step. Instead the router repays through Morpho's repay callback, and inside that callback it withdraws the posted collateral, deposits enough of it into the Receiver pool to mint exactly the shares owed, and hands those shares back to complete the repayment. Leftover assets return to the caller. A short can therefore be closed without anyone keeping idle Receiver shares on hand for the purpose.
 
+Opening a long and closing a short share one limit, because both deposit into the Receiver pool. A Receiver deposit may not leave that pool larger than five times the Payer pool, and it reverts with `ERC4626ExceededMaxDeposit` if it would. While the pools sit at that limit, a new long cannot open and an existing short cannot close through the router until a Payer deposit or a Receiver redemption brings the ratio down. The short's debt keeps accruing in the meantime, and Morpho can still liquidate it. Closing a long and opening a short redeem from the Receiver pool, which lowers the ratio, so they are never limited. The exact rules are in [Pool ratio cap](/contracts/pool#pool-ratio-cap).
+
 Both directions also come in Permit2 forms, `openWithPermit2` and `openShortWithPermit2`, which pull the caller's equity through a Permit2 signature instead of a standing ERC-20 allowance. The permit covers the equity amount of the relevant loan asset, names the router as spender, and shares the deadline of the rest of the call.
 
 ## What leverage does to a Null position

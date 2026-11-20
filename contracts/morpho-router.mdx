@@ -27,6 +27,8 @@ All four leveraged flows run inside one Morpho callback, so none of them depends
 
 Morpho checks the health of the position when the router borrows. A close does not wait for lender liquidity on either book: it depends only on the Receiver pool. An open with zero debt and a close of a position with no debt use no callback.
 
+`open` and `closeShort` deposit into the Receiver pool, so the [pool ratio cap](/contracts/pool#pool-ratio-cap) applies to them. When the deposit would leave the Receiver pool larger than 5 times the Payer pool, the call reverts with the pool's `ERC4626ExceededMaxDeposit`. A short cannot be closed through the router while the cap leaves too little room. `close` and `openShort` redeem from the Receiver pool and are never limited by the cap.
+
 ## Long functions
 
 `open` wraps `equity` of the loan asset into the market collateral, borrows `debt` of the collateral on the caller's behalf, deposits both into the Receiver pool, and posts the Receiver shares on Morpho. It returns the total collateral shares posted. `minCollateralShares` is the caller's floor on that return value.
@@ -128,8 +130,9 @@ function redeemSavings(
 | --- | --- |
 | `supplyWithPermit2` | Lends `assets` of `marketParams.loanToken` to a Morpho Blue market for the caller, pulled through Permit2. Works for the long book and the short book. The caller withdraws from Morpho directly. |
 | `depositVaultWithPermit2` | Deposits `assets` of `vault.asset()` into any ERC-4626 vault for the caller, pulled through Permit2. |
-| `depositSavings` | Wraps `assets` of the loan asset into the collateral vault share and deposits that into the savings vault: USDC to `USDCn` to the Savings Vault share. |
-| `redeemSavings` | The reverse path. The caller approves the router for the savings shares first. Either vault reverts when it cannot pay. |
+| `depositSavings` | Wraps `assets` of the loan asset into the collateral vault share and deposits that into the savings vault: USDC to `USDCn` to `USDCns`. The caller approves the router for `assets` first. |
+| `depositSavingsWithPermit2` | The same as `depositSavings`, with `assets` pulled through Permit2 instead of an ERC-20 allowance on the router. |
+| `redeemSavings` | The reverse path: `USDCns` to `USDCn` to USDC. The caller approves the router for the savings shares first. Either vault reverts when it cannot pay. |
 
 `vault` and `savingsVault` are caller-supplied and not validated. `minShares` and `minAssetsOut` are the caller's protection.
 
@@ -179,5 +182,7 @@ Separately, the router reverts with a slippage error when a result comes in belo
 | `SlippageCollateral(uint256 expected, uint256 actual)` | `minCollateral` on a short open. |
 | `SlippageAssetsOut(uint256 expected, uint256 actual)` | `minAssetsOut` on a close or on `redeemSavings`. |
 | `SlippageVaultShares(uint256 expected, uint256 actual)` | `minShares` on a vault or savings deposit. |
+
+Pool errors pass through the router unchanged. The one to expect is `ERC4626ExceededMaxDeposit(address receiver, uint256 assets, uint256 max)` from the [pool ratio cap](/contracts/pool#pool-ratio-cap), on `open` and `closeShort`.
 
 For the narrative version of these flows, including callback order and liquidation, read [Morpho integration](/protocol/morpho-integration).

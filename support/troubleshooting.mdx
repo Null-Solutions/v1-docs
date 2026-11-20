@@ -54,6 +54,8 @@ That signature is expected. Before the router can borrow or withdraw collateral 
 
 Closing a short surprises people in the opposite way. It does not need spare Receiver shares sitting in the book, because the router mints the shares it owes while repaying. If a short close still fails, check the deadline, check that the oracle update went through, and confirm the position actually belongs to the wallet you have connected.
 
+Opening a long and closing a short can also fail because of the balance of the two pools. Both buy the synthetic, and a buy cannot leave the Receiver pool more than five times the Payer pool. If the pools are at that limit, try a smaller long, or wait until Payers join or Receivers sell. A short keeps accruing interest while it waits, so watch its **Liq. price**.
+
 And a standing warning: a Margin position can be liquidated when its loan to value reaches LLTV, even if you never send another transaction. **Liq. price** is an estimate. It does not include interest that accrues later, so leave yourself room.
 
 ## "The app sent me to an unavailable page"

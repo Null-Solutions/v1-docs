@@ -92,4 +92,6 @@ await walletClient.writeContract({
 
 Most failures are checks you can predict before submitting. A passed deadline reverts with `TransactionTooOld`. A `marketParams` tuple whose tokens do not match the long or short shape for the Null market is rejected. Closing a book where you hold no Morpho collateral reverts with `NoPosition`. If the pool moved against your floor, the revert is a slippage error, and the right response is a fresh quote rather than a blind retry. Finally, if the market oracle needs a report you did not supply, the oracle reverts before the pool is ever called.
 
+One failure depends on the state of the pools. `open` and `closeShort` deposit into the Receiver pool, and a Receiver deposit may not leave that pool larger than 5 times the Payer pool. If it would, the call reverts with the pool's `ERC4626ExceededMaxDeposit`. Read `maxDeposit` on the Receiver pool before you open a long or close a short. `close` and `openShort` redeem from the Receiver pool and are never limited. See [Pool ratio cap](/contracts/pool#pool-ratio-cap).
+
 For how the two books are laid out and how liquidation works, read [Morpho integration](/protocol/morpho-integration). For the full function, event, and error surface, see the [contract reference](/contracts/morpho-router).

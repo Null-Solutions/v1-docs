@@ -149,6 +149,7 @@ A short starts at `L / (L + 1)` and is liquidated by a price rise of `0.965 × (
 | Borrow interest | The borrow APR for your side, for the life of the position. |
 | Fees | The market's entry and exit fees when the desk buys and sells. See [Fees](/how-null-works/what-it-costs). |
 | Liquidation | Reach the 96.5% LLTV and Morpho can sell your collateral, often at the worst moment. You may keep little or nothing. |
+| Pool limit | Opening a long and closing a short both buy the synthetic. A buy cannot leave the Receiver pool more than five times the Payer pool. At that limit a long cannot open and a short cannot close until Payers join or Receivers sell. Interest and liquidation risk keep running while you wait. See [Payers](/payers). |
 | Fast markets | Oracle faults, thin liquidity and contract risk all shorten the time you have to react. |
 
 Margin turns being wrong from a drawdown into a deadline. Size it so the deadline never arrives, and keep your Savings money out of it. More in [Risks](/how-null-works/what-can-go-wrong).

@@ -27,7 +27,7 @@ Guides follow the product overview and deck: one idea per page, explained so a f
 - **Synthetic**: a Receiver Pool share named after its asset: AAPLr, SPXr, BTCr, GOLDr. These are examples; the live list is `/trade`.
 - **Payer**: a negative-size position in the Receiver pool, with the market's collateral inside it. Short scale is `R / P`. Do not describe that scale as a leverage setting.
 - **USDCn**: the share of the **Null Collateral Vault**, a curated Morpho Vault V2 over USDC. It is the collateral in every market and its interest pays the Payers.
-- **Null Savings Vault**: a separate Morpho vault whose asset is `USDCn`. It lends `USDCn` into every long market only. Savers earn two layers: the Collateral Vault's interest and the long-market borrow interest.
+- **Null Savings Vault**: a separate Morpho vault whose asset is `USDCn`. Its share is **USDCns**. It lends `USDCn` into every long market only. Savers earn two layers: the Collateral Vault's interest and the long-market borrow interest.
 - **Long market**: `Xr | USDCn` (collateral | loan). Lends `USDCn` against the synthetic. Used by **Leverage Long**.
 - **Short market**: `USDCn | Xr`. Lends the synthetic against `USDCn`. Supplied by holders through **Lend**, used by **Leverage Short**. Lending a synthetic here makes it yield-bearing.
 - Inside tables, escape the pipe in market names: `AAPLr \| USDCn`.
