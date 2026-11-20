@@ -55,10 +55,15 @@ Your hedge has to follow the Receiver pool. Every time a Receiver buys, your sho
 
 That rehedging costs you spread and execution. Receivers pay an entry fee and an exit fee on the notional they trade, and on the standard deployment those fees go to the Payer pool. The fee is charged on exactly the volume you have to rehedge, so it grows one for one with the work it pays for.
 
-| Step | Receiver flow | Your rehedge | Fee to the Payer pool | Your cost to rehedge | You keep |
+Say the Payer pool holds 5,000 and the Receiver pool 15,000, so Payers are short 15,000 of AAPL and hold 15,000 of hedge. AAPL is at 250.
+
+Both the fee and the rehedge are sized by the same number: the notional the Receiver trades. A Receiver's notional is the size of their trade, and the Payers' rehedge is that same size, shared across all Payers in proportion to their stake.
+
+| Step | Receiver trade size | Payers' rehedge size | Fee to the Payer pool (0.10% of size) | Cost to rehedge (0.03% of size) | Payers keep |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| A Receiver buys | 10,000 | Buy 10,000 of hedge | 10 (0.10%) | 3 (0.03%) | 7 |
-| The Receiver sells | 10,000 | Sell 10,000 of hedge | 10 (0.10%) | 3 (0.03%) | 7 |
+| A Receiver buys | 10,000 | Buy 10,000 of hedge | 10 | 3 | 7 |
+| The Receiver sells | 10,000 | Sell 10,000 of hedge | 10 | 3 | 7 |
+| Round trip | 20,000 traded | 20,000 rehedged | 20 | 6 | 14 |
 
 Example only. Fees are set per market and capped at 2.5%. Your rehedging cost depends on where and how fast you hedge. A market's fee is meant to sit above the cost of rehedging its asset, which is one reason more volatile markets carry higher fees. See [Fees](/protocol/fees#matching-fees-to-volatility).
 
