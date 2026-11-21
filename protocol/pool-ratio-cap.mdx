@@ -43,6 +43,8 @@ Without the cap, Receivers could keep buying into a thin Payer pool, or Payers c
 
 The 20% matches the [circuit breaker](/protocol/circuit-breaker), which skips any single settlement move above 20%. At or under the cap, no single settled move can ask the Payer pool for more than it holds.
 
+The cap is also where Payer capital works hardest. Payers earn funding on the whole Receiver pool, so the thinner the Payer pool, the more each Payer dollar earns. That draws new Payers in when the ratio is high. See [Why scarce Payers earn more](/payers#why-scarce-payers-earn-more).
+
 ## What it does not do
 
 The cap limits deposits and redemptions. It does not limit price. Settlement moves collateral from Payers to Receivers when the price rises, and that pushes `R / P` up with no one trading.

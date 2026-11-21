@@ -29,6 +29,9 @@ description: "Short answers to the questions people ask most."
   <Accordion title="How do Payers always have enough to pay Receivers?">
     Every gain is paid from collateral already in the Payer pool. Nothing can owe more than it holds. A **Buy** or a **Payer sell** cannot leave the Receiver pool more than five times the Payer pool, so whenever someone joins as a Receiver or leaves as a Payer, the Payer pool covers at least a 20% rise. A rally can still push past that. New Receivers and leaving Payers then wait until the ratio comes back down. See [Pool ratio cap](/protocol/pool-ratio-cap).
   </Accordion>
+  <Accordion title="Is there an incentive for Payers to join when they're needed?">
+    Yes, and it's built in. The Payer pool works like the margin behind a short the size of the whole Receiver pool. Payers earn funding on that full notional, plus interest on their own margin. The thinner the Payer pool, the more each Payer dollar earns: with 5% interest, Payers earn about 10% on their capital when the pools are equal, and about 30% at the cap of five. Payers who hedge elsewhere want to post as little margin as possible, so they're drawn in exactly when Payers are scarce. See [Why scarce Payers earn more](/payers#why-scarce-payers-earn-more).
+  </Accordion>
   <Accordion title="What if the Payer pool runs out?">
     Returns stop until new Payers join. Missed price moves are not made up later. The [pool ratio cap](/protocol/pool-ratio-cap) makes this less likely. It does not rule it out.
   </Accordion>

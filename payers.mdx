@@ -43,6 +43,22 @@ carry ≈ y × (1 + R / P)
 
 `y` is the vault's interest rate. With 5% interest and Receivers twice the size of Payers, carry is about 15% a year on your Payer capital. Thin coverage raises your interest and your exposure at the same time. [How Payers earn](/how-null-works/payers-earn-interest-and-fees) has the worked example.
 
+## Why scarce Payers earn more
+
+There's a built-in incentive to join when Payers are needed. In perps terms, the Payer pool is the margin behind a short the size of the whole Receiver pool. You earn funding on that full notional, plus interest on your own margin.
+
+If you hedge the short elsewhere, you want to post as little margin as you can. The thinner the Payer pool, the less margin sits behind each dollar of short, so each Payer dollar earns more. Payer capital is most efficient exactly when Payers are scarce. The [pool ratio cap](/protocol/pool-ratio-cap) keeps this safe: the Receiver pool can be at most five times the Payer pool, which works like a 20% margin floor.
+
+With 5% interest and 5,000,000 in the Receiver pool:
+
+| Payer pool | `R / P` | Funding | Interest on margin | Total a year | On Payer capital |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 5,000,000 | 1 | 250,000 | 250,000 | 500,000 | 10% |
+| 2,500,000 | 2 | 250,000 | 125,000 | 375,000 | 15% |
+| 1,000,000 | 5 (the cap) | 250,000 | 50,000 | 300,000 | 30% |
+
+Example only, before fees and hedge costs. Funding stays the same because it comes from the Receivers' deposits. What changes is how little capital collects it. The short you have to hedge grows the same way: at the cap, it is five times your capital.
+
 ## Hedging is your job
 
 Most Payers don't want the price risk, so they hedge outside Null, by buying the asset or a perp on it elsewhere. What's left is the trade they wanted: Null funding plus collateral interest, minus the cost of the hedge.
