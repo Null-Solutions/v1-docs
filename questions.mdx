@@ -26,8 +26,14 @@ description: "Short answers to the questions people ask most."
   <Accordion title="Do I own the stock or coin a market follows?">
     No. You hold a Receiver Pool share, a vault share or a Morpho position, depending on the product. No votes or dividends reach you, unless the price feed itself includes them.
   </Accordion>
+  <Accordion title="How do Payers always have enough to pay Receivers?">
+    Every gain is paid from collateral already in the Payer pool. Nothing can owe more than it holds. A **Buy** or a **Payer sell** cannot leave the Receiver pool more than five times the Payer pool, so whenever someone joins as a Receiver or leaves as a Payer, the Payer pool covers at least a 20% rise. A rally can still push past that. New Receivers and leaving Payers then wait until the ratio comes back down. See [Pool ratio cap](/protocol/pool-ratio-cap).
+  </Accordion>
   <Accordion title="What if the Payer pool runs out?">
-    Returns stop until new Payers join. Missed price moves are not made up later.
+    Returns stop until new Payers join. Missed price moves are not made up later. The [pool ratio cap](/protocol/pool-ratio-cap) makes this less likely. It does not rule it out.
+  </Accordion>
+  <Accordion title="Why can't I sell my Payer position?">
+    The Receiver pool can be at most five times the Payer pool, and a **Payer sell** cannot take it past that. You can sell the part above that line now. The rest waits until Receivers sell or new Payers join. See [Leaving can wait](/payers#leaving-can-wait).
   </Accordion>
   <Accordion title="How do I get out?">
     Sell your pool tokens for your share of the collateral, less fees. Savings and Lending return what borrowers aren't using right away, and the rest as loans are repaid.

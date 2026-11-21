@@ -69,6 +69,12 @@ Both the fee and the rehedge are sized by the same number: the notional the Rece
 
 Example only. Fees are set per market and capped at 2.5%. Your rehedging cost depends on where and how fast you hedge. A market's fee is meant to sit above the cost of rehedging its asset, which is one reason more volatile markets carry higher fees. See [Fees](/protocol/fees#matching-fees-to-volatility).
 
+## Leaving can wait
+
+Payers back Receivers, so the market keeps a minimum of Payer capital behind them. A **Payer sell** cannot leave the Receiver pool more than five times the Payer pool. You can always sell the part of the Payer pool above that line. If the pools already sit on it, you wait until Receivers sell or new Payers join.
+
+A price rise makes this tighter. It moves collateral from Payers to Receivers and can push `R / P` past five with nobody trading. The Payers who lost then cannot sell until the ratio comes back down. Read `maxRedeem` on the Payer pool, or try a smaller **Payer sell**, to see what you can take out now. See [Pool ratio cap](/protocol/pool-ratio-cap).
+
 ## Running a Payer position
 
 <Steps>
@@ -82,7 +88,7 @@ Example only. Fees are set per market and capped at 2.5%. Your rehedging cost de
     Match the short notional on another venue. Its funding, fees and margin calls are yours. An unhedged Payer is a deliberate short.
   </Step>
   <Step title="Watch carry against costs">
-    When the net no longer pays for the exposure, leave with **Payer sell**.
+    When the net no longer pays for the exposure, leave with **Payer sell**. If the pools are at the cap, only part of your position may be able to leave at once.
   </Step>
 </Steps>
 

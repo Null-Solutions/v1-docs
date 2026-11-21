@@ -1,0 +1,74 @@
+---
+title: "Pool ratio cap"
+sidebarTitle: "Pool ratio cap"
+description: "A Receiver deposit or a Payer redemption cannot leave the Receiver pool more than five times the Payer pool. It is how much Receiver exposure each Payer dollar can be asked to back."
+---
+
+The pool ratio cap limits how thinly Payers can back Receivers. A deposit or redemption may not leave the Receiver pool larger than five times the Payer pool. It is the market's equivalent of 100% utilisation in a lending pool: once the Payer pool is backing all it may, new Receiver exposure and Payer exits wait until more Payer capital arrives.
+
+## The rule
+
+```text
+receiverPool <= 5 × payerPool
+```
+
+Only two flows raise `R / P`, and only those two are limited. The other two lower it and are always open.
+
+| Flow | Effect on `R / P` | Limit |
+| --- | --- | --- |
+| Receiver deposit (**Buy**) | Raises it | Up to `5 × payerPool − receiverPool`. Beyond that it reverts. |
+| Payer redemption (**Payer sell**) | Raises it | Must leave `payerPool` at least `receiverPool / 5`. Beyond that it reverts. |
+| Payer deposit (**Payer buy**) | Lowers it | None. |
+| Receiver redemption (**Sell**) | Lowers it | None beyond your balance. |
+
+| Constant | Value |
+| --- | ---: |
+| `MAX_POOL_RATIO` | 5 |
+
+The cap is the same for every market. It is checked after settlement, on the pools as they stand once price moves and funding have been applied.
+
+## Why it exists
+
+Every gain a Receiver makes is paid from the Payer pool. Settlement only moves collateral that is already in the market, and a transfer to Receivers is capped at what the Payer pool can pay. Nothing outside the market tops it up. So the question for any market is how large a price rise the Payer pool can cover.
+
+The answer is `P / R`, and the cap keeps it at 20% or more whenever someone enters as a Receiver or leaves as a Payer:
+
+| Pools after a deposit or exit | `R / P` | Rise the Payer pool covers |
+| --- | ---: | ---: |
+| Receivers 200,000, Payers 100,000 | 2 | 50% |
+| Receivers 400,000, Payers 100,000 | 4 | 25% |
+| Receivers 500,000, Payers 100,000 | 5 (the cap) | 20% |
+
+Without the cap, Receivers could keep buying into a thin Payer pool, or Payers could leave until a small move exhausted what was left. Either way, the Receivers who joined last would find their gains unpaid.
+
+The 20% matches the [circuit breaker](/protocol/circuit-breaker), which skips any single settlement move above 20%. At or under the cap, no single settled move can ask the Payer pool for more than it holds.
+
+## What it does not do
+
+The cap limits deposits and redemptions. It does not limit price. Settlement moves collateral from Payers to Receivers when the price rises, and that pushes `R / P` up with no one trading.
+
+| Step | Receivers | Payers | `R / P` |
+| --- | ---: | ---: | ---: |
+| Start | 400,000 | 100,000 | 4 |
+| Price rises 10% and settles | 440,000 | 60,000 | 7.3 |
+
+Above the cap, Receiver deposits and Payer redemptions stay closed. Payer deposits and Receiver redemptions still work at any ratio, and each one brings the ratio back down. Receiver entry fees, which go to the Payer pool on the standard deployment, also help.
+
+If a run of rises settles in steps below 20% and exhausts the Payer pool, Receivers stop gaining until new Payers join. Missed moves are not paid later. The cap makes that less likely. It does not rule it out.
+
+## Accepted consequences
+
+- **Payers first.** A market with an empty Payer pool accepts no Receiver deposits. The router deposits the Payer leg of a combined call before the Receiver leg, so a single call can open a market.
+- **Payer exits depend on Receivers.** A Payer can redeem only the part of the Payer pool above `receiverPool / 5`. At the cap, no Payer can leave until a Receiver sells or a new Payer joins. A Receiver can fill a market to the cap on purpose, paying the entry fee, and so hold Payer exits closed.
+- **Losing Payers can be held in.** After a rise pushes `R / P` above five, the Payers who lost cannot redeem until the ratio comes back under the cap.
+- **Some Margin flows can wait.** Opening a long and closing a short both deposit into the Receiver pool. At or above the cap, both revert until Payer capital arrives, and a short's debt keeps accruing in the meantime. Closing a long and opening a short redeem from the Receiver pool and are never limited. See [Morpho integration](/protocol/morpho-integration).
+- **The last Payer can always leave.** While the Receiver pool holds no more than its dust floor (`MIN_POOL_ASSETS`), nothing settles and Payers carry no exposure, so Payer redemptions are not limited.
+
+## For holders and integrators
+
+- Read `maxDeposit` on the Receiver pool and `maxRedeem(owner)` on the Payer pool before sizing a trade. They return the room left under the cap, and can be `0`.
+- Those views read the last settled state. `deposit` and `redeem` settle first and then enforce the limit, so on a stale market the enforced value can differ.
+- A breach reverts with the standard ERC-4626 errors, `ERC4626ExceededMaxDeposit` and `ERC4626ExceededMaxRedeem`.
+- The Receiver limit ignores the entry fee, which stays in the market and only lowers `R / P`, so it is slightly conservative. The Payer limit counts the exit fee, because that leaves the Payer pool too.
+
+The function-level rules are in [Pool](/contracts/pool#pool-ratio-cap).
