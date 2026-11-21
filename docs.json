@@ -485,6 +485,7 @@
               "protocol/morpho-integration",
               "protocol/fees",
               "protocol/circuit-breaker",
+              "protocol/pool-ratio-cap",
               "protocol/audits"
             ]
           },

@@ -11,10 +11,12 @@ You can lose some or all of what you put in. The two-pool design explains where 
 | Risk | Who it affects | What it means |
 | --- | --- | --- |
 | The price moves against you | Receivers and Payers | Receiver value follows the price down. Payer value moves the other way, scaled by `R / P`, so a thin Payer pool can lose fast when the price rises. |
+| You can't leave when you want | Payers | A **Payer sell** cannot leave the Payer pool smaller than a fifth of the Receiver pool. At that line, or after a rise pushes past it, Payers wait until Receivers sell or new Payers join. See [Pool ratio cap](/protocol/pool-ratio-cap). |
 | You don't own the asset | Everyone holding a synthetic | No votes, no dividends, no investor protections. You hold a claim on collateral, not the stock or coin. |
 | Interest disappoints | Receivers and Payers | Funding depends on the Collateral Vault actually earning. It can be small for long periods, or pause while the vault recovers. |
 | The collateral falls | Everyone | If the Collateral Vault loses value, the collateral behind every pool falls with it. |
 | Liquidation | Margin | If your loan-to-value reaches the 96.5% LLTV, Morpho can sell your collateral. You may get back little or nothing. The **Liquidation price** shown is an estimate. |
+| Closing a short can wait | Margin | Opening a long and closing a short both buy into the Receiver pool. While the pools are at the ratio cap, both are blocked. A short's interest keeps running in the meantime, and it can still be liquidated. |
 | Liquidity | Savings and Lending | Lent money can't be withdrawn until borrowers repay. Large withdrawals may wait or come in parts. |
 | Bad debt | Savings and Lending | If a borrower is liquidated for less than the debt, lenders can lose principal. |
 | Hedges | Payers | A hedge on another venue has its own funding, fees and margin calls. It can cost more than Null pays. |

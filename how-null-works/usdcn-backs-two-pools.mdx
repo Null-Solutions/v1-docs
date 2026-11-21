@@ -42,6 +42,7 @@ If the asset falls, money moves the other way. A Receiver can never gain more th
 | Backing | Every position is fully backed. Settlement only moves collateral that is already in the pools, so nobody can end up owing money. |
 | Fees | Receivers pay an opening and closing fee, and it goes to the Payer pool, not to Null. Payers' own fees go to the protocol. See [What it costs](/how-null-works/what-it-costs). |
 | If Payers run out | Returns stop until new Payers join. Missed price moves are not made up later. |
+| Pool ratio cap | The Receiver pool can be at most five times the Payer pool. A **Buy** or a **Payer sell** that would go past that is blocked. |
 | Big jumps | A single move of more than 20% is skipped, not settled. The new price becomes the starting point. |
 | Rules | Each market's collateral, price feed and funding model are fixed when it is created. |
 
@@ -50,6 +51,8 @@ If the asset falls, money moves the other way. A Receiver can never gain more th
 A Payer backs the whole Receiver pool with a smaller deposit. In the example, $50 backs $100 of exposure, so each Payer dollar carries two dollars of the other side. The ratio is `R / P`: Receiver pool assets divided by Payer pool assets.
 
 That ratio works both ways. It makes a Payer's share of the interest bigger, and it makes price moves hit harder. It also changes as people join and leave either pool. [Payers](/payers) covers how to size and hedge it.
+
+The ratio has a ceiling. Every Receiver gain is paid from the Payer pool, so a **Buy** or a **Payer sell** cannot leave `R / P` above 5. At 5, the Payer pool still covers a 20% rise. A rising price can push the ratio higher without anyone trading, and until it comes back down, new Receivers and leaving Payers wait. See [Pool ratio cap](/protocol/pool-ratio-cap).
 
 ## Next
 
